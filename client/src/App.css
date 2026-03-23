@@ -27,12 +27,12 @@ body {
 
 .lms-page {
   min-height: 100vh;
-  padding: 14px;
+  padding: 0;
 }
 
 .lms-shell {
-  width: min(1500px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: grid;
   grid-template-columns: 286px minmax(0, 1fr) 316px;
   gap: 12px;
@@ -51,7 +51,7 @@ body {
 
 .left-sidebar {
   width: 100%;
-  min-height: calc(100vh - 28px);
+  min-height: 100vh;
   background: var(--sidebar);
   border-radius: 12px;
   padding: 10px;
@@ -231,7 +231,7 @@ body {
   border: 1px solid #d5dded;
   border-radius: 12px;
   padding: 10px;
-  min-height: calc(100vh - 28px);
+  min-height: 100vh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
@@ -481,7 +481,7 @@ body {
 
 .right-sidebar {
   width: 100%;
-  min-height: calc(100vh - 28px);
+  min-height: 100vh;
   padding: 12px;
   overflow: auto;
   background: #fff;
@@ -606,7 +606,7 @@ body {
   .left-sidebar,
   .right-sidebar,
   .center-area {
-    min-height: calc(100vh - 28px);
+    min-height: 100vh;
   }
 
   .mobile-only {
@@ -616,7 +616,7 @@ body {
 
 @media (max-width: 760px) {
   .lms-page {
-    padding: 8px;
+    padding: 0;
   }
 
   .lms-shell {
