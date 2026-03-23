@@ -1,3 +1,4 @@
+﻿const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const healthRoutes = require("./routes/health.routes");
@@ -5,10 +6,22 @@ const authRoutes = require("./routes/auth.routes");
 
 const app = express();
 const staticRoot = path.resolve(process.cwd());
+const dashboardDist = path.resolve(process.cwd(), "client", "dist");
+const dashboardIndex = path.join(dashboardDist, "index.html");
+const hasDashboardBuild = fs.existsSync(dashboardIndex);
 
 app.use(express.json());
 app.use("/api", healthRoutes);
 app.use("/api", authRoutes);
+
+if (hasDashboardBuild) {
+  app.use("/dashboard", express.static(dashboardDist));
+
+  app.get(/^\/dashboard(\/.*)?$/, (req, res) => {
+    res.sendFile(dashboardIndex);
+  });
+}
+
 app.use(express.static(staticRoot));
 
 app.use("/api", (req, res) => {

@@ -271,7 +271,7 @@
           const result = await requestJson('/api/auth/login', payload);
           localStorage.setItem('iqx_auth_user', JSON.stringify(result.user));
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
-          setTimeout(function(){ window.location.href = 'panel.html'; }, 500);
+          setTimeout(function(){ window.location.href = '/dashboard/'; }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo iniciar sesion', 'error');
         }
@@ -280,5 +280,6 @@
   </script>
 </body>
 </html>
+
 
 
