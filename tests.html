@@ -1,0 +1,93 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tests | IQeXponencial</title>
+  <meta name="description" content="Realiza tests cognitivos en IQeXponencial para medir atencion, velocidad lectora, razonamiento y otras capacidades mentales." />
+  <link rel="canonical" href="https://iqexponencial.com/tests.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://iqexponencial.com/tests.html" />
+  <meta property="og:title" content="Tests | IQeXponencial" />
+  <meta property="og:description" content="Evalua tu rendimiento cognitivo con los tests de IQeXponencial y conoce tus fortalezas para entrenar mejor." />
+  <meta property="og:image" content="https://21e39c98-4270-4955-827a-27b38ab91ba3-00-37rf2eo3mqp3r.kirk.replit.dev/api/images/863a750d-84af-4763-ad40-c5c417960494" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://iqexponencial.com/tests.html" />
+  <meta name="twitter:title" content="Tests | IQeXponencial" />
+  <meta name="twitter:description" content="Evalua tu rendimiento cognitivo con los tests de IQeXponencial y conoce tus fortalezas para entrenar mejor." />
+  <meta name="twitter:image" content="https://21e39c98-4270-4955-827a-27b38ab91ba3-00-37rf2eo3mqp3r.kirk.replit.dev/api/images/863a750d-84af-4763-ad40-c5c417960494" />
+  <link rel="icon" type="image/png" href="./assets/images/favicon.png" />
+  <link href="https://fonts.cdnfonts.com/css/gilroy-bold" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <style>
+    html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#fff;font-family:'Gilroy-Regular',sans-serif}
+    .iqx-topnav{--iqx-nav-btn:#7de3e3;position:fixed;top:0;left:0;right:0;z-index:4000;display:flex;justify-content:flex-end;align-items:center;padding:18px 5%;padding-top:calc(18px + env(safe-area-inset-top));box-sizing:border-box}
+    .iqx-topnav-glass{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(22,31,66,.3),rgba(70,30,120,.22));border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:999px;padding:8px 10px 8px 18px;max-width:100%;margin-left:auto}
+    .iqx-topnav-links{display:none;gap:20px;opacity:0;transform:translateX(8px);pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+    @media (min-width:981px){.iqx-topnav.menu-open .iqx-topnav-links{display:flex;opacity:1;transform:translateX(0);pointer-events:auto}}
+    .iqx-topnav-links a{color:#fff;text-decoration:none;font-size:15px;transition:color .14s ease,transform .14s ease}
+    .iqx-topnav-links a:hover{color:#00ffd5;transform:translateY(-1px)}
+    .iqx-topnav-lang{position:relative}
+    .iqx-topnav-lang-btn{border:none;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:9px 12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+    .iqx-topnav-lang-btn img{width:16px;height:12px;border-radius:2px;object-fit:cover}
+    .iqx-topnav-lang-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:145px;background:#fff;border-radius:12px;box-shadow:0 12px 30px rgba(10,20,38,.22);overflow:hidden;opacity:0;transform:translateY(-8px);pointer-events:none;transition:all .22s ease}
+    .iqx-topnav-lang.open .iqx-topnav-lang-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+    .iqx-topnav-lang-menu button{width:100%;border:none;background:#fff;display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:13px;color:#182037;cursor:pointer;text-align:left}
+    .iqx-topnav-lang-menu button:hover{background:#f2f5fb}
+    .iqx-topnav-lang-menu img{width:16px;height:12px;border-radius:2px;object-fit:cover}
+    .iqx-topnav-contact{border:none;background:var(--iqx-nav-btn);color:#032d46;padding:12px 18px;border-radius:12px;font-size:13px;font-family:'Gilroy-Bold',sans-serif;cursor:pointer}
+    .iqx-topnav-burger{width:34px;height:20px;border:none;background:transparent;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;padding:0}
+    .iqx-topnav-burger span{height:2px;width:100%;background:#fff;transition:all .38s ease}
+    .iqx-topnav.menu-open .iqx-topnav-burger span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+    .iqx-topnav.menu-open .iqx-topnav-burger span:nth-child(2){opacity:0}
+    .iqx-topnav.menu-open .iqx-topnav-burger span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
+    .iqx-menu-backdrop{position:fixed;inset:0;background:rgba(0,10,24,.28);z-index:3900;opacity:0;pointer-events:none;transition:opacity .3s ease}
+    .iqx-menu-backdrop.active{opacity:1;pointer-events:auto}
+    .iqx-menu-overlay{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);background:#fff;z-index:3950;transform:translateX(102%);transition:transform .45s ease;box-shadow:-18px 0 44px rgba(0,0,0,.18);display:flex;align-items:flex-start;padding-top:86px}
+    .iqx-menu-overlay.active{transform:translateX(0)}
+    .iqx-menu-list{list-style:none;padding:0 34px;width:100%}
+    .iqx-menu-list li{margin:16px 0}
+    .iqx-menu-list a{text-decoration:none;color:#cfd5e6;font-family:'Gilroy-Bold',sans-serif;font-size:44px;line-height:.95;display:inline-block;transition:color .14s ease,padding-left .14s ease}
+    .iqx-menu-list a:hover{color:#00ffd5;padding-left:12px}
+    .iqx-menu-list a.is-typing{animation:iqxLinkFlash 400ms linear 5;pointer-events:none}
+    @keyframes iqxLinkFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.08)}}
+    @media (max-width:980px){.iqx-topnav{padding:10px 8px;justify-content:flex-end;padding-top:calc(10px + env(safe-area-inset-top))}.iqx-topnav-contact{display:none}.iqx-topnav-glass{width:fit-content;max-width:none;justify-content:flex-end;gap:8px;padding:7px 8px 7px 10px}.iqx-topnav-lang-btn{padding:8px 10px;font-size:12px}.iqx-topnav-burger{width:30px;height:18px}}
+    @media (max-width:700px){.iqx-menu-list a{font-size:16vw}}
+    .frame-wrap{position:fixed;inset:0}
+    iframe{width:100%;height:100%;border:0;display:block}
+  </style>
+</head>
+<body>
+  <header class="iqx-topnav" id="iqxTopnav">
+    <div class="iqx-topnav-glass">
+      <nav class="iqx-topnav-links" aria-label="Navegacion principal">
+        <a href="index.html" data-i18n="header.home">Inicio</a><a href="metodox.html" data-i18n="header.method">Metodo X</a><a href="training.html" data-i18n="header.training">Entrenar</a><a href="tests.html" data-i18n="header.test">Test</a><a href="blog.html" data-i18n="header.blog">Blog</a><a href="nosotros.html" data-i18n="header.about">Nosotros</a><a href="contacto.html" data-i18n="header.contact">Contacto</a>
+      </nav>
+      <div class="iqx-topnav-lang" id="iqxLang">
+        <button class="iqx-topnav-lang-btn" id="iqxLangBtn" type="button" aria-expanded="false"><img src="https://flagcdn.com/w20/es.png" alt="Bandera de Espana"/><span>ES</span><ion-icon name="chevron-down-outline"></ion-icon></button>
+        <div class="iqx-topnav-lang-menu" id="iqxLangMenu">
+          <button type="button" data-code="ES" data-flag="https://flagcdn.com/w20/es.png"><img src="https://flagcdn.com/w20/es.png" alt="Bandera de Espana"/> Espanol</button>
+          <button type="button" data-code="EN" data-flag="https://flagcdn.com/w20/us.png"><img src="https://flagcdn.com/w20/us.png" alt="USA flag"/> English</button>
+          <button type="button" data-code="PT" data-flag="https://flagcdn.com/w20/br.png"><img src="https://flagcdn.com/w20/br.png" alt="Bandera de Brasil"/> Portugues</button>
+        </div>
+      </div>
+      <button class="iqx-topnav-contact" type="button" id="iqxHeaderContact" data-i18n="header.contact">Contacto</button>
+      <button class="iqx-topnav-burger" id="iqxBurger" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="iqx-menu-backdrop" id="iqxMenuBackdrop"></div>
+  <aside class="iqx-menu-overlay" id="iqxMenuOverlay" aria-label="Menu lateral"><ul class="iqx-menu-list"><li><a href="index.html" data-i18n="header.home">Inicio</a></li><li><a href="metodox.html" data-i18n="header.method">Metodo X</a></li><li><a href="training.html" data-i18n="header.training">Entrenar</a></li><li><a href="tests.html" data-i18n="header.test">Test</a></li><li><a href="blog.html" data-i18n="header.blog">Blog</a></li><li><a href="nosotros.html" data-i18n="header.about">Nosotros</a></li><li><a href="contacto.html" data-i18n="header.contact">Contacto</a></li></ul></aside>
+  <div class="frame-wrap"><iframe id="pageFrame" src="https://iqexponencial.app/tests?embed=true" title="IQeXponencial Tests"></iframe></div>
+  <script>
+    (function initTopNavMenu(){const h=document.getElementById('iqxTopnav'),b=document.getElementById('iqxBurger'),o=document.getElementById('iqxMenuOverlay'),bd=document.getElementById('iqxMenuBackdrop'),l=document.getElementById('iqxLang'),lb=document.getElementById('iqxLangBtn'),lm=document.getElementById('iqxLangMenu'),lbtn=lm?Array.from(lm.querySelectorAll('button')):[],links=o?Array.from(o.querySelectorAll('a')):[],cb=document.getElementById('iqxHeaderContact');if(!h||!b||!o||!bd)return;const close=()=>{o.classList.remove('active');bd.classList.remove('active');h.classList.remove('menu-open');document.body.style.overflow='';},open=()=>{o.classList.add('active');bd.classList.add('active');h.classList.add('menu-open');if(window.innerWidth<=980)document.body.style.overflow='hidden';};b.addEventListener('click',()=>o.classList.contains('active')?close():open());bd.addEventListener('click',close);links.forEach((a)=>a.addEventListener('click',(e)=>{e.preventDefault();const href=a.getAttribute('href');if(!href)return;links.forEach((x)=>x.classList.remove('is-typing'));a.classList.add('is-typing');setTimeout(()=>window.location.href=href,1400);}));if(l&&lb&&lm){lb.addEventListener('click',(e)=>{e.stopPropagation();const ex=l.classList.toggle('open');lb.setAttribute('aria-expanded',String(ex));});lbtn.forEach((x)=>x.addEventListener('click',()=>{const c=(x.getAttribute('data-code')||'EN').toLowerCase();if(window.IQXI18N&&typeof window.IQXI18N.setLanguage==='function')window.IQXI18N.setLanguage(c);l.classList.remove('open');lb.setAttribute('aria-expanded','false');}));document.addEventListener('click',(e)=>{if(!l.contains(e.target)){l.classList.remove('open');lb.setAttribute('aria-expanded','false');}});}if(cb)cb.addEventListener('click',()=>window.location.href='contacto.html');})();
+  </script>
+  <script>
+    (function initPageI18n(){const i18n={es:{title:'Tests | IQeXponencial',frameTitle:'Tests IQeXponencial',header:{home:'Inicio',method:'Metodo X',training: 'Entrenar',test:'Test',blog:'Blog',about:'Nosotros',contact:'Contacto'}},en:{title:'Tests | IQeXponencial',frameTitle:'IQeXponencial Tests',header:{home:'Home',method:'Method X',training: 'Train',test:'Test',blog:'Blog',about:'About',contact:'Contact'}},pt:{title:'Testes | IQeXponencial',frameTitle:'Testes IQeXponencial',header:{home:'Inicio',method:'Metodo X',training: 'Treinar',test:'Teste',blog:'Blog',about:'Sobre Nos',contact:'Contato'}}};const norm=(r)=>{const x=String(r||'').toLowerCase();if(x.startsWith('es'))return'es';if(x.startsWith('pt'))return'pt';if(x.startsWith('en'))return'en';return'en';};const q=new URLSearchParams(window.location.search).get('lang');const s=localStorage.getItem('iqx_lang');const lang=norm(q||s||(navigator.languages&&navigator.languages[0])||navigator.language);const d=i18n[lang];const f=document.getElementById('pageFrame');document.documentElement.lang=lang;document.title=d.title;if(f)f.title=d.frameTitle;localStorage.setItem('iqx_lang',lang);const btn=document.getElementById('iqxLangBtn');if(btn){const m={es:{c:'ES',f:'https://flagcdn.com/w20/es.png'},en:{c:'EN',f:'https://flagcdn.com/w20/us.png'},pt:{c:'PT',f:'https://flagcdn.com/w20/br.png'}}[lang]||{c:'EN',f:'https://flagcdn.com/w20/us.png'};const i=btn.querySelector('img');const c=btn.querySelector('span');if(i)i.src=m.f;if(c)c.textContent=m.c;}document.querySelectorAll('[data-i18n]').forEach((el)=>{const p=el.getAttribute('data-i18n').split('.');let v=d;p.forEach((k)=>v=v&&v[k]);if(typeof v==='string')el.textContent=v;});document.querySelectorAll('a[href$=".html"]').forEach((a)=>{try{const u=new URL(a.getAttribute('href'),window.location.href);u.searchParams.set('lang',lang);a.setAttribute('href',u.pathname+u.search);}catch(_){}});window.IQXI18N={setLanguage:(n)=>{const l=norm(n);localStorage.setItem('iqx_lang',l);const u=new URL(window.location.href);u.searchParams.set('lang',l);window.location.href=u.pathname+u.search;}};})();
+  </script>
+  <script>(function initVisibilityPowerSaver(){const PAUSE_AFTER_MS=10000,PAUSED_CLASS="app-paused";let hideTimer=null,paused=false;function setPaused(next){if(paused===next)return;paused=next;document.documentElement.classList.toggle(PAUSED_CLASS,paused);if(document.body)document.body.classList.toggle(PAUSED_CLASS,paused);if(window.gsap&&window.gsap.globalTimeline){if(paused)window.gsap.globalTimeline.pause();else window.gsap.globalTimeline.resume();}document.querySelectorAll("video, audio").forEach((m)=>{if(paused){if(!m.paused){m.dataset.wasPlaying="1";m.pause();}}else if(m.dataset.wasPlaying==="1"){m.play().catch(()=>{});delete m.dataset.wasPlaying;}});window.dispatchEvent(new CustomEvent(paused?"app:pause":"app:resume"));}function schedulePause(){clearTimeout(hideTimer);hideTimer=setTimeout(()=>setPaused(true),PAUSE_AFTER_MS);}function resumeNow(){clearTimeout(hideTimer);setPaused(false);}function onVisibilityChange(){if(document.hidden)schedulePause();else resumeNow();}document.addEventListener("visibilitychange",onVisibilityChange,{passive:true});window.addEventListener("pagehide",schedulePause,{passive:true});window.addEventListener("pageshow",resumeNow,{passive:true});window.addEventListener("blur",()=>{if(!document.hidden)schedulePause();},{passive:true});window.addEventListener("focus",resumeNow,{passive:true});onVisibilityChange();})();</script>
+  <style>.app-paused *,.app-paused *::before,.app-paused *::after{animation-play-state:paused!important;}</style>
+</body>
+</html>
+
+
