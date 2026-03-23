@@ -663,3 +663,44 @@ body {
     justify-self: start;
   }
 }
+
+.user-meta {
+  display: grid;
+  gap: 1px;
+  margin-right: 2px;
+}
+
+.user-meta strong {
+  font-size: 12px;
+  color: #1d2a49;
+}
+
+.user-meta span {
+  font-size: 11px;
+  color: #6a7795;
+}
+
+.status-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.status-card {
+  width: min(560px, 100%);
+  padding: 24px;
+  background: var(--panel);
+  border-radius: 14px;
+}
+
+.status-card h2 {
+  margin: 0 0 10px;
+  font-size: 24px;
+  color: #17284a;
+}
+
+.status-card p {
+  margin: 0 0 14px;
+  color: #5f6d8a;
+}

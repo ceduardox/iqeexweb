@@ -1,6 +1,8 @@
 const express = require("express");
 const { pool } = require("../db/pool");
 const { hashPassword, verifyPassword } = require("../auth/password");
+const { createAuthToken } = require("../auth/token");
+const { requireAuth, sanitizeUser } = require("../middleware/auth");
 
 const router = express.Router();
 const ALLOWED_ROLES = new Set(["student", "teacher", "admin"]);
@@ -13,15 +15,47 @@ function normalizeName(value) {
   return String(value || "").trim().replace(/\s+/g, " ");
 }
 
-function sanitizeUser(row) {
-  return {
-    id: row.id,
-    fullName: row.full_name,
-    email: row.email,
-    role: row.role,
-    active: row.is_active,
-    createdAt: row.created_at,
-  };
+function defaultCourseCodesForRole(role) {
+  if (role === "teacher") {
+    return ["BIO-101", "LMS-110", "ART-220"];
+  }
+
+  if (role === "student") {
+    return ["BIO-101", "PHO-160", "WAT-120"];
+  }
+
+  return [];
+}
+
+function defaultMemberRole(role) {
+  return role === "teacher" ? "teacher" : "student";
+}
+
+function deterministicProgress(userId, courseId, role) {
+  if (role === "teacher") {
+    return 100;
+  }
+
+  return ((Number(userId) * 17 + Number(courseId) * 11) % 81) + 10;
+}
+
+async function enrollDefaultCourses(userId, role) {
+  const courseCodes = defaultCourseCodesForRole(role);
+  if (courseCodes.length === 0) {
+    return;
+  }
+
+  const courses = await pool.query("SELECT id FROM courses WHERE code = ANY($1::text[])", [courseCodes]);
+  for (const course of courses.rows) {
+    await pool.query(
+      `
+        INSERT INTO course_members (user_id, course_id, role, progress_percent)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (user_id, course_id) DO NOTHING
+      `,
+      [userId, course.id, defaultMemberRole(role), deterministicProgress(userId, course.id, role)]
+    );
+  }
 }
 
 router.post("/auth/register", async (req, res, next) => {
@@ -62,10 +96,15 @@ router.post("/auth/register", async (req, res, next) => {
       [fullName, email, passwordHash, role]
     );
 
+    const user = sanitizeUser(insert.rows[0]);
+    await enrollDefaultCourses(user.id, role);
+    const token = createAuthToken(user);
+
     return res.status(201).json({
       status: "ok",
       message: "Account created",
-      user: sanitizeUser(insert.rows[0]),
+      token,
+      user,
     });
   } catch (error) {
     return next(error);
@@ -95,24 +134,42 @@ router.post("/auth/login", async (req, res, next) => {
       return res.status(401).json({ status: "error", message: "Invalid credentials" });
     }
 
-    const user = result.rows[0];
-    if (!user.is_active) {
+    const row = result.rows[0];
+    if (!row.is_active) {
       return res.status(403).json({ status: "error", message: "Account is inactive" });
     }
 
-    const validPassword = await verifyPassword(password, user.password_hash);
+    const validPassword = await verifyPassword(password, row.password_hash);
     if (!validPassword) {
       return res.status(401).json({ status: "error", message: "Invalid credentials" });
     }
 
+    const user = sanitizeUser(row);
+    const token = createAuthToken(user);
+
     return res.json({
       status: "ok",
       message: "Login successful",
-      user: sanitizeUser(user),
+      token,
+      user,
     });
   } catch (error) {
     return next(error);
   }
+});
+
+router.get("/auth/me", requireAuth, (req, res) => {
+  return res.json({
+    status: "ok",
+    user: req.user,
+  });
+});
+
+router.post("/auth/logout", requireAuth, (req, res) => {
+  return res.json({
+    status: "ok",
+    message: "Logout successful",
+  });
 });
 
 module.exports = router;

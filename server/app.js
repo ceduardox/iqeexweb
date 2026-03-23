@@ -3,6 +3,7 @@ const path = require("path");
 const express = require("express");
 const healthRoutes = require("./routes/health.routes");
 const authRoutes = require("./routes/auth.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
 const app = express();
 const projectRoot = path.resolve(__dirname, "..");
@@ -14,6 +15,7 @@ const legacyAccessPage = path.join(staticRoot, "acceso.html");
 app.use(express.json());
 app.use("/api", healthRoutes);
 app.use("/api", authRoutes);
+app.use("/api", dashboardRoutes);
 
 app.use("/dashboard", express.static(dashboardDist));
 app.get(/^\/dashboard(\/.*)?$/, (req, res) => {

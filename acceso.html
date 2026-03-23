@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -216,6 +216,16 @@
         setMessage('');
       }
 
+      function persistSession(result){
+        if (result && result.token) {
+          localStorage.setItem('iqx_auth_token', String(result.token));
+        }
+
+        if (result && result.user) {
+          localStorage.setItem('iqx_auth_user', JSON.stringify(result.user));
+        }
+      }
+
       async function requestJson(url, payload){
         const response = await fetch(url, {
           method: 'POST',
@@ -248,10 +258,11 @@
         };
 
         try {
-          await requestJson('/api/auth/register', payload);
-          setMessage('Cuenta creada. Ahora puedes iniciar sesion.', 'ok');
+          const result = await requestJson('/api/auth/register', payload);
+          persistSession(result);
+          setMessage('Cuenta creada. Redirigiendo al panel...', 'ok');
           registerForm.reset();
-          setMode('login');
+          setTimeout(function(){ window.location.href = '/dashboard/'; }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo registrar la cuenta', 'error');
         }
@@ -269,7 +280,7 @@
 
         try {
           const result = await requestJson('/api/auth/login', payload);
-          localStorage.setItem('iqx_auth_user', JSON.stringify(result.user));
+          persistSession(result);
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
           setTimeout(function(){ window.location.href = '/dashboard/'; }, 500);
         } catch (error) {
@@ -280,6 +291,7 @@
   </script>
 </body>
 </html>
+
 
 
 
