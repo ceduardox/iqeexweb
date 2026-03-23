@@ -1,12 +1,13 @@
-﻿const fs = require("fs");
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const healthRoutes = require("./routes/health.routes");
 const authRoutes = require("./routes/auth.routes");
 
 const app = express();
-const staticRoot = path.resolve(process.cwd());
-const dashboardDist = path.resolve(process.cwd(), "client", "dist");
+const projectRoot = path.resolve(__dirname, "..");
+const staticRoot = projectRoot;
+const dashboardDist = path.join(projectRoot, "client", "dist");
 const dashboardIndex = path.join(dashboardDist, "index.html");
 const hasDashboardBuild = fs.existsSync(dashboardIndex);
 
