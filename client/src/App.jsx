@@ -13,6 +13,27 @@ const DEFAULT_SUPPORT_NAV = [
   { key: 'docs', label: 'Documentation' },
 ]
 
+const EMPTY_COURSE_FORM = {
+  code: '',
+  title: '',
+  category: 'General',
+  level: 'Beginner',
+  theme: 'vivid',
+  isPublished: true,
+}
+
+const EMPTY_ACTIVITY_FORM = {
+  title: '',
+  description: '',
+  eventType: 'task',
+}
+
+const EMPTY_MEMBER_FORM = {
+  email: '',
+  role: 'student',
+  progressPercent: 0,
+}
+
 function parseStoredJson(key) {
   try {
     const raw = localStorage.getItem(key)
@@ -54,6 +75,33 @@ function roleLabel(role) {
   }
 
   return 'Student'
+}
+
+function activityTime(value) {
+  if (!value) return '--:--'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--:--'
+  return date.toISOString().slice(11, 16)
+}
+
+function mapActivityRow(row) {
+  const type = row.eventType || row.type || 'task'
+  return {
+    id: row.id,
+    courseId: row.courseId,
+    title: row.title,
+    course: row.courseTitle || row.course || 'General',
+    description: row.description || '',
+    type,
+    eventType: type,
+    time: row.time || activityTime(row.happenedAt),
+    happenedAt: row.happenedAt || null,
+    canManage: Boolean(row.canManage),
+  }
+}
+
+function getCourseScope(role) {
+  return role === 'admin' ? 'all' : 'mine'
 }
 
 async function apiRequest(url, token, options = {}) {
@@ -102,6 +150,10 @@ function Icon({ name }) {
     discussion: 'M4 5h16v10H7l-3 3z',
     file: 'M7 3h7l4 4v14H7zM14 3v4h4',
     logout: 'M10 17l5-5-5-5M15 12H5M19 4v16',
+    edit: 'M4 20h4l10-10-4-4L4 16v4zM13 7l4 4',
+    trash: 'M4 7h16M9 7V4h6v3M8 7l1 13h6l1-13',
+    user: 'M12 12a4 4 0 100-8 4 4 0 000 8zm-7 9a7 7 0 0114 0',
+    add: 'M12 5v14M5 12h14',
   }
 
   const d = pathByName[name] || pathByName.dashboard
@@ -113,7 +165,7 @@ function Icon({ name }) {
   )
 }
 
-function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, courses, user }) {
+function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, courses, user, selectedCourseId, onSelectCourse }) {
   const activeCourses = courses.slice(0, 4)
 
   return (
@@ -141,11 +193,21 @@ function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, cours
 
         <ul className="course-links">
           {activeCourses.length > 0 ? (
-            activeCourses.map((course, index) => (
-              <li key={course.id || `${course.title}-${index}`} className={index === 0 ? 'active' : ''}>{course.title}</li>
-            ))
+            activeCourses.map((course) => {
+              const selected = Number(course.id) === Number(selectedCourseId)
+              return (
+                <li key={course.id} className={selected ? 'active' : ''}>
+                  <button type="button" onClick={() => onSelectCourse(course.id)}>
+                    <span>{course.title}</span>
+                    {course.isPublished === false ? <small>Archived</small> : null}
+                  </button>
+                </li>
+              )
+            })
           ) : (
-            <li className="active">No courses assigned yet</li>
+            <li className="active">
+              <button type="button">No courses assigned yet</button>
+            </li>
           )}
         </ul>
       </section>
@@ -428,18 +490,226 @@ function PrivateFilesSection({ privateFiles }) {
   )
 }
 
-function ContentBankSection({ tags, categories }) {
+function ContentBankSection({
+  user,
+  courses,
+  selectedCourse,
+  selectedCourseId,
+  onSelectCourse,
+  members,
+  activities,
+  courseForm,
+  onCourseChange,
+  onCreateCourse,
+  onUpdateCourse,
+  onArchiveCourse,
+  memberForm,
+  onMemberChange,
+  onAddMember,
+  onRemoveMember,
+  activityForm,
+  onActivityChange,
+  onCreateActivity,
+  onRenameActivity,
+  onDeleteActivity,
+  busyAction,
+  managerMessage,
+}) {
+  const canCreateCourse = user.role === 'admin' || user.role === 'teacher'
+  const canManageSelectedCourse = Boolean(selectedCourse && selectedCourse.canManage)
+
   return (
-    <section className="block shell-box">
+    <section className="block shell-box manager-wrap">
       <header className="block-header">
-        <h2>Content Bank</h2>
+        <h2>Content Bank And Management</h2>
       </header>
-      <div className="tag-list">
-        {tags.map((tag) => <button key={tag} type="button" className="tag">{tag}</button>)}
+
+      {managerMessage ? (
+        <p className={`manager-message ${managerMessage.type === 'error' ? 'error' : 'success'}`}>
+          {managerMessage.text}
+        </p>
+      ) : null}
+
+      <div className="manager-grid">
+        <article className="manager-card">
+          <h3>Course Catalog</h3>
+          <ul className="manager-list">
+            {courses.length > 0 ? (
+              courses.map((course) => (
+                <li key={course.id} className={`manager-item ${Number(course.id) === Number(selectedCourseId) ? 'active' : ''}`}>
+                  <button type="button" className="manager-select" onClick={() => onSelectCourse(course.id)}>
+                    <span>
+                      <strong>{course.title}</strong>
+                      <small>{course.code} - {course.category}</small>
+                    </span>
+                    <span className="manager-meta">{typeof course.memberCount === 'number' ? `${course.memberCount} users` : '--'}</span>
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="manager-empty">No courses available.</li>
+            )}
+          </ul>
+        </article>
+
+        <article className="manager-card">
+          <h3>Course Settings</h3>
+          <form className="manager-form" onSubmit={onCreateCourse}>
+            <div className="form-grid">
+              <label>
+                Code
+                <input name="code" value={courseForm.code} onChange={onCourseChange} placeholder="BIO-101" />
+              </label>
+              <label>
+                Title
+                <input name="title" value={courseForm.title} onChange={onCourseChange} required minLength={3} />
+              </label>
+              <label>
+                Category
+                <input name="category" value={courseForm.category} onChange={onCourseChange} />
+              </label>
+              <label>
+                Level
+                <input name="level" value={courseForm.level} onChange={onCourseChange} />
+              </label>
+              <label>
+                Theme
+                <select name="theme" value={courseForm.theme} onChange={onCourseChange}>
+                  <option value="vivid">Vivid</option>
+                  <option value="earth">Earth</option>
+                </select>
+              </label>
+              <label className="checkbox-row">
+                <input type="checkbox" name="isPublished" checked={Boolean(courseForm.isPublished)} onChange={onCourseChange} />
+                <span>Published</span>
+              </label>
+            </div>
+
+            <div className="manager-actions">
+              <button className="ghost-btn" type="submit" disabled={!canCreateCourse || busyAction === 'create-course'}>Create course</button>
+              <button className="ghost-btn" type="button" onClick={onUpdateCourse} disabled={!canManageSelectedCourse || busyAction === 'update-course'}>Update selected</button>
+              <button className="ghost-btn danger-btn" type="button" onClick={onArchiveCourse} disabled={!canManageSelectedCourse || busyAction === 'archive-course'}>Archive selected</button>
+            </div>
+
+            {selectedCourse ? (
+              <p className="manager-note">
+                Active: <strong>{selectedCourse.title}</strong>{' '}
+                {selectedCourse.isPublished ? <span className="course-state online">Published</span> : <span className="course-state archived">Archived</span>}
+              </p>
+            ) : (
+              <p className="manager-note">Pick a course to edit membership and activity.</p>
+            )}
+          </form>
+        </article>
+
+        <article className="manager-card">
+          <h3>Course Members</h3>
+          {selectedCourse ? (
+            <>
+              <ul className="manager-list compact">
+                {members.length > 0 ? (
+                  members.map((member) => (
+                    <li key={member.id} className="manager-item">
+                      <div className="manager-user">
+                        <span>
+                          <strong>{member.fullName}</strong>
+                          <small>{member.email}</small>
+                        </span>
+                      </div>
+                      <div className="manager-meta">
+                        <span className="manager-role">{member.role}</span>
+                        <span>{member.progressPercent}%</span>
+                      </div>
+                      <button className="ghost-btn small" type="button" onClick={() => onRemoveMember(member.id)} disabled={!canManageSelectedCourse || busyAction === `member-remove-${member.id}` || Number(member.id) === Number(user.id)}>Remove</button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="manager-empty">No members assigned yet.</li>
+                )}
+              </ul>
+
+              <form className="manager-form" onSubmit={onAddMember}>
+                <div className="form-grid">
+                  <label>
+                    User email
+                    <input type="email" name="email" value={memberForm.email} onChange={onMemberChange} required />
+                  </label>
+                  <label>
+                    Role
+                    <select name="role" value={memberForm.role} onChange={onMemberChange}>
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="assistant">Assistant</option>
+                    </select>
+                  </label>
+                  <label>
+                    Progress
+                    <input type="number" min="0" max="100" name="progressPercent" value={memberForm.progressPercent} onChange={onMemberChange} />
+                  </label>
+                </div>
+                <div className="manager-actions">
+                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'member-add'}>Save member</button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <p className="manager-empty">Select a course first.</p>
+          )}
+        </article>
+
+        <article className="manager-card">
+          <h3>Course Activity</h3>
+          {selectedCourse ? (
+            <>
+              <ul className="manager-list compact">
+                {activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <li key={activity.id} className="manager-item">
+                      <div>
+                        <strong>{activity.title}</strong>
+                        <small>{activity.type} - {activity.time}</small>
+                      </div>
+                      <div className="manager-actions inline">
+                        <button className="ghost-btn small" type="button" onClick={() => onRenameActivity(activity.id, activity.title)} disabled={!canManageSelectedCourse || busyAction === `activity-edit-${activity.id}`}>Rename</button>
+                        <button className="ghost-btn small danger-btn" type="button" onClick={() => onDeleteActivity(activity.id)} disabled={!canManageSelectedCourse || busyAction === `activity-delete-${activity.id}`}>Delete</button>
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="manager-empty">No activity events for this course.</li>
+                )}
+              </ul>
+
+              <form className="manager-form" onSubmit={onCreateActivity}>
+                <div className="form-grid">
+                  <label>
+                    Title
+                    <input name="title" value={activityForm.title} onChange={onActivityChange} required minLength={3} />
+                  </label>
+                  <label>
+                    Type
+                    <select name="eventType" value={activityForm.eventType} onChange={onActivityChange}>
+                      <option value="task">Task</option>
+                      <option value="quiz">Quiz</option>
+                      <option value="discussion">Discussion</option>
+                      <option value="file">File</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Description
+                  <textarea name="description" rows="2" value={activityForm.description} onChange={onActivityChange} />
+                </label>
+                <div className="manager-actions">
+                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'activity-add'}>Create activity</button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <p className="manager-empty">Select a course first.</p>
+          )}
+        </article>
       </div>
-      <ul className="panel-list">
-        {categories.length > 0 ? categories.map((category) => <li key={category}>Category: {category}</li>) : <li>No content categories</li>}
-      </ul>
     </section>
   )
 }
@@ -474,15 +744,140 @@ function App() {
   const [token, setToken] = useState(() => localStorage.getItem('iqx_auth_token') || '')
   const [user, setUser] = useState(() => parseStoredJson('iqx_auth_user'))
   const [dashboardData, setDashboardData] = useState(null)
+  const [courses, setCourses] = useState([])
+  const [timelineItems, setTimelineItems] = useState([])
+  const [courseMembers, setCourseMembers] = useState([])
+  const [courseActivities, setCourseActivities] = useState([])
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
+  const [courseForm, setCourseForm] = useState(EMPTY_COURSE_FORM)
+  const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM)
+  const [activityForm, setActivityForm] = useState(EMPTY_ACTIVITY_FORM)
+  const [managerMessage, setManagerMessage] = useState(null)
+  const [busyAction, setBusyAction] = useState('')
   const [status, setStatus] = useState(token ? 'loading' : 'unauthorized')
+
+  const selectedCourse = useMemo(() => {
+    if (!selectedCourseId) return null
+    return courses.find((course) => Number(course.id) === Number(selectedCourseId)) || null
+  }, [courses, selectedCourseId])
+
+  const primaryNav = useMemo(() => {
+    const base = dashboardData?.primaryNav || DEFAULT_PRIMARY_NAV
+    return base.map((item) => {
+      if (item.key !== 'content-bank') return item
+      return {
+        ...item,
+        badge: courses.length > 0 ? String(courses.length) : null,
+      }
+    })
+  }, [dashboardData, courses.length])
+
+  const supportNav = dashboardData?.supportNav || DEFAULT_SUPPORT_NAV
+
+  const recentCourses = useMemo(() => {
+    if (courses.length === 0) {
+      return dashboardData?.recentCourses || []
+    }
+
+    return courses.slice(0, 8).map((course) => ({
+      id: course.id,
+      title: course.title,
+      level: course.level,
+      tone: course.theme,
+      category: course.category,
+      progress: typeof course.progressPercent === 'number' ? course.progressPercent : null,
+    }))
+  }, [courses, dashboardData])
+
+  const tags = useMemo(() => {
+    const values = new Set(dashboardData?.tags || [])
+    if (selectedCourse?.category) values.add(String(selectedCourse.category).toLowerCase())
+    return Array.from(values)
+  }, [dashboardData, selectedCourse])
+
+  const categories = useMemo(() => {
+    if (courses.length === 0) return dashboardData?.categories || []
+    return Array.from(new Set(courses.map((course) => course.category).filter(Boolean)))
+  }, [courses, dashboardData])
+
+  const recentItems = useMemo(() => {
+    if (timelineItems.length === 0) return dashboardData?.recentItems || []
+    return timelineItems.slice(0, 5).map((item) => item.title)
+  }, [timelineItems, dashboardData])
+
+  const privateFiles = dashboardData?.privateFiles || []
+
+  useEffect(() => {
+    if (courses.length === 0) {
+      setSelectedCourseId(null)
+      return
+    }
+
+    const exists = courses.some((course) => Number(course.id) === Number(selectedCourseId))
+    if (!exists) {
+      setSelectedCourseId(courses[0].id)
+    }
+  }, [courses, selectedCourseId])
+
+  useEffect(() => {
+    if (!selectedCourse) {
+      setCourseForm(EMPTY_COURSE_FORM)
+      return
+    }
+
+    setCourseForm({
+      code: selectedCourse.code || '',
+      title: selectedCourse.title || '',
+      category: selectedCourse.category || 'General',
+      level: selectedCourse.level || 'Beginner',
+      theme: selectedCourse.theme || 'vivid',
+      isPublished: selectedCourse.isPublished !== false,
+    })
+  }, [selectedCourse])
+
+  async function refreshOverview(authToken) {
+    const overview = await apiRequest('/api/dashboard/overview', authToken, { method: 'GET' })
+    setDashboardData(overview.data || null)
+  }
+
+  async function refreshCourses(authToken, role) {
+    const scope = getCourseScope(role)
+    const response = await apiRequest(`/api/courses?scope=${scope}&includeUnpublished=true`, authToken, { method: 'GET' })
+    setCourses(response.courses || [])
+    return response.courses || []
+  }
+
+  async function refreshTimeline(authToken) {
+    const response = await apiRequest('/api/activities?limit=40', authToken, { method: 'GET' })
+    setTimelineItems((response.activities || []).map(mapActivityRow))
+  }
+
+  async function refreshCourseDetails(authToken, courseId) {
+    if (!courseId) {
+      setCourseMembers([])
+      setCourseActivities([])
+      return
+    }
+
+    const [members, activities] = await Promise.all([
+      apiRequest(`/api/courses/${courseId}/members`, authToken, { method: 'GET' }),
+      apiRequest(`/api/activities?courseId=${courseId}&limit=60`, authToken, { method: 'GET' }),
+    ])
+
+    setCourseMembers(members.members || [])
+    setCourseActivities((activities.activities || []).map(mapActivityRow))
+  }
 
   useEffect(() => {
     let cancelled = false
 
-    async function loadDashboard() {
+    async function bootstrap() {
       if (!token) {
         setStatus('unauthorized')
+        setUser(null)
         setDashboardData(null)
+        setCourses([])
+        setTimelineItems([])
         return
       }
 
@@ -490,36 +885,73 @@ function App() {
         setStatus('loading')
 
         const me = await apiRequest('/api/auth/me', token, { method: 'GET' })
-        const overview = await apiRequest('/api/dashboard/overview', token, { method: 'GET' })
-
-        if (cancelled) {
-          return
-        }
+        if (cancelled) return
 
         setUser(me.user)
         localStorage.setItem('iqx_auth_user', JSON.stringify(me.user))
-        setDashboardData(overview.data)
+
+        await Promise.all([
+          refreshOverview(token),
+          refreshCourses(token, me.user.role),
+          refreshTimeline(token),
+        ])
+
+        if (cancelled) return
         setStatus('ready')
       } catch (_) {
-        if (cancelled) {
-          return
-        }
+        if (cancelled) return
 
         localStorage.removeItem('iqx_auth_token')
         localStorage.removeItem('iqx_auth_user')
         setToken('')
         setUser(null)
         setDashboardData(null)
+        setCourses([])
+        setTimelineItems([])
+        setCourseMembers([])
+        setCourseActivities([])
         setStatus('unauthorized')
       }
     }
 
-    loadDashboard()
+    bootstrap()
 
     return () => {
       cancelled = true
     }
   }, [token])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSelectedCourseData() {
+      if (status !== 'ready' || !token || !selectedCourseId) {
+        setCourseMembers([])
+        setCourseActivities([])
+        return
+      }
+
+      try {
+        await refreshCourseDetails(token, selectedCourseId)
+      } catch (error) {
+        if (cancelled) return
+
+        if (error.status === 403 || error.status === 404) {
+          setCourseMembers([])
+          setCourseActivities([])
+          return
+        }
+
+        setManagerMessage({ type: 'error', text: error.message || 'Cannot load course details' })
+      }
+    }
+
+    loadSelectedCourseData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [status, token, selectedCourseId])
 
   async function handleLogout() {
     try {
@@ -533,8 +965,283 @@ function App() {
       setToken('')
       setUser(null)
       setDashboardData(null)
+      setCourses([])
+      setTimelineItems([])
+      setCourseMembers([])
+      setCourseActivities([])
       setStatus('unauthorized')
       window.location.href = '/acceso.html'
+    }
+  }
+
+  function onCourseFieldChange(event) {
+    const { name, value, type, checked } = event.target
+    setCourseForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  function onMemberFieldChange(event) {
+    const { name, value } = event.target
+    setMemberForm((prev) => ({
+      ...prev,
+      [name]: name === 'progressPercent' ? Number(value) : value,
+    }))
+  }
+
+  function onActivityFieldChange(event) {
+    const { name, value } = event.target
+    setActivityForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  async function onCreateCourse(event) {
+    event.preventDefault()
+    if (!token || !user) return
+
+    setBusyAction('create-course')
+    setManagerMessage(null)
+
+    try {
+      const result = await apiRequest('/api/courses', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          code: courseForm.code,
+          title: courseForm.title,
+          category: courseForm.category,
+          level: courseForm.level,
+          theme: courseForm.theme,
+          isPublished: Boolean(courseForm.isPublished),
+        }),
+      })
+
+      await Promise.all([
+        refreshCourses(token, user.role),
+        refreshTimeline(token),
+        refreshOverview(token),
+      ])
+
+      if (result.course?.id) {
+        setSelectedCourseId(result.course.id)
+      }
+
+      setManagerMessage({ type: 'success', text: `Course created: ${result.course?.title || 'ok'}` })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot create course' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onUpdateCourse() {
+    if (!token || !selectedCourse) return
+
+    setBusyAction('update-course')
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/courses/${selectedCourse.id}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: courseForm.title,
+          category: courseForm.category,
+          level: courseForm.level,
+          theme: courseForm.theme,
+          isPublished: Boolean(courseForm.isPublished),
+        }),
+      })
+
+      await Promise.all([
+        refreshCourses(token, user.role),
+        refreshOverview(token),
+      ])
+
+      setManagerMessage({ type: 'success', text: 'Course updated' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot update course' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onArchiveCourse() {
+    if (!token || !selectedCourse) return
+    if (!window.confirm(`Archive course "${selectedCourse.title}"?`)) return
+
+    setBusyAction('archive-course')
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/courses/${selectedCourse.id}`, token, {
+        method: 'DELETE',
+      })
+
+      await Promise.all([
+        refreshCourses(token, user.role),
+        refreshOverview(token),
+      ])
+
+      setManagerMessage({ type: 'success', text: 'Course archived' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot archive course' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onAddMember(event) {
+    event.preventDefault()
+    if (!token || !selectedCourse) return
+
+    setBusyAction('member-add')
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/courses/${selectedCourse.id}/members`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: memberForm.email,
+          role: memberForm.role,
+          progressPercent: Number(memberForm.progressPercent),
+        }),
+      })
+
+      await Promise.all([
+        refreshCourseDetails(token, selectedCourse.id),
+        refreshCourses(token, user.role),
+      ])
+
+      setMemberForm(EMPTY_MEMBER_FORM)
+      setManagerMessage({ type: 'success', text: 'Member saved' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot save member' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onRemoveMember(memberUserId) {
+    if (!token || !selectedCourse) return
+    if (!window.confirm('Remove this member from the course?')) return
+
+    const actionId = `member-remove-${memberUserId}`
+    setBusyAction(actionId)
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/courses/${selectedCourse.id}/members/${memberUserId}`, token, {
+        method: 'DELETE',
+      })
+
+      await Promise.all([
+        refreshCourseDetails(token, selectedCourse.id),
+        refreshCourses(token, user.role),
+      ])
+
+      setManagerMessage({ type: 'success', text: 'Member removed' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot remove member' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onCreateActivity(event) {
+    event.preventDefault()
+    if (!token || !selectedCourse) return
+
+    setBusyAction('activity-add')
+    setManagerMessage(null)
+
+    try {
+      await apiRequest('/api/activities', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          title: activityForm.title,
+          description: activityForm.description,
+          eventType: activityForm.eventType,
+        }),
+      })
+
+      await Promise.all([
+        refreshCourseDetails(token, selectedCourse.id),
+        refreshTimeline(token),
+        refreshOverview(token),
+      ])
+
+      setActivityForm(EMPTY_ACTIVITY_FORM)
+      setManagerMessage({ type: 'success', text: 'Activity created' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot create activity' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onRenameActivity(activityId, currentTitle) {
+    if (!token || !selectedCourse) return
+
+    const nextTitle = window.prompt('New activity title', currentTitle)
+    if (nextTitle === null) return
+
+    const normalized = nextTitle.trim()
+    if (normalized.length < 3) {
+      setManagerMessage({ type: 'error', text: 'Activity title must contain at least 3 characters' })
+      return
+    }
+
+    const actionId = `activity-edit-${activityId}`
+    setBusyAction(actionId)
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/activities/${activityId}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: normalized }),
+      })
+
+      await Promise.all([
+        refreshCourseDetails(token, selectedCourse.id),
+        refreshTimeline(token),
+        refreshOverview(token),
+      ])
+
+      setManagerMessage({ type: 'success', text: 'Activity updated' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot update activity' })
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onDeleteActivity(activityId) {
+    if (!token || !selectedCourse) return
+    if (!window.confirm('Delete this activity event?')) return
+
+    const actionId = `activity-delete-${activityId}`
+    setBusyAction(actionId)
+    setManagerMessage(null)
+
+    try {
+      await apiRequest(`/api/activities/${activityId}`, token, {
+        method: 'DELETE',
+      })
+
+      await Promise.all([
+        refreshCourseDetails(token, selectedCourse.id),
+        refreshTimeline(token),
+        refreshOverview(token),
+      ])
+
+      setManagerMessage({ type: 'success', text: 'Activity deleted' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'Cannot delete activity' })
+    } finally {
+      setBusyAction('')
     }
   }
 
@@ -542,18 +1249,9 @@ function App() {
     return <AccessRequired />
   }
 
-  if (status === 'loading' || !dashboardData || !user) {
+  if (status === 'loading' || !user) {
     return <LoadingState />
   }
-
-  const primaryNav = dashboardData.primaryNav || DEFAULT_PRIMARY_NAV
-  const supportNav = dashboardData.supportNav || DEFAULT_SUPPORT_NAV
-  const recentCourses = dashboardData.recentCourses || []
-  const timelineItems = dashboardData.timelineItems || []
-  const tags = dashboardData.tags || []
-  const recentItems = dashboardData.recentItems || []
-  const privateFiles = dashboardData.privateFiles || []
-  const categories = dashboardData.categories || []
 
   return (
     <div className="lms-page">
@@ -564,8 +1262,10 @@ function App() {
             onSectionChange={setActiveSection}
             primaryNav={primaryNav}
             supportNav={supportNav}
-            courses={recentCourses}
+            courses={courses}
             user={user}
+            selectedCourseId={selectedCourseId}
+            onSelectCourse={setSelectedCourseId}
           />
         </div>
 
@@ -587,7 +1287,33 @@ function App() {
 
             {activeSection === 'calendar' ? <CalendarSection timelineItems={timelineItems} /> : null}
             {activeSection === 'private-files' ? <PrivateFilesSection privateFiles={privateFiles} /> : null}
-            {activeSection === 'content-bank' ? <ContentBankSection tags={tags} categories={categories} /> : null}
+            {activeSection === 'content-bank' ? (
+              <ContentBankSection
+                user={user}
+                courses={courses}
+                selectedCourse={selectedCourse}
+                selectedCourseId={selectedCourseId}
+                onSelectCourse={setSelectedCourseId}
+                members={courseMembers}
+                activities={courseActivities}
+                courseForm={courseForm}
+                onCourseChange={onCourseFieldChange}
+                onCreateCourse={onCreateCourse}
+                onUpdateCourse={onUpdateCourse}
+                onArchiveCourse={onArchiveCourse}
+                memberForm={memberForm}
+                onMemberChange={onMemberFieldChange}
+                onAddMember={onAddMember}
+                onRemoveMember={onRemoveMember}
+                activityForm={activityForm}
+                onActivityChange={onActivityFieldChange}
+                onCreateActivity={onCreateActivity}
+                onRenameActivity={onRenameActivity}
+                onDeleteActivity={onDeleteActivity}
+                busyAction={busyAction}
+                managerMessage={managerMessage}
+              />
+            ) : null}
           </main>
         </section>
 

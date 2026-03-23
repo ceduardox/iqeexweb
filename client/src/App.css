@@ -179,10 +179,30 @@ body {
 .course-links li {
   border: 1px solid #26365a;
   border-radius: 10px;
-  padding: 9px;
-  font-size: 12px;
+  overflow: hidden;
+}
+
+.course-links li button {
+  width: 100%;
+  border: none;
+  background: transparent;
   color: #d2def6;
+  text-align: left;
+  padding: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
   line-height: 1.35;
+  cursor: pointer;
+}
+
+.course-links li small {
+  color: #9db1db;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .course-links li.active {
@@ -540,6 +560,235 @@ body {
   border-style: dashed;
 }
 
+.manager-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.manager-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.manager-card {
+  border: 1px solid #dbe2f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fcfdff;
+}
+
+.manager-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #21345c;
+}
+
+.manager-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.manager-list.compact {
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.manager-item {
+  border: 1px solid #dde4f2;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manager-item.active {
+  border-color: #94a9e8;
+  background: #eef2ff;
+}
+
+.manager-select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  color: #25385f;
+  gap: 8px;
+}
+
+.manager-select strong,
+.manager-user strong {
+  display: block;
+  font-size: 13px;
+}
+
+.manager-select small,
+.manager-user small {
+  display: block;
+  font-size: 11px;
+  color: #687798;
+}
+
+.manager-meta {
+  font-size: 11px;
+  color: #5f6f8f;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.manager-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #edf1ff;
+  color: #4c5fc3;
+}
+
+.manager-role {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eff3ff;
+  color: #3c4e8d;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.manager-form {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.manager-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #4d5d7f;
+}
+
+.manager-form input,
+.manager-form select,
+.manager-form textarea {
+  border: 1px solid #d7dfef;
+  border-radius: 9px;
+  padding: 8px 9px;
+  font-size: 13px;
+  color: #25395f;
+  background: #fff;
+}
+
+.manager-form textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.manager-actions.inline {
+  flex-wrap: nowrap;
+}
+
+.manager-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #61708d;
+}
+
+.manager-empty {
+  margin: 0;
+  font-size: 12px;
+  color: #6a7996;
+}
+
+.manager-message {
+  margin: 0;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.manager-message.success {
+  border: 1px solid #bfe1c7;
+  color: #216537;
+  background: #eaf9ef;
+}
+
+.manager-message.error {
+  border: 1px solid #f0bfc6;
+  color: #8c2331;
+  background: #ffedf0;
+}
+
+.course-state {
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.course-state.online {
+  background: #eaf7ec;
+  color: #2e7140;
+}
+
+.course-state.archived {
+  background: #f4f0e7;
+  color: #8c6d34;
+}
+
+.danger-btn {
+  border-color: #e8c0c8;
+  color: #8b2432;
+  background: #fff7f8;
+}
+
+.danger-btn:hover {
+  border-color: #e2a8b2;
+  background: #fff0f3;
+}
+
 .backdrop {
   position: fixed;
   inset: 0;
@@ -576,6 +825,11 @@ body {
 @media (max-width: 1080px) {
   .lms-shell {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manager-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 
   .side-layer.left,
