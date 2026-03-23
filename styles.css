@@ -999,6 +999,27 @@ hero, .cards-row, .lower { padding:40px 80px; }
     background:linear-gradient(180deg, rgba(105,42,198,1), rgba(122,74,206,0.96));
     box-shadow:inset 0 0 0 1px rgba(255,255,255,0.32);
   }
+
+  /* Windows: avoid viewport-width overflow while preserving iOS behavior */
+  html.windows-device .segments-top{
+    width:100%;
+    margin-left:0;
+  }
+  html.windows-device .segments-inner{
+    width:100%;
+    margin-left:0;
+    margin-right:0;
+    left:auto;
+    right:auto;
+  }
+  html.windows-device .segments-track{
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  html.windows-device .segments-track::-webkit-scrollbar{
+    display:none;
+    height:0;
+  }
 }
 
 @media (max-width:900px){

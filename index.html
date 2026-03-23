@@ -64,10 +64,12 @@
   <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
   <script>
-    (function addIosClass() {
+    (function addDeviceClasses() {
       var ua = navigator.userAgent || '';
       var isIOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var isWindows = /Windows/i.test(ua);
       if (isIOS) document.documentElement.classList.add('ios-device');
+      if (isWindows && !isIOS) document.documentElement.classList.add('windows-device');
     })();
   </script>
   <!-- GSAP + ScrollTrigger -->
