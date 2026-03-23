@@ -2,15 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 const DEFAULT_PRIMARY_NAV = [
-  { key: 'dashboard', label: 'Dashboard', badge: null },
-  { key: 'calendar', label: 'Calendar', badge: null },
-  { key: 'private-files', label: 'Private files', badge: null },
-  { key: 'content-bank', label: 'Content bank', badge: null },
-]
-
-const DEFAULT_SUPPORT_NAV = [
-  { key: 'learn-theme', label: 'Learn this theme' },
-  { key: 'docs', label: 'Documentation' },
+  { key: 'dashboard', label: 'Resumen', badge: null },
+  { key: 'content-bank', label: 'Gestion', badge: null },
 ]
 
 const EMPTY_COURSE_FORM = {
@@ -67,14 +60,14 @@ function initialsFromName(fullName) {
 function roleLabel(role) {
   const normalized = String(role || '').toLowerCase()
   if (normalized === 'admin') {
-    return 'Administrator'
+    return 'Administrador'
   }
 
   if (normalized === 'teacher') {
-    return 'Teacher'
+    return 'Profesor'
   }
 
-  return 'Student'
+  return 'Estudiante'
 }
 
 function activityTime(value) {
@@ -122,7 +115,7 @@ async function apiRequest(url, token, options = {}) {
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    const error = new Error(data.message || 'Request failed')
+    const error = new Error(data.message || 'Solicitud fallida')
     error.status = response.status
     throw error
   }
@@ -165,55 +158,60 @@ function Icon({ name }) {
   )
 }
 
-function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, courses, user, selectedCourseId, onSelectCourse }) {
-  const activeCourses = courses.slice(0, 4)
+function Sidebar({
+  activeSection,
+  onSectionChange,
+  primaryNav,
+  courses,
+  selectedCourseId,
+  onSelectCourse,
+  courseQuery,
+  onCourseQueryChange,
+}) {
+  const filteredCourses = useMemo(() => {
+    const needle = String(courseQuery || '').trim().toLowerCase()
+    if (!needle) return courses
+    return courses.filter((course) => {
+      return String(course.title || '').toLowerCase().includes(needle) || String(course.code || '').toLowerCase().includes(needle)
+    })
+  }, [courses, courseQuery])
 
   return (
     <aside className="left-sidebar">
-      <div className="search-box shell-box">
-        <Icon name="search" />
-        <input type="text" placeholder="Search" />
-      </div>
-
       <section className="nav-group shell-box">
         <header className="group-header">
-          <span>My Courses</span>
+          <span>Cursos</span>
           <span className="counter-pill">{courses.length}</span>
         </header>
 
         <div className="mini-search">
           <Icon name="search" />
-          <input type="text" placeholder="Search" />
+          <input value={courseQuery} onChange={(event) => onCourseQueryChange(event.target.value)} placeholder="Buscar curso por titulo o codigo" />
         </div>
 
-        <label className="toggle-row">
-          <input type="checkbox" defaultChecked />
-          <span>Only courses in progress</span>
-        </label>
-
         <ul className="course-links">
-          {activeCourses.length > 0 ? (
-            activeCourses.map((course) => {
+          {filteredCourses.length > 0 ? (
+            filteredCourses.map((course) => {
               const selected = Number(course.id) === Number(selectedCourseId)
               return (
                 <li key={course.id} className={selected ? 'active' : ''}>
                   <button type="button" onClick={() => onSelectCourse(course.id)}>
                     <span>{course.title}</span>
-                    {course.isPublished === false ? <small>Archived</small> : null}
+                    {course.isPublished === false ? <small>Archivado</small> : null}
                   </button>
                 </li>
               )
             })
           ) : (
             <li className="active">
-              <button type="button">No courses assigned yet</button>
+              <button type="button">No hay cursos</button>
             </li>
           )}
         </ul>
       </section>
 
       <section className="nav-group shell-box">
-        <header className="group-header muted">Course overview</header>
+        <header className="group-header muted">Panel</header>
         <ul className="menu-list">
           {primaryNav.map((item) => (
             <li key={item.key} className={item.key === activeSection ? 'active' : ''}>
@@ -222,11 +220,7 @@ function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, cours
                   name={
                     item.key === 'dashboard'
                       ? 'dashboard'
-                      : item.key === 'calendar'
-                        ? 'calendar'
-                        : item.key === 'private-files'
-                          ? 'files'
-                          : 'content'
+                      : 'content'
                   }
                 />
                 <span>{item.label}</span>
@@ -237,30 +231,11 @@ function Sidebar({ activeSection, onSectionChange, primaryNav, supportNav, cours
         </ul>
       </section>
 
-      <section className="nav-group shell-box slim">
-        <ul className="menu-list">
-          {supportNav.map((item) => (
-            <li key={item.key}>
-              <button type="button">
-                <Icon name={item.key === 'learn-theme' ? 'help' : 'doc'} />
-                <span>{item.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <footer className="sidebar-footer shell-box">
-        <button type="button">
-          <Icon name="dashboard" />
-          <span>{user.role === 'admin' ? 'Site administration' : 'My workspace'}</span>
-        </button>
-      </footer>
     </aside>
   )
 }
 
-function Topbar({ onToggleLeft, onToggleRight, user, onLogout }) {
+function Topbar({ onToggleLeft, user, onLogout, selectedCourse, totalCourses }) {
   const initials = initialsFromName(user.fullName)
 
   return (
@@ -271,19 +246,10 @@ function Topbar({ onToggleLeft, onToggleRight, user, onLogout }) {
         </button>
 
         <div className="brand-mark" aria-hidden="true">IQ</div>
-
-        <button className="ghost-btn" type="button">
-          <Icon name="courses" />
-          <span>Courses</span>
-        </button>
-
-        <button className="ghost-btn" type="button">
-          <span>Doc</span>
-        </button>
-
-        <button className="ghost-btn" type="button">
-          <span>Server</span>
-        </button>
+        <div className="topbar-context">
+          <strong>{selectedCourse?.title || 'Sin curso seleccionado'}</strong>
+          <span>{totalCourses} cursos disponibles</span>
+        </div>
       </div>
 
       <div className="topbar-right">
@@ -292,11 +258,6 @@ function Topbar({ onToggleLeft, onToggleRight, user, onLogout }) {
           <span>{roleLabel(user.role)}</span>
         </div>
 
-        <button className="icon-btn" type="button"><Icon name="globe" /></button>
-        <button className="icon-btn" type="button"><Icon name="bell" /></button>
-        <button className="icon-btn" type="button"><Icon name="chat" /></button>
-        <button className="icon-btn mobile-only" type="button" onClick={onToggleRight}><Icon name="panel" /></button>
-
         <div className="avatar-block">
           <div className="avatar-dot">3</div>
           <div className="avatar">{initials}</div>
@@ -304,10 +265,56 @@ function Topbar({ onToggleLeft, onToggleRight, user, onLogout }) {
 
         <button className="ghost-btn" type="button" onClick={onLogout}>
           <Icon name="logout" />
-          <span>Logout</span>
+          <span>Cerrar sesion</span>
         </button>
       </div>
     </header>
+  )
+}
+
+function OverviewSection({ user, courses, selectedCourse, timelineItems, onGoToManagement, onRefresh, refreshing }) {
+  const totalCourses = courses.length
+  const publishedCourses = courses.filter((course) => course.isPublished !== false).length
+  const selectedMembers = typeof selectedCourse?.memberCount === 'number' ? selectedCourse.memberCount : 0
+  const selectedActivities = timelineItems.filter((item) => Number(item.courseId) === Number(selectedCourse?.id)).length
+
+  return (
+    <section className="block shell-box overview-block">
+      <header className="block-header">
+        <h2>Resumen</h2>
+        <div className="manager-actions inline">
+          <button className="ghost-btn small" type="button" onClick={onRefresh} disabled={refreshing}>
+            {refreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+          <button className="ghost-btn small" type="button" onClick={onGoToManagement}>
+            Ir a Gestion
+          </button>
+        </div>
+      </header>
+
+      <div className="overview-grid">
+        <article className="overview-card">
+          <small>Usuario</small>
+          <strong>{user.fullName}</strong>
+          <span>{roleLabel(user.role)}</span>
+        </article>
+        <article className="overview-card">
+          <small>Cursos Totales</small>
+          <strong>{totalCourses}</strong>
+          <span>{publishedCourses} publicados</span>
+        </article>
+        <article className="overview-card">
+          <small>Curso Seleccionado</small>
+          <strong>{selectedCourse?.title || 'Sin seleccion'}</strong>
+          <span>{selectedCourse ? `${selectedMembers} miembros` : 'Elige un curso'}</span>
+        </article>
+        <article className="overview-card">
+          <small>Actividad Curso</small>
+          <strong>{selectedActivities}</strong>
+          <span>eventos registrados</span>
+        </article>
+      </div>
+    </section>
   )
 }
 
@@ -315,7 +322,7 @@ function CoursesSection({ recentCourses }) {
   return (
     <section className="block shell-box">
       <header className="block-header">
-        <h2>Recently Accessed Courses</h2>
+        <h2>Cursos Recientes</h2>
       </header>
 
       <div className="course-grid">
@@ -336,8 +343,8 @@ function CoursesSection({ recentCourses }) {
           <article className="course-card vivid">
             <div className="overlay" />
             <div className="content">
-              <h3>No Courses</h3>
-              <p>Request course assignment from an administrator.</p>
+              <h3>Sin Cursos</h3>
+              <p>Solicita asignacion de cursos al administrador.</p>
             </div>
           </article>
         )}
@@ -363,19 +370,17 @@ function TimelineSection({ timelineItems }) {
   return (
     <section className="block shell-box">
       <header className="block-header timeline-head">
-        <h2>Timeline</h2>
-        <button className="icon-btn" type="button"><Icon name="panel" /></button>
+        <h2>Actividad</h2>
       </header>
 
       <div className="timeline-tools">
-        <button className="chip-btn" type="button">All</button>
         <div className="mini-search grow">
           <Icon name="search" />
           <input
             value={filterText}
             onChange={(event) => setFilterText(event.target.value)}
             type="text"
-            placeholder="Search activity"
+            placeholder="Buscar actividad"
           />
         </div>
       </div>
@@ -393,7 +398,6 @@ function TimelineSection({ timelineItems }) {
                   <h4>{item.title}</h4>
                   <p>{item.course}</p>
                 </div>
-                <button className="ghost-btn small" type="button">View</button>
               </div>
             </li>
           ))
@@ -404,87 +408,11 @@ function TimelineSection({ timelineItems }) {
               <span className="event-icon"><Icon name="task" /></span>
               <div>
                 <h4>No events</h4>
-                <p>Activity timeline will appear here.</p>
+                <p>La actividad aparecera aqui.</p>
               </div>
             </div>
           </li>
         )}
-      </ul>
-    </section>
-  )
-}
-
-function RightPanel({ tags, recentItems, privateFiles, categories }) {
-  return (
-    <aside className="right-sidebar shell-box">
-      <section className="panel-block">
-        <h3>Tags</h3>
-        <div className="tag-list">
-          {tags.map((tag) => (
-            <button key={tag} type="button" className="tag">{tag}</button>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel-block">
-        <h3>Recently Accessed Items</h3>
-        <ul className="panel-list">
-          {recentItems.length > 0 ? recentItems.map((item) => <li key={item}>{item}</li>) : <li>No recent items</li>}
-        </ul>
-      </section>
-
-      <section className="panel-block">
-        <h3>Private Files</h3>
-        <ul className="panel-list compact">
-          {privateFiles.length > 0 ? privateFiles.map((file) => <li key={file}>{file}</li>) : <li>No private files</li>}
-        </ul>
-      </section>
-
-      <section className="panel-block">
-        <h3>Global Search</h3>
-        <div className="mini-search">
-          <Icon name="search" />
-          <input type="text" placeholder="Search" />
-        </div>
-      </section>
-
-      <section className="panel-block">
-        <h3>Course Categories</h3>
-        <ul className="panel-list compact">
-          {categories.length > 0 ? categories.map((category) => <li key={category}>{category}</li>) : <li>No categories</li>}
-        </ul>
-      </section>
-    </aside>
-  )
-}
-
-function CalendarSection({ timelineItems }) {
-  return (
-    <section className="block shell-box">
-      <header className="block-header">
-        <h2>Calendar</h2>
-      </header>
-      <ul className="panel-list">
-        {timelineItems.length > 0 ? (
-          timelineItems.slice(0, 8).map((item) => (
-            <li key={item.id}>{item.time} - {item.title}</li>
-          ))
-        ) : (
-          <li>No upcoming calendar events</li>
-        )}
-      </ul>
-    </section>
-  )
-}
-
-function PrivateFilesSection({ privateFiles }) {
-  return (
-    <section className="block shell-box">
-      <header className="block-header">
-        <h2>Private Files</h2>
-      </header>
-      <ul className="panel-list">
-        {privateFiles.length > 0 ? privateFiles.map((item) => <li key={item}>{item}</li>) : <li>No private files available</li>}
       </ul>
     </section>
   )
@@ -521,7 +449,7 @@ function ContentBankSection({
   return (
     <section className="block shell-box manager-wrap">
       <header className="block-header">
-        <h2>Content Bank And Management</h2>
+        <h2>Gestion de Plataforma</h2>
       </header>
 
       {managerMessage ? (
@@ -532,7 +460,7 @@ function ContentBankSection({
 
       <div className="manager-grid">
         <article className="manager-card">
-          <h3>Course Catalog</h3>
+          <h3>Cursos</h3>
           <ul className="manager-list">
             {courses.length > 0 ? (
               courses.map((course) => (
@@ -547,33 +475,33 @@ function ContentBankSection({
                 </li>
               ))
             ) : (
-              <li className="manager-empty">No courses available.</li>
+              <li className="manager-empty">No hay cursos disponibles.</li>
             )}
           </ul>
         </article>
 
         <article className="manager-card">
-          <h3>Course Settings</h3>
+          <h3>Configuracion del Curso</h3>
           <form className="manager-form" onSubmit={onCreateCourse}>
             <div className="form-grid">
               <label>
-                Code
+                Codigo
                 <input name="code" value={courseForm.code} onChange={onCourseChange} placeholder="BIO-101" />
               </label>
               <label>
-                Title
+                Titulo
                 <input name="title" value={courseForm.title} onChange={onCourseChange} required minLength={3} />
               </label>
               <label>
-                Category
+                Categoria
                 <input name="category" value={courseForm.category} onChange={onCourseChange} />
               </label>
               <label>
-                Level
+                Nivel
                 <input name="level" value={courseForm.level} onChange={onCourseChange} />
               </label>
               <label>
-                Theme
+                Tema
                 <select name="theme" value={courseForm.theme} onChange={onCourseChange}>
                   <option value="vivid">Vivid</option>
                   <option value="earth">Earth</option>
@@ -581,29 +509,35 @@ function ContentBankSection({
               </label>
               <label className="checkbox-row">
                 <input type="checkbox" name="isPublished" checked={Boolean(courseForm.isPublished)} onChange={onCourseChange} />
-                <span>Published</span>
+                <span>Publicado</span>
               </label>
             </div>
 
             <div className="manager-actions">
-              <button className="ghost-btn" type="submit" disabled={!canCreateCourse || busyAction === 'create-course'}>Create course</button>
-              <button className="ghost-btn" type="button" onClick={onUpdateCourse} disabled={!canManageSelectedCourse || busyAction === 'update-course'}>Update selected</button>
-              <button className="ghost-btn danger-btn" type="button" onClick={onArchiveCourse} disabled={!canManageSelectedCourse || busyAction === 'archive-course'}>Archive selected</button>
+              <button className="ghost-btn" type="submit" disabled={!canCreateCourse || busyAction === 'create-course'}>
+                {busyAction === 'create-course' ? 'Creando...' : 'Crear curso'}
+              </button>
+              <button className="ghost-btn" type="button" onClick={onUpdateCourse} disabled={!canManageSelectedCourse || busyAction === 'update-course'}>
+                {busyAction === 'update-course' ? 'Guardando...' : 'Actualizar seleccionado'}
+              </button>
+              <button className="ghost-btn danger-btn" type="button" onClick={onArchiveCourse} disabled={!canManageSelectedCourse || busyAction === 'archive-course'}>
+                {busyAction === 'archive-course' ? 'Archivando...' : 'Archivar seleccionado'}
+              </button>
             </div>
 
             {selectedCourse ? (
               <p className="manager-note">
-                Active: <strong>{selectedCourse.title}</strong>{' '}
-                {selectedCourse.isPublished ? <span className="course-state online">Published</span> : <span className="course-state archived">Archived</span>}
+                Activo: <strong>{selectedCourse.title}</strong>{' '}
+                {selectedCourse.isPublished ? <span className="course-state online">Publicado</span> : <span className="course-state archived">Archivado</span>}
               </p>
             ) : (
-              <p className="manager-note">Pick a course to edit membership and activity.</p>
+              <p className="manager-note">Elige un curso para editar miembros y actividad.</p>
             )}
           </form>
         </article>
 
         <article className="manager-card">
-          <h3>Course Members</h3>
+          <h3>Miembros del Curso</h3>
           {selectedCourse ? (
             <>
               <ul className="manager-list compact">
@@ -620,45 +554,47 @@ function ContentBankSection({
                         <span className="manager-role">{member.role}</span>
                         <span>{member.progressPercent}%</span>
                       </div>
-                      <button className="ghost-btn small" type="button" onClick={() => onRemoveMember(member.id)} disabled={!canManageSelectedCourse || busyAction === `member-remove-${member.id}` || Number(member.id) === Number(user.id)}>Remove</button>
+                      <button className="ghost-btn small" type="button" onClick={() => onRemoveMember(member.id)} disabled={!canManageSelectedCourse || busyAction === `member-remove-${member.id}` || Number(member.id) === Number(user.id)}>Quitar</button>
                     </li>
                   ))
                 ) : (
-                  <li className="manager-empty">No members assigned yet.</li>
+                  <li className="manager-empty">Aun no hay miembros asignados.</li>
                 )}
               </ul>
 
               <form className="manager-form" onSubmit={onAddMember}>
                 <div className="form-grid">
                   <label>
-                    User email
+                    Email del usuario
                     <input type="email" name="email" value={memberForm.email} onChange={onMemberChange} required />
                   </label>
                   <label>
-                    Role
+                    Rol
                     <select name="role" value={memberForm.role} onChange={onMemberChange}>
-                      <option value="student">Student</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="assistant">Assistant</option>
+                      <option value="student">Estudiante</option>
+                      <option value="teacher">Profesor</option>
+                      <option value="assistant">Asistente</option>
                     </select>
                   </label>
                   <label>
-                    Progress
+                    Progreso
                     <input type="number" min="0" max="100" name="progressPercent" value={memberForm.progressPercent} onChange={onMemberChange} />
                   </label>
                 </div>
                 <div className="manager-actions">
-                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'member-add'}>Save member</button>
+                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'member-add'}>
+                    {busyAction === 'member-add' ? 'Guardando...' : 'Guardar miembro'}
+                  </button>
                 </div>
               </form>
             </>
           ) : (
-            <p className="manager-empty">Select a course first.</p>
+            <p className="manager-empty">Selecciona primero un curso.</p>
           )}
         </article>
 
         <article className="manager-card">
-          <h3>Course Activity</h3>
+          <h3>Actividad del Curso</h3>
           {selectedCourse ? (
             <>
               <ul className="manager-list compact">
@@ -670,43 +606,45 @@ function ContentBankSection({
                         <small>{activity.type} - {activity.time}</small>
                       </div>
                       <div className="manager-actions inline">
-                        <button className="ghost-btn small" type="button" onClick={() => onRenameActivity(activity.id, activity.title)} disabled={!canManageSelectedCourse || busyAction === `activity-edit-${activity.id}`}>Rename</button>
-                        <button className="ghost-btn small danger-btn" type="button" onClick={() => onDeleteActivity(activity.id)} disabled={!canManageSelectedCourse || busyAction === `activity-delete-${activity.id}`}>Delete</button>
+                        <button className="ghost-btn small" type="button" onClick={() => onRenameActivity(activity.id, activity.title)} disabled={!canManageSelectedCourse || busyAction === `activity-edit-${activity.id}`}>Renombrar</button>
+                        <button className="ghost-btn small danger-btn" type="button" onClick={() => onDeleteActivity(activity.id)} disabled={!canManageSelectedCourse || busyAction === `activity-delete-${activity.id}`}>Eliminar</button>
                       </div>
                     </li>
                   ))
                 ) : (
-                  <li className="manager-empty">No activity events for this course.</li>
+                  <li className="manager-empty">No hay actividades registradas para este curso.</li>
                 )}
               </ul>
 
               <form className="manager-form" onSubmit={onCreateActivity}>
                 <div className="form-grid">
                   <label>
-                    Title
+                    Titulo
                     <input name="title" value={activityForm.title} onChange={onActivityChange} required minLength={3} />
                   </label>
                   <label>
-                    Type
+                    Tipo
                     <select name="eventType" value={activityForm.eventType} onChange={onActivityChange}>
-                      <option value="task">Task</option>
-                      <option value="quiz">Quiz</option>
-                      <option value="discussion">Discussion</option>
-                      <option value="file">File</option>
+                      <option value="task">Tarea</option>
+                      <option value="quiz">Cuestionario</option>
+                      <option value="discussion">Discusion</option>
+                      <option value="file">Archivo</option>
                     </select>
                   </label>
                 </div>
                 <label>
-                  Description
+                  Descripcion
                   <textarea name="description" rows="2" value={activityForm.description} onChange={onActivityChange} />
                 </label>
                 <div className="manager-actions">
-                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'activity-add'}>Create activity</button>
+                  <button className="ghost-btn" type="submit" disabled={!canManageSelectedCourse || busyAction === 'activity-add'}>
+                    {busyAction === 'activity-add' ? 'Guardando...' : 'Crear actividad'}
+                  </button>
                 </div>
               </form>
             </>
           ) : (
-            <p className="manager-empty">Select a course first.</p>
+            <p className="manager-empty">Selecciona primero un curso.</p>
           )}
         </article>
       </div>
@@ -718,9 +656,9 @@ function AccessRequired() {
   return (
     <div className="status-shell">
       <section className="status-card shell-box">
-        <h2>Session Required</h2>
-        <p>You need to sign in before entering the LMS dashboard.</p>
-        <a className="ghost-btn" href="/acceso.html">Go to Access Panel</a>
+        <h2>Sesion requerida</h2>
+        <p>Debes iniciar sesion antes de entrar al panel LMS.</p>
+        <a className="ghost-btn" href="/acceso.html">Ir al acceso</a>
       </section>
     </div>
   )
@@ -730,8 +668,8 @@ function LoadingState() {
   return (
     <div className="status-shell">
       <section className="status-card shell-box">
-        <h2>Loading dashboard</h2>
-        <p>Fetching your role, courses, and timeline data.</p>
+        <h2>Cargando panel</h2>
+        <p>Obteniendo cursos, roles y actividad.</p>
       </section>
     </div>
   )
@@ -740,7 +678,7 @@ function LoadingState() {
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [leftOpen, setLeftOpen] = useState(false)
-  const [rightOpen, setRightOpen] = useState(false)
+  const [courseQuery, setCourseQuery] = useState('')
   const [token, setToken] = useState(() => localStorage.getItem('iqx_auth_token') || '')
   const [user, setUser] = useState(() => parseStoredJson('iqx_auth_user'))
   const [dashboardData, setDashboardData] = useState(null)
@@ -754,6 +692,7 @@ function App() {
   const [activityForm, setActivityForm] = useState(EMPTY_ACTIVITY_FORM)
   const [managerMessage, setManagerMessage] = useState(null)
   const [busyAction, setBusyAction] = useState('')
+  const [refreshingOverview, setRefreshingOverview] = useState(false)
   const [status, setStatus] = useState(token ? 'loading' : 'unauthorized')
 
   const selectedCourse = useMemo(() => {
@@ -772,8 +711,6 @@ function App() {
     })
   }, [dashboardData, courses.length])
 
-  const supportNav = dashboardData?.supportNav || DEFAULT_SUPPORT_NAV
-
   const recentCourses = useMemo(() => {
     if (courses.length === 0) {
       return dashboardData?.recentCourses || []
@@ -788,24 +725,6 @@ function App() {
       progress: typeof course.progressPercent === 'number' ? course.progressPercent : null,
     }))
   }, [courses, dashboardData])
-
-  const tags = useMemo(() => {
-    const values = new Set(dashboardData?.tags || [])
-    if (selectedCourse?.category) values.add(String(selectedCourse.category).toLowerCase())
-    return Array.from(values)
-  }, [dashboardData, selectedCourse])
-
-  const categories = useMemo(() => {
-    if (courses.length === 0) return dashboardData?.categories || []
-    return Array.from(new Set(courses.map((course) => course.category).filter(Boolean)))
-  }, [courses, dashboardData])
-
-  const recentItems = useMemo(() => {
-    if (timelineItems.length === 0) return dashboardData?.recentItems || []
-    return timelineItems.slice(0, 5).map((item) => item.title)
-  }, [timelineItems, dashboardData])
-
-  const privateFiles = dashboardData?.privateFiles || []
 
   useEffect(() => {
     if (courses.length === 0) {
@@ -834,6 +753,12 @@ function App() {
       isPublished: selectedCourse.isPublished !== false,
     })
   }, [selectedCourse])
+
+  useEffect(() => {
+    if (!managerMessage) return
+    const timeoutId = setTimeout(() => setManagerMessage(null), 3500)
+    return () => clearTimeout(timeoutId)
+  }, [managerMessage])
 
   async function refreshOverview(authToken) {
     const overview = await apiRequest('/api/dashboard/overview', authToken, { method: 'GET' })
@@ -868,6 +793,22 @@ function App() {
     setCourseActivities((activities.activities || []).map(mapActivityRow))
   }
 
+  async function refreshWorkspace(authToken, role, courseId) {
+    setRefreshingOverview(true)
+    try {
+      await Promise.all([
+        refreshOverview(authToken),
+        refreshCourses(authToken, role),
+        refreshTimeline(authToken),
+      ])
+      if (courseId) {
+        await refreshCourseDetails(authToken, courseId)
+      }
+    } finally {
+      setRefreshingOverview(false)
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -890,11 +831,7 @@ function App() {
         setUser(me.user)
         localStorage.setItem('iqx_auth_user', JSON.stringify(me.user))
 
-        await Promise.all([
-          refreshOverview(token),
-          refreshCourses(token, me.user.role),
-          refreshTimeline(token),
-        ])
+        await refreshWorkspace(token, me.user.role, selectedCourseId)
 
         if (cancelled) return
         setStatus('ready')
@@ -942,7 +879,7 @@ function App() {
           return
         }
 
-        setManagerMessage({ type: 'error', text: error.message || 'Cannot load course details' })
+        setManagerMessage({ type: 'error', text: error.message || 'No se pudo cargar el detalle del curso' })
       }
     }
 
@@ -1018,19 +955,15 @@ function App() {
         }),
       })
 
-      await Promise.all([
-        refreshCourses(token, user.role),
-        refreshTimeline(token),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, result.course?.id || selectedCourseId)
 
       if (result.course?.id) {
         setSelectedCourseId(result.course.id)
       }
 
-      setManagerMessage({ type: 'success', text: `Course created: ${result.course?.title || 'ok'}` })
+      setManagerMessage({ type: 'success', text: `Curso creado: ${result.course?.title || 'ok'}` })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot create course' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo crear el curso' })
     } finally {
       setBusyAction('')
     }
@@ -1054,14 +987,11 @@ function App() {
         }),
       })
 
-      await Promise.all([
-        refreshCourses(token, user.role),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
-      setManagerMessage({ type: 'success', text: 'Course updated' })
+      setManagerMessage({ type: 'success', text: 'Curso actualizado' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot update course' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo actualizar el curso' })
     } finally {
       setBusyAction('')
     }
@@ -1069,7 +999,7 @@ function App() {
 
   async function onArchiveCourse() {
     if (!token || !selectedCourse) return
-    if (!window.confirm(`Archive course "${selectedCourse.title}"?`)) return
+    if (!window.confirm(`¿Archivar el curso "${selectedCourse.title}"?`)) return
 
     setBusyAction('archive-course')
     setManagerMessage(null)
@@ -1079,14 +1009,11 @@ function App() {
         method: 'DELETE',
       })
 
-      await Promise.all([
-        refreshCourses(token, user.role),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, null)
 
-      setManagerMessage({ type: 'success', text: 'Course archived' })
+      setManagerMessage({ type: 'success', text: 'Curso archivado' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot archive course' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo archivar el curso' })
     } finally {
       setBusyAction('')
     }
@@ -1109,15 +1036,12 @@ function App() {
         }),
       })
 
-      await Promise.all([
-        refreshCourseDetails(token, selectedCourse.id),
-        refreshCourses(token, user.role),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
       setMemberForm(EMPTY_MEMBER_FORM)
-      setManagerMessage({ type: 'success', text: 'Member saved' })
+      setManagerMessage({ type: 'success', text: 'Miembro guardado' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot save member' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo guardar el miembro' })
     } finally {
       setBusyAction('')
     }
@@ -1125,7 +1049,7 @@ function App() {
 
   async function onRemoveMember(memberUserId) {
     if (!token || !selectedCourse) return
-    if (!window.confirm('Remove this member from the course?')) return
+    if (!window.confirm('¿Quitar este miembro del curso?')) return
 
     const actionId = `member-remove-${memberUserId}`
     setBusyAction(actionId)
@@ -1136,14 +1060,11 @@ function App() {
         method: 'DELETE',
       })
 
-      await Promise.all([
-        refreshCourseDetails(token, selectedCourse.id),
-        refreshCourses(token, user.role),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
-      setManagerMessage({ type: 'success', text: 'Member removed' })
+      setManagerMessage({ type: 'success', text: 'Miembro removido' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot remove member' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo quitar el miembro' })
     } finally {
       setBusyAction('')
     }
@@ -1167,16 +1088,12 @@ function App() {
         }),
       })
 
-      await Promise.all([
-        refreshCourseDetails(token, selectedCourse.id),
-        refreshTimeline(token),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
       setActivityForm(EMPTY_ACTIVITY_FORM)
-      setManagerMessage({ type: 'success', text: 'Activity created' })
+      setManagerMessage({ type: 'success', text: 'Actividad creada' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot create activity' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo crear la actividad' })
     } finally {
       setBusyAction('')
     }
@@ -1185,12 +1102,12 @@ function App() {
   async function onRenameActivity(activityId, currentTitle) {
     if (!token || !selectedCourse) return
 
-    const nextTitle = window.prompt('New activity title', currentTitle)
+    const nextTitle = window.prompt('Nuevo titulo de actividad', currentTitle)
     if (nextTitle === null) return
 
     const normalized = nextTitle.trim()
     if (normalized.length < 3) {
-      setManagerMessage({ type: 'error', text: 'Activity title must contain at least 3 characters' })
+      setManagerMessage({ type: 'error', text: 'El titulo debe tener al menos 3 caracteres' })
       return
     }
 
@@ -1204,15 +1121,11 @@ function App() {
         body: JSON.stringify({ title: normalized }),
       })
 
-      await Promise.all([
-        refreshCourseDetails(token, selectedCourse.id),
-        refreshTimeline(token),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
-      setManagerMessage({ type: 'success', text: 'Activity updated' })
+      setManagerMessage({ type: 'success', text: 'Actividad actualizada' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot update activity' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo actualizar la actividad' })
     } finally {
       setBusyAction('')
     }
@@ -1220,7 +1133,7 @@ function App() {
 
   async function onDeleteActivity(activityId) {
     if (!token || !selectedCourse) return
-    if (!window.confirm('Delete this activity event?')) return
+    if (!window.confirm('¿Eliminar este evento de actividad?')) return
 
     const actionId = `activity-delete-${activityId}`
     setBusyAction(actionId)
@@ -1231,17 +1144,24 @@ function App() {
         method: 'DELETE',
       })
 
-      await Promise.all([
-        refreshCourseDetails(token, selectedCourse.id),
-        refreshTimeline(token),
-        refreshOverview(token),
-      ])
+      await refreshWorkspace(token, user.role, selectedCourse.id)
 
-      setManagerMessage({ type: 'success', text: 'Activity deleted' })
+      setManagerMessage({ type: 'success', text: 'Actividad eliminada' })
     } catch (error) {
-      setManagerMessage({ type: 'error', text: error.message || 'Cannot delete activity' })
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo eliminar la actividad' })
     } finally {
       setBusyAction('')
+    }
+  }
+
+  async function onRefreshOverview() {
+    if (!token || !user) return
+    setManagerMessage(null)
+    try {
+      await refreshWorkspace(token, user.role, selectedCourseId)
+      setManagerMessage({ type: 'success', text: 'Datos actualizados' })
+    } catch (error) {
+      setManagerMessage({ type: 'error', text: error.message || 'No se pudo actualizar la informacion' })
     }
   }
 
@@ -1261,32 +1181,40 @@ function App() {
             activeSection={activeSection}
             onSectionChange={setActiveSection}
             primaryNav={primaryNav}
-            supportNav={supportNav}
             courses={courses}
-            user={user}
             selectedCourseId={selectedCourseId}
             onSelectCourse={setSelectedCourseId}
+            courseQuery={courseQuery}
+            onCourseQueryChange={setCourseQuery}
           />
         </div>
 
         <section className="center-area">
           <Topbar
             onToggleLeft={() => setLeftOpen((prev) => !prev)}
-            onToggleRight={() => setRightOpen((prev) => !prev)}
             onLogout={handleLogout}
             user={user}
+            selectedCourse={selectedCourse}
+            totalCourses={courses.length}
           />
 
           <main className="center-content">
             {activeSection === 'dashboard' ? (
               <>
+                <OverviewSection
+                  user={user}
+                  courses={courses}
+                  selectedCourse={selectedCourse}
+                  timelineItems={timelineItems}
+                  onGoToManagement={() => setActiveSection('content-bank')}
+                  onRefresh={onRefreshOverview}
+                  refreshing={refreshingOverview}
+                />
                 <CoursesSection recentCourses={recentCourses} />
                 <TimelineSection timelineItems={timelineItems} />
               </>
             ) : null}
 
-            {activeSection === 'calendar' ? <CalendarSection timelineItems={timelineItems} /> : null}
-            {activeSection === 'private-files' ? <PrivateFilesSection privateFiles={privateFiles} /> : null}
             {activeSection === 'content-bank' ? (
               <ContentBankSection
                 user={user}
@@ -1316,20 +1244,15 @@ function App() {
             ) : null}
           </main>
         </section>
-
-        <div className={`side-layer right ${rightOpen ? 'open' : ''}`}>
-          <RightPanel tags={tags} recentItems={recentItems} privateFiles={privateFiles} categories={categories} />
-        </div>
       </div>
 
-      {(leftOpen || rightOpen) ? (
+      {leftOpen ? (
         <button
           aria-label="Close overlays"
           className="backdrop"
           type="button"
           onClick={() => {
             setLeftOpen(false)
-            setRightOpen(false)
           }}
         />
       ) : null}
