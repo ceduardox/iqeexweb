@@ -1,4 +1,4 @@
-<!doctype html>
+ï»¿<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -133,9 +133,9 @@
 <body>
   <div class="shell">
     <section class="info">
-      <a class="back-link" href="index.html">? Volver al inicio</a>
+      <a class="back-link" href="index.html">VOLVER AL INICIO</a>
       <h1 class="brand">Panel de <span class="x">Acceso</span></h1>
-      <p class="subtitle">Base inicial estilo LMS para administradores, profesores y alumnos. Empieza creando tu cuenta o iniciando sesión.</p>
+      <p class="subtitle">Base inicial estilo LMS para administradores, profesores y alumnos. Empieza creando tu cuenta o iniciando sesion.</p>
       <div class="chips">
         <span class="chip">Roles</span>
         <span class="chip">Cursos</span>
@@ -146,7 +146,7 @@
 
     <section class="card">
       <div class="tabs" role="tablist" aria-label="Acceso">
-        <button class="tab active" type="button" id="tabLogin">Iniciar Sesión</button>
+        <button class="tab active" type="button" id="tabLogin">Iniciar Sesion</button>
         <button class="tab" type="button" id="tabRegister">Registrarme</button>
       </div>
 
@@ -159,11 +159,11 @@
             <input id="loginEmail" name="email" type="email" required />
           </div>
           <div>
-            <label for="loginPassword">Contraseña</label>
+            <label for="loginPassword">Contrasena</label>
             <input id="loginPassword" name="password" type="password" minlength="8" required />
           </div>
           <button class="btn" type="submit">Entrar al Panel</button>
-          <p class="hint">Si no tienes cuenta, usa la pestaña <strong>Registrarme</strong>.</p>
+          <p class="hint">Si no tienes cuenta, usa la pestana <strong>Registrarme</strong>.</p>
         </form>
 
         <form id="registerForm" autocomplete="on">
@@ -184,11 +184,11 @@
             </select>
           </div>
           <div>
-            <label for="registerPassword">Contraseña</label>
+            <label for="registerPassword">Contrasena</label>
             <input id="registerPassword" name="password" type="password" minlength="8" required />
           </div>
           <button class="btn" type="submit">Crear Cuenta</button>
-          <p class="hint">Recomendado: contraseña de al menos 10 caracteres.</p>
+          <p class="hint">Recomendado: Contrasena de al menos 10 caracteres.</p>
         </form>
       </div>
     </section>
@@ -249,7 +249,7 @@
 
         try {
           await requestJson('/api/auth/register', payload);
-          setMessage('Cuenta creada. Ahora puedes iniciar sesión.', 'ok');
+          setMessage('Cuenta creada. Ahora puedes iniciar sesion.', 'ok');
           registerForm.reset();
           setMode('login');
         } catch (error) {
@@ -273,10 +273,12 @@
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
           setTimeout(function(){ window.location.href = 'panel.html'; }, 500);
         } catch (error) {
-          setMessage(error.message || 'No se pudo iniciar sesión', 'error');
+          setMessage(error.message || 'No se pudo iniciar sesion', 'error');
         }
       });
     })();
   </script>
 </body>
 </html>
+
+
