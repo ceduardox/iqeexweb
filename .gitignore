@@ -6,7 +6,3 @@
 # Node
 node_modules/
 npm-debug.log*
-
-# Frontend build
-client/dist/
-
