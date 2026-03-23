@@ -8,6 +8,7 @@
     "dev:api": "node server/index.js",
     "dev:web": "npm --prefix client run dev",
     "build:web": "npm --prefix client run build",
+    "build": "npm run build:web",
     "start": "node server/index.js",
     "db:init": "node scripts/init-db.js",
     "db:test": "node scripts/test-db.js"
