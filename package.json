@@ -7,7 +7,7 @@
     "dev": "concurrently -k -n API,WEB -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "node server/index.js",
     "dev:web": "npm --prefix client run dev",
-    "build:web": "npm --prefix client run build",
+    "build:web": "npm --prefix client install --include=dev && npm --prefix client run build",
     "build": "npm run build:web",
     "start": "node server/index.js",
     "db:init": "node scripts/init-db.js",
