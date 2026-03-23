@@ -8,7 +8,7 @@
     "dev:api": "node server/index.js",
     "dev:web": "npm --prefix client run dev",
     "build:web": "npm --prefix client run build",
-    "postinstall": "npm --prefix client install --include=dev && npm --prefix client run build",
+    "postinstall": "npm --prefix client install --include=dev && npm --prefix client run build || echo dashboard-build-skipped",
     "start": "node server/index.js",
     "db:init": "node scripts/init-db.js",
     "db:test": "node scripts/test-db.js"
@@ -34,3 +34,4 @@
     "concurrently": "^9.2.1"
   }
 }
+

@@ -9,19 +9,27 @@ const projectRoot = path.resolve(__dirname, "..");
 const staticRoot = projectRoot;
 const dashboardDist = path.join(projectRoot, "client", "dist");
 const dashboardIndex = path.join(dashboardDist, "index.html");
-const hasDashboardBuild = fs.existsSync(dashboardIndex);
+const legacyAccessPage = path.join(staticRoot, "acceso.html");
 
 app.use(express.json());
 app.use("/api", healthRoutes);
 app.use("/api", authRoutes);
 
-if (hasDashboardBuild) {
-  app.use("/dashboard", express.static(dashboardDist));
+app.use("/dashboard", express.static(dashboardDist));
+app.get(/^\/dashboard(\/.*)?$/, (req, res) => {
+  if (fs.existsSync(dashboardIndex)) {
+    return res.sendFile(dashboardIndex);
+  }
 
-  app.get(/^\/dashboard(\/.*)?$/, (req, res) => {
-    res.sendFile(dashboardIndex);
+  if (fs.existsSync(legacyAccessPage)) {
+    return res.sendFile(legacyAccessPage);
+  }
+
+  return res.status(404).json({
+    status: "error",
+    message: "Dashboard not available",
   });
-}
+});
 
 app.use(express.static(staticRoot));
 
