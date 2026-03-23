@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel | IQeXponencial</title>
+  <link href="https://fonts.cdnfonts.com/css/gilroy-bold" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:'Gilroy-Regular',sans-serif;
+      color:#10203d;
+      background:
+        radial-gradient(1000px 500px at 90% 0%, rgba(120,100,255,.35), transparent 56%),
+        radial-gradient(900px 500px at 0% 100%, rgba(64,205,188,.25), transparent 52%),
+        linear-gradient(130deg, #0f1934, #1c2f5a);
+      padding:22px;
+    }
+    .shell{
+      max-width:1100px;
+      margin:0 auto;
+      background:#fff;
+      border-radius:26px;
+      padding:24px;
+      box-shadow:0 24px 60px rgba(8,14,28,.34);
+    }
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .kicker{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#6b5bf0;font-family:'Gilroy-Bold',sans-serif}
+    h1{margin:8px 0 4px;font-size:36px;line-height:.95;font-family:'Gilroy-Bold',sans-serif}
+    .meta{margin:0;color:#45567b}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-family:'Gilroy-Bold',sans-serif}
+    .btn.primary{background:#112442;color:#fff}
+    .btn.ghost{background:#eef2ff;color:#2b3e66}
+    .grid{margin-top:18px;display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{border:1px solid #dbe4f4;background:#f7f9ff;border-radius:14px;padding:14px}
+    .card h3{margin:0 0 8px;font-size:16px;font-family:'Gilroy-Bold',sans-serif}
+    .card p{margin:0;color:#4c5d82;line-height:1.45}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top">
+      <div>
+        <p class="kicker">Panel LMS</p>
+        <h1 id="welcome">Bienvenido</h1>
+        <p class="meta" id="roleLine"></p>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="goHome">Ir al Inicio</button>
+        <button class="btn primary" id="logoutBtn">Cerrar Sesión</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <article class="card">
+        <h3>Gestión de Cursos</h3>
+        <p>Crea materias, módulos y recursos por lección.</p>
+      </article>
+      <article class="card">
+        <h3>Usuarios y Roles</h3>
+        <p>Organiza alumnos, profesores y administradores.</p>
+      </article>
+      <article class="card">
+        <h3>Evaluaciones</h3>
+        <p>Configura tests, tareas, rúbricas y seguimiento de progreso.</p>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    (function initPanel(){
+      const raw = localStorage.getItem('iqx_auth_user');
+      if (!raw) {
+        window.location.href = 'acceso.html';
+        return;
+      }
+
+      let user;
+      try {
+        user = JSON.parse(raw);
+      } catch (_) {
+        localStorage.removeItem('iqx_auth_user');
+        window.location.href = 'acceso.html';
+        return;
+      }
+
+      const roleMap = { student: 'Alumno', teacher: 'Profesor', admin: 'Administrador' };
+      document.getElementById('welcome').textContent = `Bienvenido, ${user.fullName || 'Usuario'}`;
+      document.getElementById('roleLine').textContent = `Rol: ${roleMap[user.role] || user.role || 'Sin rol'}`;
+
+      document.getElementById('logoutBtn').addEventListener('click', function(){
+        localStorage.removeItem('iqx_auth_user');
+        window.location.href = 'acceso.html';
+      });
+
+      document.getElementById('goHome').addEventListener('click', function(){
+        window.location.href = 'index.html';
+      });
+    })();
+  </script>
+</body>
+</html>
