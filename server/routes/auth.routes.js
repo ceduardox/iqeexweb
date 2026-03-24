@@ -3,10 +3,16 @@ const { pool } = require("../db/pool");
 const { hashPassword, verifyPassword } = require("../auth/password");
 const { createAuthToken } = require("../auth/token");
 const { requireAuth, sanitizeUser } = require("../middleware/auth");
+const { createRateLimiter } = require("../middleware/rate-limit");
 const { ensureUserPrimaryRole, getUserAccess } = require("../services/rbac");
 
 const router = express.Router();
 const ALLOWED_ROLES = new Set(["student", "teacher", "admin"]);
+const authMutationLimiter = createRateLimiter({
+  windowMs: Number(process.env.RATE_LIMIT_AUTH_WINDOW_MS) || 10 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_AUTH_MAX) || 40,
+  message: "Too many authentication attempts. Try again in a few minutes.",
+});
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
@@ -75,7 +81,7 @@ async function buildUserWithAccess(userRow) {
   };
 }
 
-router.post("/auth/register", async (req, res, next) => {
+router.post("/auth/register", authMutationLimiter, async (req, res, next) => {
   try {
     const fullName = normalizeName(req.body.fullName);
     const email = normalizeEmail(req.body.email);
@@ -130,7 +136,7 @@ router.post("/auth/register", async (req, res, next) => {
   }
 });
 
-router.post("/auth/login", async (req, res, next) => {
+router.post("/auth/login", authMutationLimiter, async (req, res, next) => {
   try {
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || "");
@@ -194,3 +200,5 @@ router.post("/auth/logout", requireAuth, (req, res) => {
 });
 
 module.exports = router;
+
+

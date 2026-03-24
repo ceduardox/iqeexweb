@@ -82,6 +82,9 @@ Alcance:
 - Paginacion/filtros en tablas grandes.
 - Seguridad operativa (rate limit, validaciones extra, auditoria basica).
 
+Avance actual:
+- Rate limiting operativo en auth y envio de intentos de quiz.
+
 Pruebas minimas:
 - Flujos largos sin bloqueos UX.
 - Responsive completo en movil/tablet.

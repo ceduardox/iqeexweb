@@ -1,11 +1,18 @@
 const express = require("express");
 const { pool } = require("../db/pool");
 const { requireAuth, requirePermission } = require("../middleware/auth");
+const { createRateLimiter } = require("../middleware/rate-limit");
 const { resolveCourseAccess } = require("../services/course-access");
 
 const router = express.Router();
 
 const QUESTION_TYPES = new Set(["multiple_choice", "true_false", "short_answer"]);
+const quizAttemptLimiter = createRateLimiter({
+  windowMs: Number(process.env.RATE_LIMIT_QUIZ_ATTEMPT_WINDOW_MS) || 5 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_QUIZ_ATTEMPT_MAX) || 60,
+  message: "Too many quiz attempts. Please wait a moment and try again.",
+  keyFn: (req) => req.user?.id ? `user-${req.user.id}:quiz-attempt` : req.ip,
+});
 
 function normalizeText(value) {
   return String(value || "").trim();
@@ -575,7 +582,7 @@ router.delete("/questions/:questionId", requireAuth, requirePermission("courses.
   }
 });
 
-router.post("/quizzes/:quizId/attempts", requireAuth, requirePermission("courses.read"), async (req, res, next) => {
+router.post("/quizzes/:quizId/attempts", requireAuth, requirePermission("courses.read"), quizAttemptLimiter, async (req, res, next) => {
   try {
     const quizId = Number(req.params.quizId);
     if (!Number.isInteger(quizId) || quizId <= 0) {
@@ -839,3 +846,5 @@ router.get("/quizzes/:quizId/results", requireAuth, requirePermission("reports.r
 });
 
 module.exports = router;
+
+

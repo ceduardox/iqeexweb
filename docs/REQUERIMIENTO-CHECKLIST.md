@@ -5,7 +5,7 @@
 - [x] Frontend con React + Vite + Ant Design + icons.
 - [x] Frontend y backend separados (`client/` y `server/`).
 - [x] API REST modular por rutas (`auth`, `dashboard`, `courses`, `activities`, `modules`, `admin`).
-- [~] Middleware de auth, roles/permisos y manejo de errores (hecho base; falta endurecer validaciones por modulo).
+- [~] Middleware de auth, roles/permisos y manejo de errores (hecho base + rate limiting en auth/quizzes; falta endurecer mas validaciones por modulo).
 - [~] UI moderna tipo SaaS (base lograda, aun falta refinamiento premium en todos los modulos).
 - [ ] React Router y arquitectura de paginas por feature (pendiente; hoy es SPA en un solo `App.jsx`).
 
@@ -148,3 +148,6 @@
   - Constructor de preguntas.
   - Resolucion de quiz por alumno.
   - Tabla de intentos propios y resultados globales (si tiene permiso).
+- Seguridad operativa aplicada:
+  - Rate limiting en `POST /api/auth/register` y `POST /api/auth/login`.
+  - Rate limiting en `POST /api/quizzes/:quizId/attempts`.
