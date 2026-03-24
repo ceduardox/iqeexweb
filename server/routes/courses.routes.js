@@ -1,6 +1,6 @@
 const express = require("express");
 const { pool } = require("../db/pool");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requirePermission } = require("../middleware/auth");
 const { resolveCourseAccess } = require("../services/course-access");
 
 const router = express.Router();
@@ -89,7 +89,7 @@ function canCreateCourse(user) {
   return user.role === "admin" || user.role === "teacher";
 }
 
-router.get("/courses", requireAuth, async (req, res, next) => {
+router.get("/courses", requireAuth, requirePermission("courses.read"), async (req, res, next) => {
   try {
     const scope = normalizeText(req.query.scope).toLowerCase() || "mine";
     const includeUnpublished = parsePublished(req.query.includeUnpublished) === true;
@@ -199,7 +199,7 @@ router.get("/courses", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/courses", requireAuth, async (req, res, next) => {
+router.post("/courses", requireAuth, requirePermission("courses.create"), async (req, res, next) => {
   try {
     if (!canCreateCourse(req.user)) {
       return res.status(403).json({ status: "error", message: "You are not allowed to create courses" });
@@ -264,7 +264,7 @@ router.post("/courses", requireAuth, async (req, res, next) => {
   }
 });
 
-router.patch("/courses/:courseId", requireAuth, async (req, res, next) => {
+router.patch("/courses/:courseId", requireAuth, requirePermission("courses.update"), async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
     if (!Number.isInteger(courseId) || courseId <= 0) {
@@ -354,7 +354,7 @@ router.patch("/courses/:courseId", requireAuth, async (req, res, next) => {
   }
 });
 
-router.delete("/courses/:courseId", requireAuth, async (req, res, next) => {
+router.delete("/courses/:courseId", requireAuth, requirePermission("courses.archive"), async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
     if (!Number.isInteger(courseId) || courseId <= 0) {
@@ -389,7 +389,7 @@ router.delete("/courses/:courseId", requireAuth, async (req, res, next) => {
   }
 });
 
-router.get("/courses/:courseId/members", requireAuth, async (req, res, next) => {
+router.get("/courses/:courseId/members", requireAuth, requirePermission("courses.read"), async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
     if (!Number.isInteger(courseId) || courseId <= 0) {
@@ -432,7 +432,7 @@ router.get("/courses/:courseId/members", requireAuth, async (req, res, next) => 
   }
 });
 
-router.post("/courses/:courseId/members", requireAuth, async (req, res, next) => {
+router.post("/courses/:courseId/members", requireAuth, requirePermission("members.manage"), async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
     if (!Number.isInteger(courseId) || courseId <= 0) {
@@ -507,7 +507,7 @@ router.post("/courses/:courseId/members", requireAuth, async (req, res, next) =>
   }
 });
 
-router.delete("/courses/:courseId/members/:memberUserId", requireAuth, async (req, res, next) => {
+router.delete("/courses/:courseId/members/:memberUserId", requireAuth, requirePermission("members.manage"), async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
     const memberUserId = Number(req.params.memberUserId);
@@ -544,3 +544,4 @@ router.delete("/courses/:courseId/members/:memberUserId", requireAuth, async (re
 });
 
 module.exports = router;
+

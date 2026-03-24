@@ -5,6 +5,7 @@ import {
   Avatar,
   Button,
   Card,
+  Checkbox,
   Col,
   ConfigProvider,
   Empty,
@@ -39,7 +40,9 @@ import {
   MenuUnfoldOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import './App.css'
 
@@ -70,6 +73,42 @@ const EMPTY_MEMBER_FORM = {
   email: '',
   role: 'student',
   progressPercent: 0,
+}
+
+const EMPTY_ADMIN_USER_FORM = {
+  fullName: '',
+  email: '',
+  password: '',
+  primaryRole: 'student',
+  roles: ['student'],
+  active: true,
+}
+
+const EMPTY_EDIT_USER_FORM = {
+  fullName: '',
+  primaryRole: 'student',
+  roles: ['student'],
+  active: true,
+}
+
+const EMPTY_MODULE_FORM = {
+  title: '',
+  description: '',
+  sortOrder: 1,
+  isPublished: true,
+}
+
+const EMPTY_LESSON_FORM = {
+  title: '',
+  description: '',
+  contentType: 'text',
+  contentText: '',
+  videoUrl: '',
+  resourceUrl: '',
+  durationMinutes: 10,
+  sortOrder: 1,
+  isFreePreview: false,
+  isPublished: true,
 }
 
 function parseStoredJson(key) {
@@ -179,6 +218,24 @@ function DashboardWorkspace() {
   const [courseForm, setCourseForm] = useState(EMPTY_COURSE_FORM)
   const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM)
   const [activityForm, setActivityForm] = useState(EMPTY_ACTIVITY_FORM)
+  const [moduleForm, setModuleForm] = useState(EMPTY_MODULE_FORM)
+  const [lessonForm, setLessonForm] = useState(EMPTY_LESSON_FORM)
+  const [courseModules, setCourseModules] = useState([])
+  const [selectedModuleId, setSelectedModuleId] = useState(null)
+  const [adminUserForm, setAdminUserForm] = useState(EMPTY_ADMIN_USER_FORM)
+  const [editUserForm, setEditUserForm] = useState(EMPTY_EDIT_USER_FORM)
+  const [systemUsers, setSystemUsers] = useState([])
+  const [selectedUserId, setSelectedUserId] = useState(null)
+  const [userSearch, setUserSearch] = useState('')
+  const [userRoleFilter, setUserRoleFilter] = useState('all')
+  const [userActiveFilter, setUserActiveFilter] = useState('all')
+  const [rolesCatalog, setRolesCatalog] = useState([])
+  const [permissionsCatalog, setPermissionsCatalog] = useState([])
+  const [rolePermissionsMap, setRolePermissionsMap] = useState({})
+  const [selectedRoleCode, setSelectedRoleCode] = useState('admin')
+  const [rolePermissionDraft, setRolePermissionDraft] = useState([])
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [permissionsLoading, setPermissionsLoading] = useState(false)
   const [busyAction, setBusyAction] = useState('')
   const [refreshingOverview, setRefreshingOverview] = useState(false)
   const [status, setStatus] = useState(token ? 'loading' : 'unauthorized')
@@ -187,6 +244,30 @@ function DashboardWorkspace() {
     if (!selectedCourseId) return null
     return courses.find((course) => Number(course.id) === Number(selectedCourseId)) || null
   }, [courses, selectedCourseId])
+
+  const selectedUser = useMemo(() => {
+    if (!selectedUserId) return null
+    return systemUsers.find((row) => Number(row.id) === Number(selectedUserId)) || null
+  }, [systemUsers, selectedUserId])
+
+  const selectedModule = useMemo(() => {
+    if (!selectedModuleId) return null
+    return courseModules.find((module) => Number(module.id) === Number(selectedModuleId)) || null
+  }, [courseModules, selectedModuleId])
+
+  const hasPermission = (permissionCode) => {
+    if (!user) return false
+    if (String(user.role || '').toLowerCase() === 'admin') return true
+    const list = Array.isArray(user.permissions) ? user.permissions : []
+    return list.includes(permissionCode)
+  }
+
+  const canReadUsers = hasPermission('users.read')
+  const canCreateUsers = hasPermission('users.create')
+  const canUpdateUsers = hasPermission('users.update')
+  const canDisableUsers = hasPermission('users.disable')
+  const canReadRoles = hasPermission('roles.read')
+  const canManageRoles = hasPermission('roles.manage')
 
   const filteredCourses = useMemo(() => {
     const needle = String(courseQuery || '').trim().toLowerCase()
@@ -245,6 +326,47 @@ function DashboardWorkspace() {
     })
   }, [selectedCourse])
 
+  useEffect(() => {
+    if (courseModules.length === 0) {
+      setSelectedModuleId(null)
+      setModuleForm(EMPTY_MODULE_FORM)
+      return
+    }
+
+    const exists = courseModules.some((module) => Number(module.id) === Number(selectedModuleId))
+    if (!exists) {
+      setSelectedModuleId(courseModules[0].id)
+      return
+    }
+
+    if (selectedModule) {
+      setModuleForm({
+        title: selectedModule.title || '',
+        description: selectedModule.description || '',
+        sortOrder: Number(selectedModule.sortOrder) || 1,
+        isPublished: selectedModule.isPublished !== false,
+      })
+    }
+  }, [courseModules, selectedModuleId, selectedModule])
+
+  useEffect(() => {
+    if (!selectedUser) {
+      setEditUserForm(EMPTY_EDIT_USER_FORM)
+      return
+    }
+
+    const roles = Array.isArray(selectedUser.roles) && selectedUser.roles.length > 0 ? selectedUser.roles : [selectedUser.primaryRole || selectedUser.role || 'student']
+    const primaryRole = selectedUser.primaryRole || selectedUser.role || roles[0]
+    const normalizedRoles = roles.includes(primaryRole) ? roles : [primaryRole, ...roles]
+
+    setEditUserForm({
+      fullName: selectedUser.fullName || '',
+      primaryRole,
+      roles: normalizedRoles,
+      active: Boolean(selectedUser.active),
+    })
+  }, [selectedUser])
+
   async function refreshOverview(authToken) {
     const overview = await apiRequest('/api/dashboard/overview', authToken, { method: 'GET' })
     setDashboardData(overview.data || null)
@@ -278,6 +400,27 @@ function DashboardWorkspace() {
     setCourseActivities((activities.activities || []).map(mapActivityRow))
   }
 
+  async function refreshCourseModules(authToken, courseId) {
+    if (!courseId) {
+      setCourseModules([])
+      setSelectedModuleId(null)
+      return
+    }
+
+    const response = await apiRequest(`/api/courses/${courseId}/modules?includeLessons=true`, authToken, { method: 'GET' })
+    const modules = response.modules || []
+    setCourseModules(modules)
+
+    if (modules.length === 0) {
+      setSelectedModuleId(null)
+      return
+    }
+
+    if (!modules.some((module) => Number(module.id) === Number(selectedModuleId))) {
+      setSelectedModuleId(modules[0].id)
+    }
+  }
+
   async function refreshWorkspace(authToken, role, courseId) {
     setRefreshingOverview(true)
     try {
@@ -287,6 +430,55 @@ function DashboardWorkspace() {
       }
     } finally {
       setRefreshingOverview(false)
+    }
+  }
+
+  async function loadAdminUsers(authToken, options = {}) {
+    if (!canReadUsers) return
+    setAdminLoading(true)
+    try {
+      const search = options.search ?? userSearch
+      const role = options.role ?? userRoleFilter
+      const active = options.active ?? userActiveFilter
+
+      const query = new URLSearchParams()
+      if (search) query.set('search', search)
+      if (role && role !== 'all') query.set('role', role)
+      if (active === 'active') query.set('active', 'true')
+      if (active === 'inactive') query.set('active', 'false')
+
+      const response = await apiRequest(`/api/admin/users${query.toString() ? `?${query.toString()}` : ''}`, authToken, { method: 'GET' })
+      const nextUsers = response.users || []
+      setSystemUsers(nextUsers)
+
+      if (nextUsers.length === 0) {
+        setSelectedUserId(null)
+      } else if (!nextUsers.some((row) => Number(row.id) === Number(selectedUserId))) {
+        setSelectedUserId(nextUsers[0].id)
+      }
+    } finally {
+      setAdminLoading(false)
+    }
+  }
+
+  async function loadRolePermissions(authToken) {
+    if (!canReadRoles) return
+    setPermissionsLoading(true)
+    try {
+      const response = await apiRequest('/api/admin/permissions', authToken, { method: 'GET' })
+      const roles = response.roles || []
+      const permissions = response.permissions || []
+      const map = response.rolePermissions || {}
+
+      setRolesCatalog(roles)
+      setPermissionsCatalog(permissions)
+      setRolePermissionsMap(map)
+
+      const defaultRole = roles.some((row) => row.code === selectedRoleCode) ? selectedRoleCode : roles[0]?.code || 'admin'
+      setSelectedRoleCode(defaultRole)
+      setRolePermissionDraft(Array.isArray(map[defaultRole]) ? map[defaultRole] : [])
+    } finally {
+      setPermissionsLoading(false)
     }
   }
 
@@ -367,6 +559,44 @@ function DashboardWorkspace() {
     }
   }, [status, token, selectedCourseId, messageApi])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAdminModules() {
+      if (status !== 'ready' || !token || activeSection !== 'content-bank') {
+        return
+      }
+
+      try {
+        if (managerTab === 'modules') {
+          await refreshCourseModules(token, selectedCourseId)
+        }
+
+        if (managerTab === 'users' && canReadUsers) {
+          await loadAdminUsers(token)
+        }
+
+        if (managerTab === 'roles' && canReadRoles) {
+          await loadRolePermissions(token)
+        }
+      } catch (error) {
+        if (cancelled) return
+        messageApi.error(error.message || 'No se pudo cargar el modulo administrativo')
+      }
+    }
+
+    loadAdminModules()
+    return () => {
+      cancelled = true
+    }
+  }, [status, token, activeSection, managerTab, canReadUsers, canReadRoles, selectedCourseId])
+
+  useEffect(() => {
+    const current = rolePermissionsMap[selectedRoleCode]
+    if (!Array.isArray(current)) return
+    setRolePermissionDraft(current)
+  }, [selectedRoleCode, rolePermissionsMap])
+
   async function handleLogout() {
     try {
       if (token) {
@@ -399,6 +629,149 @@ function DashboardWorkspace() {
 
   function onActivityFieldChange(field, value) {
     setActivityForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function onModuleFieldChange(field, value) {
+    setModuleForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function onLessonFieldChange(field, value) {
+    setLessonForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function onCreateModule() {
+    if (!token || !selectedCourse || !canManageSelectedCourse) return
+    setBusyAction('module-create')
+    try {
+      const result = await apiRequest(`/api/courses/${selectedCourse.id}/modules`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: moduleForm.title,
+          description: moduleForm.description,
+          sortOrder: Number(moduleForm.sortOrder),
+          isPublished: Boolean(moduleForm.isPublished),
+        }),
+      })
+
+      await refreshCourseModules(token, selectedCourse.id)
+      if (result.module?.id) {
+        setSelectedModuleId(result.module.id)
+      }
+      setModuleForm(EMPTY_MODULE_FORM)
+      messageApi.success('Modulo creado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo crear el modulo')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onUpdateModule() {
+    if (!token || !selectedModule || !canManageSelectedCourse) return
+    setBusyAction('module-update')
+    try {
+      await apiRequest(`/api/modules/${selectedModule.id}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: moduleForm.title,
+          description: moduleForm.description,
+          sortOrder: Number(moduleForm.sortOrder),
+          isPublished: Boolean(moduleForm.isPublished),
+        }),
+      })
+      await refreshCourseModules(token, selectedCourse.id)
+      messageApi.success('Modulo actualizado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo actualizar el modulo')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onDeleteModule() {
+    if (!token || !selectedModule || !canManageSelectedCourse) return
+    if (!window.confirm(`Eliminar modulo "${selectedModule.title}"?`)) return
+
+    setBusyAction('module-delete')
+    try {
+      await apiRequest(`/api/modules/${selectedModule.id}`, token, { method: 'DELETE' })
+      await refreshCourseModules(token, selectedCourse.id)
+      messageApi.success('Modulo eliminado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo eliminar el modulo')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onCreateLesson() {
+    if (!token || !selectedModule || !canManageSelectedCourse) return
+    setBusyAction('lesson-create')
+    try {
+      await apiRequest(`/api/modules/${selectedModule.id}/lessons`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: lessonForm.title,
+          description: lessonForm.description,
+          contentType: lessonForm.contentType,
+          contentText: lessonForm.contentText,
+          videoUrl: lessonForm.videoUrl,
+          resourceUrl: lessonForm.resourceUrl,
+          durationMinutes: Number(lessonForm.durationMinutes),
+          sortOrder: Number(lessonForm.sortOrder),
+          isFreePreview: Boolean(lessonForm.isFreePreview),
+          isPublished: Boolean(lessonForm.isPublished),
+        }),
+      })
+      await refreshCourseModules(token, selectedCourse.id)
+      setLessonForm(EMPTY_LESSON_FORM)
+      messageApi.success('Leccion creada')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo crear la leccion')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onRenameLesson(lesson) {
+    if (!token || !selectedCourse || !lesson || !canManageSelectedCourse) return
+    const nextTitle = window.prompt('Nuevo titulo de leccion', lesson.title)
+    if (nextTitle === null) return
+    const normalized = String(nextTitle || '').trim()
+    if (normalized.length < 3) {
+      messageApi.error('El titulo debe tener al menos 3 caracteres')
+      return
+    }
+
+    setBusyAction(`lesson-update-${lesson.id}`)
+    try {
+      await apiRequest(`/api/lessons/${lesson.id}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: normalized }),
+      })
+      await refreshCourseModules(token, selectedCourse.id)
+      messageApi.success('Leccion actualizada')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo actualizar la leccion')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onDeleteLesson(lesson) {
+    if (!token || !selectedCourse || !lesson || !canManageSelectedCourse) return
+    if (!window.confirm(`Eliminar leccion "${lesson.title}"?`)) return
+
+    setBusyAction(`lesson-delete-${lesson.id}`)
+    try {
+      await apiRequest(`/api/lessons/${lesson.id}`, token, { method: 'DELETE' })
+      await refreshCourseModules(token, selectedCourse.id)
+      messageApi.success('Leccion eliminada')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo eliminar la leccion')
+    } finally {
+      setBusyAction('')
+    }
   }
 
   async function onCreateCourse() {
@@ -596,6 +969,117 @@ function DashboardWorkspace() {
     }
   }
 
+  function onAdminUserFormChange(field, value) {
+    setAdminUserForm((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'primaryRole' && Array.isArray(next.roles) && !next.roles.includes(value)) {
+        next.roles = [value, ...next.roles]
+      }
+      return next
+    })
+  }
+
+  function onEditUserFormChange(field, value) {
+    setEditUserForm((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'primaryRole' && Array.isArray(next.roles) && !next.roles.includes(value)) {
+        next.roles = [value, ...next.roles]
+      }
+      return next
+    })
+  }
+
+  async function onCreateAdminUser() {
+    if (!token || !canCreateUsers) return
+    setBusyAction('create-admin-user')
+    try {
+      const roles = Array.isArray(adminUserForm.roles) ? adminUserForm.roles : [adminUserForm.primaryRole]
+      const nextRoles = roles.includes(adminUserForm.primaryRole) ? roles : [adminUserForm.primaryRole, ...roles]
+      await apiRequest('/api/admin/users', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          fullName: adminUserForm.fullName,
+          email: adminUserForm.email,
+          password: adminUserForm.password,
+          primaryRole: adminUserForm.primaryRole,
+          roles: nextRoles,
+          active: Boolean(adminUserForm.active),
+        }),
+      })
+
+      setAdminUserForm(EMPTY_ADMIN_USER_FORM)
+      await loadAdminUsers(token)
+      messageApi.success('Usuario creado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo crear el usuario')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onUpdateSelectedUser() {
+    if (!token || !selectedUser || !canUpdateUsers) return
+    setBusyAction('update-admin-user')
+    try {
+      const roles = Array.isArray(editUserForm.roles) ? editUserForm.roles : [editUserForm.primaryRole]
+      const nextRoles = roles.includes(editUserForm.primaryRole) ? roles : [editUserForm.primaryRole, ...roles]
+      await apiRequest(`/api/admin/users/${selectedUser.id}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          fullName: editUserForm.fullName,
+          primaryRole: editUserForm.primaryRole,
+          roles: nextRoles,
+          active: Boolean(editUserForm.active),
+        }),
+      })
+
+      await loadAdminUsers(token)
+      messageApi.success('Usuario actualizado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo actualizar el usuario')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onToggleUserActive(targetUser) {
+    if (!token || !canDisableUsers || !targetUser) return
+    setBusyAction(`toggle-user-${targetUser.id}`)
+    try {
+      await apiRequest(`/api/admin/users/${targetUser.id}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          active: !targetUser.active,
+        }),
+      })
+      await loadAdminUsers(token)
+      messageApi.success(targetUser.active ? 'Usuario desactivado' : 'Usuario activado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo actualizar el estado')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onSaveRolePermissions() {
+    if (!token || !selectedRoleCode || !canManageRoles) return
+    setBusyAction('save-role-permissions')
+    try {
+      await apiRequest(`/api/admin/roles/${selectedRoleCode}/permissions`, token, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          permissions: rolePermissionDraft,
+        }),
+      })
+      await loadRolePermissions(token)
+      messageApi.success('Permisos de rol actualizados')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo guardar permisos')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
   const memberColumns = [
     {
       title: 'Usuario',
@@ -693,6 +1177,180 @@ function DashboardWorkspace() {
       ),
     },
   ]
+
+  const moduleColumns = [
+    {
+      title: 'Modulo',
+      dataIndex: 'title',
+      key: 'title',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">{row.description || 'Sin descripcion'}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Orden',
+      dataIndex: 'sortOrder',
+      key: 'sortOrder',
+      width: 100,
+    },
+    {
+      title: 'Lecciones',
+      key: 'lessons',
+      width: 120,
+      render: (_, row) => (Array.isArray(row.lessons) ? row.lessons.length : 0),
+    },
+    {
+      title: 'Estado',
+      dataIndex: 'isPublished',
+      key: 'isPublished',
+      width: 120,
+      render: (value) => (value ? <Tag color="green">Publicado</Tag> : <Tag color="orange">Borrador</Tag>),
+    },
+    {
+      title: 'Accion',
+      key: 'action',
+      width: 140,
+      render: (_, row) => (
+        <Button size="small" icon={<BookOutlined />} onClick={() => setSelectedModuleId(row.id)}>
+          Seleccionar
+        </Button>
+      ),
+    },
+  ]
+
+  const lessonColumns = [
+    {
+      title: 'Leccion',
+      dataIndex: 'title',
+      key: 'title',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">{row.description || 'Sin descripcion'}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Tipo',
+      dataIndex: 'contentType',
+      key: 'contentType',
+      width: 110,
+      render: (value) => <Tag>{value}</Tag>,
+    },
+    {
+      title: 'Duracion',
+      dataIndex: 'durationMinutes',
+      key: 'durationMinutes',
+      width: 120,
+      render: (value) => `${value} min`,
+    },
+    {
+      title: 'Orden',
+      dataIndex: 'sortOrder',
+      key: 'sortOrder',
+      width: 90,
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      width: 190,
+      render: (_, row) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            disabled={!canManageSelectedCourse || busyAction === `lesson-update-${row.id}`}
+            onClick={() => onRenameLesson(row)}
+          >
+            Editar
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            disabled={!canManageSelectedCourse || busyAction === `lesson-delete-${row.id}`}
+            onClick={() => onDeleteLesson(row)}
+          >
+            Eliminar
+          </Button>
+        </Space>
+      ),
+    },
+  ]
+
+  const userColumns = [
+    {
+      title: 'Usuario',
+      dataIndex: 'fullName',
+      key: 'fullName',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">{row.email}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Rol Primario',
+      dataIndex: 'primaryRole',
+      key: 'primaryRole',
+      width: 140,
+      render: (value) => <Tag color="blue">{value}</Tag>,
+    },
+    {
+      title: 'Roles',
+      dataIndex: 'roles',
+      key: 'roles',
+      width: 220,
+      render: (roles) => (
+        <Space wrap>
+          {(Array.isArray(roles) ? roles : []).map((roleCode) => (
+            <Tag key={roleCode}>{roleCode}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: 'Estado',
+      dataIndex: 'active',
+      key: 'active',
+      width: 120,
+      render: (value) => (value ? <Tag color="green">Activo</Tag> : <Tag color="red">Inactivo</Tag>),
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      width: 220,
+      render: (_, row) => (
+        <Space>
+          <Button size="small" icon={<UserOutlined />} onClick={() => setSelectedUserId(row.id)}>
+            Seleccionar
+          </Button>
+          <Button
+            size="small"
+            danger={Boolean(row.active)}
+            disabled={!canDisableUsers || Number(row.id) === Number(user?.id) || busyAction === `toggle-user-${row.id}`}
+            onClick={() => onToggleUserActive(row)}
+          >
+            {row.active ? 'Desactivar' : 'Activar'}
+          </Button>
+        </Space>
+      ),
+    },
+  ]
+
+  const roleOptions = rolesCatalog.map((role) => ({
+    label: `${role.name} (${role.code})`,
+    value: role.code,
+  }))
+
+  const permissionsCheckboxOptions = permissionsCatalog.map((permission) => ({
+    label: `${permission.code} - ${permission.name}`,
+    value: permission.code,
+  }))
 
   if (status === 'unauthorized') {
     return (
@@ -931,6 +1589,9 @@ function DashboardWorkspace() {
                       { label: 'Cursos', value: 'courses' },
                       { label: 'Miembros', value: 'members' },
                       { label: 'Actividades', value: 'activities' },
+                      { label: 'Modulos', value: 'modules' },
+                      { label: 'Usuarios', value: 'users' },
+                      { label: 'Roles y Permisos', value: 'roles' },
                     ]}
                   />
                 </Card>
@@ -1163,6 +1824,426 @@ function DashboardWorkspace() {
                   ) : (
                     <Card>
                       <Empty description="Selecciona un curso para gestionar actividades" />
+                    </Card>
+                  )
+                ) : null}
+
+                {managerTab === 'modules' ? (
+                  selectedCourse ? (
+                    <Space direction="vertical" size={16} style={{ display: 'flex' }}>
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} xl={14}>
+                          <Card
+                            title={`Modulos de ${selectedCourse.title}`}
+                            extra={(
+                              <Button icon={<ReloadOutlined />} onClick={() => refreshCourseModules(token, selectedCourse.id)}>
+                                Recargar
+                              </Button>
+                            )}
+                          >
+                            <Table
+                              rowKey="id"
+                              dataSource={courseModules}
+                              pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                              onRow={(record) => ({
+                                onClick: () => setSelectedModuleId(record.id),
+                              })}
+                              rowClassName={(record) => (Number(record.id) === Number(selectedModuleId) ? 'selected-row' : '')}
+                              columns={moduleColumns}
+                            />
+                          </Card>
+                        </Col>
+                        <Col xs={24} xl={10}>
+                          <Card title="Crear/editar modulo">
+                            <Space direction="vertical" size={12} style={{ display: 'flex' }}>
+                              <Input
+                                placeholder="Titulo del modulo"
+                                value={moduleForm.title}
+                                onChange={(event) => onModuleFieldChange('title', event.target.value)}
+                              />
+                              <Input.TextArea
+                                rows={3}
+                                placeholder="Descripcion"
+                                value={moduleForm.description}
+                                onChange={(event) => onModuleFieldChange('description', event.target.value)}
+                              />
+                              <InputNumber
+                                style={{ width: '100%' }}
+                                min={1}
+                                value={moduleForm.sortOrder}
+                                onChange={(value) => onModuleFieldChange('sortOrder', value ?? 1)}
+                                addonBefore="Orden"
+                              />
+                              <Space>
+                                <Text>Publicado</Text>
+                                <Switch checked={Boolean(moduleForm.isPublished)} onChange={(checked) => onModuleFieldChange('isPublished', checked)} />
+                              </Space>
+                              <Space wrap>
+                                <Button
+                                  type="primary"
+                                  icon={<PlusOutlined />}
+                                  loading={busyAction === 'module-create'}
+                                  disabled={!canManageSelectedCourse}
+                                  onClick={onCreateModule}
+                                >
+                                  Crear modulo
+                                </Button>
+                                <Button
+                                  icon={<EditOutlined />}
+                                  loading={busyAction === 'module-update'}
+                                  disabled={!canManageSelectedCourse || !selectedModule}
+                                  onClick={onUpdateModule}
+                                >
+                                  Actualizar
+                                </Button>
+                                <Button
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                  loading={busyAction === 'module-delete'}
+                                  disabled={!canManageSelectedCourse || !selectedModule}
+                                  onClick={onDeleteModule}
+                                >
+                                  Eliminar
+                                </Button>
+                              </Space>
+                            </Space>
+                          </Card>
+                        </Col>
+                      </Row>
+
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} xl={15}>
+                          <Card title={selectedModule ? `Lecciones de ${selectedModule.title}` : 'Lecciones del modulo'}>
+                            {selectedModule ? (
+                              <Table
+                                rowKey="id"
+                                dataSource={Array.isArray(selectedModule.lessons) ? selectedModule.lessons : []}
+                                pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                                columns={lessonColumns}
+                              />
+                            ) : (
+                              <Empty description="Selecciona un modulo para ver lecciones" />
+                            )}
+                          </Card>
+                        </Col>
+                        <Col xs={24} xl={9}>
+                          <Card title="Crear leccion">
+                            {selectedModule ? (
+                              <Space direction="vertical" size={12} style={{ display: 'flex' }}>
+                                <Input
+                                  placeholder="Titulo de leccion"
+                                  value={lessonForm.title}
+                                  onChange={(event) => onLessonFieldChange('title', event.target.value)}
+                                />
+                                <Input.TextArea
+                                  rows={3}
+                                  placeholder="Descripcion"
+                                  value={lessonForm.description}
+                                  onChange={(event) => onLessonFieldChange('description', event.target.value)}
+                                />
+                                <Select
+                                  value={lessonForm.contentType}
+                                  onChange={(value) => onLessonFieldChange('contentType', value)}
+                                  options={[
+                                    { label: 'Texto', value: 'text' },
+                                    { label: 'Video', value: 'video' },
+                                    { label: 'Archivo', value: 'file' },
+                                    { label: 'Mixto', value: 'mixed' },
+                                  ]}
+                                />
+                                <Input.TextArea
+                                  rows={3}
+                                  placeholder="Contenido principal"
+                                  value={lessonForm.contentText}
+                                  onChange={(event) => onLessonFieldChange('contentText', event.target.value)}
+                                />
+                                <Input
+                                  placeholder="URL video (opcional)"
+                                  value={lessonForm.videoUrl}
+                                  onChange={(event) => onLessonFieldChange('videoUrl', event.target.value)}
+                                />
+                                <Input
+                                  placeholder="URL recurso (opcional)"
+                                  value={lessonForm.resourceUrl}
+                                  onChange={(event) => onLessonFieldChange('resourceUrl', event.target.value)}
+                                />
+                                <InputNumber
+                                  style={{ width: '100%' }}
+                                  min={0}
+                                  value={lessonForm.durationMinutes}
+                                  onChange={(value) => onLessonFieldChange('durationMinutes', value ?? 0)}
+                                  addonBefore="Duracion"
+                                  addonAfter="min"
+                                />
+                                <InputNumber
+                                  style={{ width: '100%' }}
+                                  min={1}
+                                  value={lessonForm.sortOrder}
+                                  onChange={(value) => onLessonFieldChange('sortOrder', value ?? 1)}
+                                  addonBefore="Orden"
+                                />
+                                <Space>
+                                  <Text>Preview gratis</Text>
+                                  <Switch checked={Boolean(lessonForm.isFreePreview)} onChange={(checked) => onLessonFieldChange('isFreePreview', checked)} />
+                                </Space>
+                                <Space>
+                                  <Text>Publicado</Text>
+                                  <Switch checked={Boolean(lessonForm.isPublished)} onChange={(checked) => onLessonFieldChange('isPublished', checked)} />
+                                </Space>
+                                <Button
+                                  type="primary"
+                                  icon={<PlusOutlined />}
+                                  loading={busyAction === 'lesson-create'}
+                                  disabled={!canManageSelectedCourse}
+                                  onClick={onCreateLesson}
+                                >
+                                  Crear leccion
+                                </Button>
+                              </Space>
+                            ) : (
+                              <Empty description="Selecciona un modulo primero" />
+                            )}
+                          </Card>
+                        </Col>
+                      </Row>
+                    </Space>
+                  ) : (
+                    <Card>
+                      <Empty description="Selecciona un curso para gestionar modulos y lecciones" />
+                    </Card>
+                  )
+                ) : null}
+
+                {managerTab === 'users' ? (
+                  canReadUsers ? (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} xl={15}>
+                        <Card
+                          title="Usuarios del sistema"
+                          extra={(
+                            <Button icon={<ReloadOutlined />} loading={adminLoading} onClick={() => loadAdminUsers(token)}>
+                              Recargar
+                            </Button>
+                          )}
+                        >
+                          <Space direction="vertical" size={12} style={{ display: 'flex' }}>
+                            <Row gutter={[8, 8]}>
+                              <Col xs={24} md={10}>
+                                <Input
+                                  allowClear
+                                  placeholder="Buscar por nombre o email"
+                                  value={userSearch}
+                                  onChange={(event) => setUserSearch(event.target.value)}
+                                />
+                              </Col>
+                              <Col xs={24} md={7}>
+                                <Select
+                                  style={{ width: '100%' }}
+                                  value={userRoleFilter}
+                                  onChange={setUserRoleFilter}
+                                  options={[
+                                    { label: 'Todos los roles', value: 'all' },
+                                    { label: 'Admin', value: 'admin' },
+                                    { label: 'Profesor', value: 'teacher' },
+                                    { label: 'Estudiante', value: 'student' },
+                                  ]}
+                                />
+                              </Col>
+                              <Col xs={24} md={7}>
+                                <Select
+                                  style={{ width: '100%' }}
+                                  value={userActiveFilter}
+                                  onChange={setUserActiveFilter}
+                                  options={[
+                                    { label: 'Todos', value: 'all' },
+                                    { label: 'Activos', value: 'active' },
+                                    { label: 'Inactivos', value: 'inactive' },
+                                  ]}
+                                />
+                              </Col>
+                            </Row>
+
+                            <Button
+                              onClick={() => loadAdminUsers(token, { search: userSearch, role: userRoleFilter, active: userActiveFilter })}
+                              icon={<UserOutlined />}
+                            >
+                              Aplicar filtros
+                            </Button>
+
+                            <Table
+                              rowKey="id"
+                              loading={adminLoading}
+                              dataSource={systemUsers}
+                              pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                              columns={userColumns}
+                            />
+                          </Space>
+                        </Card>
+                      </Col>
+                      <Col xs={24} xl={9}>
+                        <Card title="Crear usuario">
+                          <Space direction="vertical" size={10} style={{ display: 'flex' }}>
+                            <Input
+                              placeholder="Nombre completo"
+                              value={adminUserForm.fullName}
+                              onChange={(event) => onAdminUserFormChange('fullName', event.target.value)}
+                            />
+                            <Input
+                              type="email"
+                              placeholder="correo@dominio.com"
+                              value={adminUserForm.email}
+                              onChange={(event) => onAdminUserFormChange('email', event.target.value)}
+                            />
+                            <Input.Password
+                              placeholder="Contrasena inicial"
+                              value={adminUserForm.password}
+                              onChange={(event) => onAdminUserFormChange('password', event.target.value)}
+                            />
+                            <Select
+                              value={adminUserForm.primaryRole}
+                              onChange={(value) => onAdminUserFormChange('primaryRole', value)}
+                              options={[
+                                { label: 'Administrador', value: 'admin' },
+                                { label: 'Profesor', value: 'teacher' },
+                                { label: 'Estudiante', value: 'student' },
+                              ]}
+                            />
+                            <Checkbox.Group
+                              value={adminUserForm.roles}
+                              options={[
+                                { label: 'Admin', value: 'admin' },
+                                { label: 'Profesor', value: 'teacher' },
+                                { label: 'Estudiante', value: 'student' },
+                              ]}
+                              onChange={(value) => onAdminUserFormChange('roles', value)}
+                            />
+                            <Space>
+                              <Text>Activo</Text>
+                              <Switch checked={Boolean(adminUserForm.active)} onChange={(checked) => onAdminUserFormChange('active', checked)} />
+                            </Space>
+                            <Button
+                              type="primary"
+                              icon={<PlusOutlined />}
+                              loading={busyAction === 'create-admin-user'}
+                              disabled={!canCreateUsers}
+                              onClick={onCreateAdminUser}
+                            >
+                              Crear usuario
+                            </Button>
+                          </Space>
+                        </Card>
+
+                        <Card title="Editar usuario seleccionado" style={{ marginTop: 16 }}>
+                          {selectedUser ? (
+                            <Space direction="vertical" size={10} style={{ display: 'flex' }}>
+                              <Text type="secondary">{selectedUser.email}</Text>
+                              <Input
+                                placeholder="Nombre completo"
+                                value={editUserForm.fullName}
+                                onChange={(event) => onEditUserFormChange('fullName', event.target.value)}
+                              />
+                              <Select
+                                value={editUserForm.primaryRole}
+                                onChange={(value) => onEditUserFormChange('primaryRole', value)}
+                                options={[
+                                  { label: 'Administrador', value: 'admin' },
+                                  { label: 'Profesor', value: 'teacher' },
+                                  { label: 'Estudiante', value: 'student' },
+                                ]}
+                              />
+                              <Checkbox.Group
+                                value={editUserForm.roles}
+                                options={[
+                                  { label: 'Admin', value: 'admin' },
+                                  { label: 'Profesor', value: 'teacher' },
+                                  { label: 'Estudiante', value: 'student' },
+                                ]}
+                                onChange={(value) => onEditUserFormChange('roles', value)}
+                              />
+                              <Space>
+                                <Text>Activo</Text>
+                                <Switch checked={Boolean(editUserForm.active)} onChange={(checked) => onEditUserFormChange('active', checked)} />
+                              </Space>
+                              <Button
+                                type="primary"
+                                icon={<EditOutlined />}
+                                loading={busyAction === 'update-admin-user'}
+                                disabled={!canUpdateUsers}
+                                onClick={onUpdateSelectedUser}
+                              >
+                                Guardar cambios
+                              </Button>
+                            </Space>
+                          ) : (
+                            <Empty description="Selecciona un usuario para editar" />
+                          )}
+                        </Card>
+                      </Col>
+                    </Row>
+                  ) : (
+                    <Card>
+                      <Empty description="No tienes permiso para ver usuarios" />
+                    </Card>
+                  )
+                ) : null}
+
+                {managerTab === 'roles' ? (
+                  canReadRoles ? (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} xl={16}>
+                        <Card
+                          title="Permisos por rol"
+                          extra={(
+                            <Button icon={<ReloadOutlined />} loading={permissionsLoading} onClick={() => loadRolePermissions(token)}>
+                              Recargar
+                            </Button>
+                          )}
+                        >
+                          <Space direction="vertical" size={12} style={{ display: 'flex' }}>
+                            <Select
+                              value={selectedRoleCode}
+                              onChange={setSelectedRoleCode}
+                              options={roleOptions}
+                            />
+                            <Checkbox.Group
+                              value={rolePermissionDraft}
+                              options={permissionsCheckboxOptions}
+                              onChange={(value) => setRolePermissionDraft(value)}
+                              style={{ display: 'grid', gap: 8 }}
+                            />
+                            <Button
+                              type="primary"
+                              icon={<SafetyCertificateOutlined />}
+                              loading={busyAction === 'save-role-permissions'}
+                              disabled={!canManageRoles}
+                              onClick={onSaveRolePermissions}
+                            >
+                              Guardar permisos del rol
+                            </Button>
+                          </Space>
+                        </Card>
+                      </Col>
+                      <Col xs={24} xl={8}>
+                        <Card title="Roles disponibles">
+                          <List
+                            dataSource={rolesCatalog}
+                            locale={{ emptyText: 'Sin roles' }}
+                            renderItem={(role) => (
+                              <List.Item>
+                                <Space direction="vertical" size={0}>
+                                  <Text strong>{role.name}</Text>
+                                  <Text type="secondary">{role.code}</Text>
+                                  <Text type="secondary">{role.description}</Text>
+                                </Space>
+                              </List.Item>
+                            )}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
+                  ) : (
+                    <Card>
+                      <Empty description="No tienes permiso para roles y permisos" />
                     </Card>
                   )
                 ) : null}

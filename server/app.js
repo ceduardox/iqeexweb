@@ -6,6 +6,8 @@ const authRoutes = require("./routes/auth.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const coursesRoutes = require("./routes/courses.routes");
 const activitiesRoutes = require("./routes/activities.routes");
+const modulesRoutes = require("./routes/modules.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 const projectRoot = path.resolve(__dirname, "..");
@@ -20,6 +22,8 @@ app.use("/api", authRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", coursesRoutes);
 app.use("/api", activitiesRoutes);
+app.use("/api", modulesRoutes);
+app.use("/api", adminRoutes);
 
 app.use("/dashboard", express.static(dashboardDist));
 app.get(/^\/dashboard(\/.*)?$/, (req, res) => {

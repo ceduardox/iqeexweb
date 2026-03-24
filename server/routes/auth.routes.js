@@ -3,6 +3,7 @@ const { pool } = require("../db/pool");
 const { hashPassword, verifyPassword } = require("../auth/password");
 const { createAuthToken } = require("../auth/token");
 const { requireAuth, sanitizeUser } = require("../middleware/auth");
+const { ensureUserPrimaryRole, getUserAccess } = require("../services/rbac");
 
 const router = express.Router();
 const ALLOWED_ROLES = new Set(["student", "teacher", "admin"]);
@@ -13,6 +14,11 @@ function normalizeEmail(value) {
 
 function normalizeName(value) {
   return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function normalizeRole(value) {
+  const normalized = String(value || "student").trim().toLowerCase();
+  return ALLOWED_ROLES.has(normalized) ? normalized : null;
 }
 
 function defaultCourseCodesForRole(role) {
@@ -58,12 +64,23 @@ async function enrollDefaultCourses(userId, role) {
   }
 }
 
+async function buildUserWithAccess(userRow) {
+  const access = await getUserAccess(userRow.id, userRow.role);
+  return {
+    ...sanitizeUser(userRow),
+    role: access.primaryRole,
+    primaryRole: access.primaryRole,
+    roles: access.roles,
+    permissions: access.permissions,
+  };
+}
+
 router.post("/auth/register", async (req, res, next) => {
   try {
     const fullName = normalizeName(req.body.fullName);
     const email = normalizeEmail(req.body.email);
     const password = String(req.body.password || "");
-    const role = String(req.body.role || "student").toLowerCase();
+    const role = normalizeRole(req.body.role);
 
     if (fullName.length < 3) {
       return res.status(400).json({ status: "error", message: "Name must contain at least 3 characters" });
@@ -77,7 +94,7 @@ router.post("/auth/register", async (req, res, next) => {
       return res.status(400).json({ status: "error", message: "Password must contain at least 8 characters" });
     }
 
-    if (!ALLOWED_ROLES.has(role)) {
+    if (!role) {
       return res.status(400).json({ status: "error", message: "Invalid role" });
     }
 
@@ -96,8 +113,10 @@ router.post("/auth/register", async (req, res, next) => {
       [fullName, email, passwordHash, role]
     );
 
-    const user = sanitizeUser(insert.rows[0]);
-    await enrollDefaultCourses(user.id, role);
+    await ensureUserPrimaryRole(insert.rows[0].id, role);
+    await enrollDefaultCourses(insert.rows[0].id, role);
+
+    const user = await buildUserWithAccess(insert.rows[0]);
     const token = createAuthToken(user);
 
     return res.status(201).json({
@@ -144,7 +163,9 @@ router.post("/auth/login", async (req, res, next) => {
       return res.status(401).json({ status: "error", message: "Invalid credentials" });
     }
 
-    const user = sanitizeUser(row);
+    await ensureUserPrimaryRole(row.id, row.role);
+
+    const user = await buildUserWithAccess(row);
     const token = createAuthToken(user);
 
     return res.json({

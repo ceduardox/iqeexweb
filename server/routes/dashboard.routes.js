@@ -1,6 +1,6 @@
 const express = require("express");
 const { pool } = require("../db/pool");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requirePermission } = require("../middleware/auth");
 
 const router = express.Router();
 const ALLOWED_EVENT_TYPES = new Set(["task", "file", "discussion", "quiz"]);
@@ -140,7 +140,7 @@ function buildPrivateFiles(user) {
   ];
 }
 
-router.get("/dashboard/overview", requireAuth, async (req, res, next) => {
+router.get("/dashboard/overview", requireAuth, requirePermission("dashboard.read"), async (req, res, next) => {
   try {
     const courses = await fetchCoursesForUser(req.user);
     const timeline = await fetchTimelineForUser(req.user);
@@ -179,3 +179,4 @@ router.get("/dashboard/overview", requireAuth, async (req, res, next) => {
 });
 
 module.exports = router;
+

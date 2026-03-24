@@ -1,6 +1,6 @@
 const express = require("express");
 const { pool } = require("../db/pool");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requirePermission } = require("../middleware/auth");
 const { resolveCourseAccess } = require("../services/course-access");
 
 const router = express.Router();
@@ -51,7 +51,7 @@ async function canManageCourseEvents(user, courseId) {
   return access.exists && access.canManage;
 }
 
-router.get("/activities", requireAuth, async (req, res, next) => {
+router.get("/activities", requireAuth, requirePermission("courses.read"), async (req, res, next) => {
   try {
     const courseId = req.query.courseId ? Number(req.query.courseId) : null;
     const limit = Math.min(100, Math.max(1, Number(req.query.limit || 40)));
@@ -153,7 +153,7 @@ router.get("/activities", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/activities", requireAuth, async (req, res, next) => {
+router.post("/activities", requireAuth, requirePermission("activities.manage"), async (req, res, next) => {
   try {
     if (req.user.role !== "admin" && req.user.role !== "teacher") {
       return res.status(403).json({ status: "error", message: "You are not allowed to create activities" });
@@ -220,7 +220,7 @@ router.post("/activities", requireAuth, async (req, res, next) => {
   }
 });
 
-router.patch("/activities/:activityId", requireAuth, async (req, res, next) => {
+router.patch("/activities/:activityId", requireAuth, requirePermission("activities.manage"), async (req, res, next) => {
   try {
     const activityId = Number(req.params.activityId);
     if (!Number.isInteger(activityId) || activityId <= 0) {
@@ -327,7 +327,7 @@ router.patch("/activities/:activityId", requireAuth, async (req, res, next) => {
   }
 });
 
-router.delete("/activities/:activityId", requireAuth, async (req, res, next) => {
+router.delete("/activities/:activityId", requireAuth, requirePermission("activities.manage"), async (req, res, next) => {
   try {
     const activityId = Number(req.params.activityId);
     if (!Number.isInteger(activityId) || activityId <= 0) {
@@ -369,3 +369,4 @@ router.delete("/activities/:activityId", requireAuth, async (req, res, next) => 
 });
 
 module.exports = router;
+

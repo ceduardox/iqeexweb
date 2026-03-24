@@ -1,5 +1,6 @@
 const { pool } = require("../db/pool");
 const { verifyAuthToken } = require("../auth/token");
+const { getUserAccess, userHasPermission, userHasAnyPermission } = require("../services/rbac");
 
 function sanitizeUser(row) {
   return {
@@ -48,15 +49,60 @@ async function requireAuth(req, res, next) {
       return res.status(403).json({ status: "error", message: "Account is inactive" });
     }
 
+    const roleContext = await getUserAccess(row.id, row.role);
+
     req.auth = claims;
-    req.user = sanitizeUser(row);
+    req.user = {
+      ...sanitizeUser(row),
+      role: roleContext.primaryRole || row.role,
+      primaryRole: roleContext.primaryRole || row.role,
+      roles: roleContext.roles,
+      permissions: roleContext.permissions,
+    };
+
     return next();
   } catch (error) {
     return res.status(401).json({ status: "error", message: error.message || "Invalid auth token" });
   }
 }
 
+function requirePermission(permissionCode) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ status: "error", message: "Missing authenticated user" });
+    }
+
+    if (userHasPermission(req.user, permissionCode)) {
+      return next();
+    }
+
+    return res.status(403).json({
+      status: "error",
+      message: `Missing permission: ${permissionCode}`,
+    });
+  };
+}
+
+function requireAnyPermission(permissionCodes) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ status: "error", message: "Missing authenticated user" });
+    }
+
+    if (userHasAnyPermission(req.user, permissionCodes)) {
+      return next();
+    }
+
+    return res.status(403).json({
+      status: "error",
+      message: "Missing required permission",
+    });
+  };
+}
+
 module.exports = {
   requireAuth,
+  requirePermission,
+  requireAnyPermission,
   sanitizeUser,
 };
