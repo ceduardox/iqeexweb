@@ -57,7 +57,7 @@ Estado actual:
 - Smoke test E2E completado (registro -> cursos -> modulos -> marcar leccion -> progreso sube de 0 a 25 en entorno local con Railway).
 - Pendiente en este bloque: algoritmo de "continuar donde quedo" por leccion exacta y eventos de tiempo por reproduccion real de video.
 
-## Bloque 4: Quizzes y tareas
+## Bloque 4 (hecho base): Quizzes y tareas
 Alcance:
 - Quizzes de opcion multiple + V/F + respuesta corta.
 - Intentos y puntaje.
@@ -67,6 +67,13 @@ Pruebas minimas:
 - Profesor crea quiz.
 - Alumno responde intento.
 - Profesor revisa resultados.
+
+Estado actual:
+- Backend implementado: `quizzes`, `quiz_questions`, `quiz_attempts`, `quiz_attempt_answers`.
+- API implementada para crear quiz, crear/eliminar preguntas, rendir intento y revisar resultados.
+- Frontend implementado en tab `Quizzes` con flujo completo profesor/alumno.
+- Smoke test E2E completado (profesor crea quiz + pregunta, alumno responde, profesor ve resultado con score 100%).
+- Pendiente en este bloque: tareas abiertas, banco de preguntas reusable, limites de intento/temporizador estrictos y retroalimentacion avanzada.
 
 ## Bloque 5: UX premium y hardening
 Alcance:

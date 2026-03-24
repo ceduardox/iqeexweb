@@ -8,6 +8,7 @@ const coursesRoutes = require("./routes/courses.routes");
 const activitiesRoutes = require("./routes/activities.routes");
 const modulesRoutes = require("./routes/modules.routes");
 const progressRoutes = require("./routes/progress.routes");
+const quizzesRoutes = require("./routes/quizzes.routes");
 const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/api", coursesRoutes);
 app.use("/api", activitiesRoutes);
 app.use("/api", modulesRoutes);
 app.use("/api", progressRoutes);
+app.use("/api", quizzesRoutes);
 app.use("/api", adminRoutes);
 
 app.use("/dashboard", express.static(dashboardDist));

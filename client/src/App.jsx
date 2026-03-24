@@ -112,6 +112,24 @@ const EMPTY_LESSON_FORM = {
   isPublished: true,
 }
 
+const EMPTY_QUIZ_FORM = {
+  title: '',
+  description: '',
+  passingScore: 70,
+  timeLimitMinutes: 20,
+  allowMultipleAttempts: true,
+  isPublished: true,
+}
+
+const EMPTY_QUESTION_FORM = {
+  prompt: '',
+  questionType: 'multiple_choice',
+  optionsText: 'Opcion A\nOpcion B\nOpcion C',
+  correctAnswer: '',
+  points: 1,
+  sortOrder: 1,
+}
+
 function parseStoredJson(key) {
   try {
     const raw = localStorage.getItem(key)
@@ -242,8 +260,18 @@ function DashboardWorkspace() {
   const [activityForm, setActivityForm] = useState(EMPTY_ACTIVITY_FORM)
   const [moduleForm, setModuleForm] = useState(EMPTY_MODULE_FORM)
   const [lessonForm, setLessonForm] = useState(EMPTY_LESSON_FORM)
+  const [quizForm, setQuizForm] = useState(EMPTY_QUIZ_FORM)
+  const [questionForm, setQuestionForm] = useState(EMPTY_QUESTION_FORM)
   const [courseModules, setCourseModules] = useState([])
   const [selectedModuleId, setSelectedModuleId] = useState(null)
+  const [courseQuizzes, setCourseQuizzes] = useState([])
+  const [selectedQuizId, setSelectedQuizId] = useState(null)
+  const [quizQuestions, setQuizQuestions] = useState([])
+  const [quizAttemptDraft, setQuizAttemptDraft] = useState({})
+  const [quizResultsRows, setQuizResultsRows] = useState([])
+  const [quizResultsSummary, setQuizResultsSummary] = useState(null)
+  const [myQuizAttempts, setMyQuizAttempts] = useState([])
+  const [quizLoading, setQuizLoading] = useState(false)
   const [myCourseProgress, setMyCourseProgress] = useState(null)
   const [lessonProgressMap, setLessonProgressMap] = useState({})
   const [courseProgressRows, setCourseProgressRows] = useState([])
@@ -280,6 +308,11 @@ function DashboardWorkspace() {
     if (!selectedModuleId) return null
     return courseModules.find((module) => Number(module.id) === Number(selectedModuleId)) || null
   }, [courseModules, selectedModuleId])
+
+  const selectedQuiz = useMemo(() => {
+    if (!selectedQuizId) return null
+    return courseQuizzes.find((quiz) => Number(quiz.id) === Number(selectedQuizId)) || null
+  }, [courseQuizzes, selectedQuizId])
 
   const hasPermission = (permissionCode) => {
     if (!user) return false
@@ -450,6 +483,83 @@ function DashboardWorkspace() {
     if (!modules.some((module) => Number(module.id) === Number(selectedModuleId))) {
       setSelectedModuleId(modules[0].id)
     }
+  }
+
+  async function refreshCourseQuizzes(authToken, courseId) {
+    if (!courseId) {
+      setCourseQuizzes([])
+      setSelectedQuizId(null)
+      setQuizQuestions([])
+      setQuizAttemptDraft({})
+      setQuizResultsRows([])
+      setQuizResultsSummary(null)
+      setMyQuizAttempts([])
+      return
+    }
+
+    setQuizLoading(true)
+    try {
+      const response = await apiRequest(`/api/courses/${courseId}/quizzes?includeUnpublished=true`, authToken, { method: 'GET' })
+      const quizzes = response.quizzes || []
+      setCourseQuizzes(quizzes)
+
+      if (quizzes.length === 0) {
+        setSelectedQuizId(null)
+        setQuizQuestions([])
+        setQuizAttemptDraft({})
+        setQuizResultsRows([])
+        setQuizResultsSummary(null)
+        setMyQuizAttempts([])
+        return
+      }
+
+      const found = quizzes.some((quiz) => Number(quiz.id) === Number(selectedQuizId))
+      const quizId = found ? selectedQuizId : quizzes[0].id
+      if (!found) {
+        setSelectedQuizId(quizId)
+      }
+    } finally {
+      setQuizLoading(false)
+    }
+  }
+
+  async function loadQuizDetails(authToken, quizId) {
+    if (!quizId) {
+      setQuizQuestions([])
+      setQuizAttemptDraft({})
+      return
+    }
+
+    const response = await apiRequest(`/api/quizzes/${quizId}`, authToken, { method: 'GET' })
+    const questions = Array.isArray(response.questions) ? response.questions : []
+    setQuizQuestions(questions)
+
+    setQuestionForm((prev) => {
+      const nextSort = questions.length + 1
+      return { ...prev, sortOrder: nextSort > 0 ? nextSort : 1 }
+    })
+  }
+
+  async function loadMyQuizAttempts(authToken, quizId) {
+    if (!quizId) {
+      setMyQuizAttempts([])
+      return
+    }
+
+    const response = await apiRequest(`/api/quizzes/${quizId}/my-attempts`, authToken, { method: 'GET' })
+    setMyQuizAttempts(Array.isArray(response.attempts) ? response.attempts : [])
+  }
+
+  async function loadQuizResults(authToken, quizId) {
+    if (!quizId || !canReadReports || !canManageSelectedCourse) {
+      setQuizResultsRows([])
+      setQuizResultsSummary(null)
+      return
+    }
+
+    const response = await apiRequest(`/api/quizzes/${quizId}/results`, authToken, { method: 'GET' })
+    setQuizResultsRows(Array.isArray(response.rows) ? response.rows : [])
+    setQuizResultsSummary(response.summary || null)
   }
 
   async function loadMyCourseProgress(authToken, courseId) {
@@ -643,6 +753,10 @@ function DashboardWorkspace() {
           await loadCourseProgressOverview(token, selectedCourseId)
         }
 
+        if (managerTab === 'quizzes') {
+          await refreshCourseQuizzes(token, selectedCourseId)
+        }
+
         if (managerTab === 'users' && canReadUsers) {
           await loadAdminUsers(token)
         }
@@ -661,6 +775,44 @@ function DashboardWorkspace() {
       cancelled = true
     }
   }, [status, token, activeSection, managerTab, canReadUsers, canReadRoles, selectedCourseId, canReadReports, canManageSelectedCourse])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadQuizWorkspace() {
+      if (status !== 'ready' || !token || activeSection !== 'content-bank' || managerTab !== 'quizzes') {
+        return
+      }
+
+      if (!selectedQuizId) {
+        setQuizQuestions([])
+        setQuizAttemptDraft({})
+        setMyQuizAttempts([])
+        setQuizResultsRows([])
+        setQuizResultsSummary(null)
+        return
+      }
+
+      setQuizLoading(true)
+      try {
+        await loadQuizDetails(token, selectedQuizId)
+        await loadMyQuizAttempts(token, selectedQuizId)
+        await loadQuizResults(token, selectedQuizId)
+      } catch (error) {
+        if (cancelled) return
+        messageApi.error(error.message || 'No se pudo cargar la informacion del quiz')
+      } finally {
+        if (!cancelled) {
+          setQuizLoading(false)
+        }
+      }
+    }
+
+    loadQuizWorkspace()
+    return () => {
+      cancelled = true
+    }
+  }, [status, token, activeSection, managerTab, selectedQuizId, canReadReports, canManageSelectedCourse])
 
   useEffect(() => {
     const current = rolePermissionsMap[selectedRoleCode]
@@ -708,6 +860,14 @@ function DashboardWorkspace() {
 
   function onLessonFieldChange(field, value) {
     setLessonForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function onQuizFieldChange(field, value) {
+    setQuizForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function onQuestionFieldChange(field, value) {
+    setQuestionForm((prev) => ({ ...prev, [field]: value }))
   }
 
   async function onCreateModule() {
@@ -865,6 +1025,125 @@ function DashboardWorkspace() {
       messageApi.success(isCompleted ? 'Leccion completada' : 'Leccion marcada como pendiente')
     } catch (error) {
       messageApi.error(error.message || 'No se pudo actualizar el progreso de la leccion')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onCreateQuiz() {
+    if (!token || !selectedCourse || !canManageSelectedCourse) return
+    setBusyAction('quiz-create')
+    try {
+      const response = await apiRequest(`/api/courses/${selectedCourse.id}/quizzes`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: quizForm.title,
+          description: quizForm.description,
+          passingScore: Number(quizForm.passingScore),
+          timeLimitMinutes: Number(quizForm.timeLimitMinutes),
+          allowMultipleAttempts: Boolean(quizForm.allowMultipleAttempts),
+          isPublished: Boolean(quizForm.isPublished),
+        }),
+      })
+
+      await refreshCourseQuizzes(token, selectedCourse.id)
+      if (response.quiz?.id) {
+        setSelectedQuizId(response.quiz.id)
+      }
+      setQuizForm(EMPTY_QUIZ_FORM)
+      messageApi.success('Quiz creado')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo crear el quiz')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onCreateQuizQuestion() {
+    if (!token || !selectedQuiz || !canManageSelectedCourse) return
+    setBusyAction('quiz-question-create')
+    try {
+      const options =
+        questionForm.questionType === 'multiple_choice'
+          ? String(questionForm.optionsText || '')
+              .split(/\r?\n/)
+              .map((row) => row.trim())
+              .filter(Boolean)
+          : []
+
+      await apiRequest(`/api/quizzes/${selectedQuiz.id}/questions`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          prompt: questionForm.prompt,
+          questionType: questionForm.questionType,
+          options,
+          correctAnswer: questionForm.correctAnswer,
+          points: Number(questionForm.points),
+          sortOrder: Number(questionForm.sortOrder),
+        }),
+      })
+
+      await loadQuizDetails(token, selectedQuiz.id)
+      await refreshCourseQuizzes(token, selectedCourse.id)
+      setQuestionForm({
+        ...EMPTY_QUESTION_FORM,
+        sortOrder: (quizQuestions.length || 0) + 2,
+      })
+      messageApi.success('Pregunta agregada')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo agregar la pregunta')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onDeleteQuizQuestion(question) {
+    if (!token || !selectedQuiz || !question || !canManageSelectedCourse) return
+    if (!window.confirm('Eliminar esta pregunta?')) return
+
+    setBusyAction(`quiz-question-delete-${question.id}`)
+    try {
+      await apiRequest(`/api/questions/${question.id}`, token, { method: 'DELETE' })
+      await loadQuizDetails(token, selectedQuiz.id)
+      await refreshCourseQuizzes(token, selectedCourse.id)
+      messageApi.success('Pregunta eliminada')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo eliminar la pregunta')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  function onQuizAnswerChange(questionId, answer) {
+    setQuizAttemptDraft((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }))
+  }
+
+  async function onSubmitQuizAttempt() {
+    if (!token || !selectedQuiz) return
+    setBusyAction('quiz-attempt-submit')
+    try {
+      const responses = quizQuestions.map((question) => ({
+        questionId: question.id,
+        answer: quizAttemptDraft[question.id] || '',
+      }))
+
+      const response = await apiRequest(`/api/quizzes/${selectedQuiz.id}/attempts`, token, {
+        method: 'POST',
+        body: JSON.stringify({ responses }),
+      })
+
+      await loadMyQuizAttempts(token, selectedQuiz.id)
+      await loadQuizResults(token, selectedQuiz.id)
+      await loadQuizDetails(token, selectedQuiz.id)
+      setQuizAttemptDraft({})
+
+      const score = response.attempt?.scorePercent
+      messageApi.success(`Intento enviado (${Number(score || 0)}%)`)
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo enviar el intento')
     } finally {
       setBusyAction('')
     }
@@ -1440,6 +1719,109 @@ function DashboardWorkspace() {
     },
   ]
 
+  const quizQuestionColumns = [
+    {
+      title: 'Pregunta',
+      dataIndex: 'prompt',
+      key: 'prompt',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">
+            Tipo: {row.questionType} | Puntos: {row.points}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Orden',
+      dataIndex: 'sortOrder',
+      key: 'sortOrder',
+      width: 90,
+    },
+    {
+      title: 'Opciones',
+      key: 'options',
+      width: 230,
+      render: (_, row) =>
+        Array.isArray(row.options) && row.options.length > 0 ? (
+          <Space wrap>
+            {row.options.map((option) => (
+              <Tag key={option}>{option}</Tag>
+            ))}
+          </Space>
+        ) : (
+          <Text type="secondary">Respuesta abierta</Text>
+        ),
+    },
+    {
+      title: 'Accion',
+      key: 'action',
+      width: 140,
+      render: (_, row) => (
+        <Button
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          disabled={!canManageSelectedCourse || busyAction === `quiz-question-delete-${row.id}`}
+          loading={busyAction === `quiz-question-delete-${row.id}`}
+          onClick={() => onDeleteQuizQuestion(row)}
+        >
+          Eliminar
+        </Button>
+      ),
+    },
+  ]
+
+  const myQuizAttemptColumns = [
+    {
+      title: 'Intento',
+      dataIndex: 'id',
+      key: 'id',
+      width: 90,
+    },
+    {
+      title: 'Puntaje',
+      key: 'score',
+      width: 180,
+      render: (_, row) => `${row.scorePoints}/${row.totalPoints} (${row.scorePercent}%)`,
+    },
+    {
+      title: 'Fecha',
+      dataIndex: 'submittedAt',
+      key: 'submittedAt',
+      width: 220,
+      render: (value, row) => formatDateTime(value || row.createdAt),
+    },
+  ]
+
+  const quizResultsColumns = [
+    {
+      title: 'Alumno',
+      dataIndex: 'fullName',
+      key: 'fullName',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">{row.email}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Puntaje',
+      key: 'score',
+      width: 200,
+      render: (_, row) => `${row.scorePoints}/${row.totalPoints} (${row.scorePercent}%)`,
+    },
+    {
+      title: 'Fecha',
+      dataIndex: 'submittedAt',
+      key: 'submittedAt',
+      width: 220,
+      render: (value, row) => formatDateTime(value || row.createdAt),
+    },
+  ]
+
   const userColumns = [
     {
       title: 'Usuario',
@@ -1749,6 +2131,7 @@ function DashboardWorkspace() {
                       { label: 'Actividades', value: 'activities' },
                       { label: 'Modulos', value: 'modules' },
                       { label: 'Progreso', value: 'progress' },
+                      { label: 'Quizzes', value: 'quizzes' },
                       { label: 'Usuarios', value: 'users' },
                       { label: 'Roles y Permisos', value: 'roles' },
                     ]}
@@ -2252,6 +2635,291 @@ function DashboardWorkspace() {
                   ) : (
                     <Card>
                       <Empty description="Selecciona un curso para ver progreso" />
+                    </Card>
+                  )
+                ) : null}
+
+                {managerTab === 'quizzes' ? (
+                  selectedCourse ? (
+                    <Row gutter={[16, 16]}>
+                      <Col xs={24} xl={8}>
+                        <Card
+                          title={`Quizzes de ${selectedCourse.title}`}
+                          extra={(
+                            <Button icon={<ReloadOutlined />} loading={quizLoading} onClick={() => refreshCourseQuizzes(token, selectedCourse.id)}>
+                              Recargar
+                            </Button>
+                          )}
+                        >
+                          <Table
+                            rowKey="id"
+                            loading={quizLoading}
+                            dataSource={courseQuizzes}
+                            pagination={{ pageSize: 6, hideOnSinglePage: true }}
+                            onRow={(record) => ({
+                              onClick: () => setSelectedQuizId(record.id),
+                            })}
+                            rowClassName={(record) => (Number(record.id) === Number(selectedQuizId) ? 'selected-row' : '')}
+                            locale={{ emptyText: 'Sin quizzes' }}
+                            columns={[
+                              {
+                                title: 'Quiz',
+                                dataIndex: 'title',
+                                key: 'title',
+                                render: (value, row) => (
+                                  <Space direction="vertical" size={0}>
+                                    <Text strong>{value}</Text>
+                                    <Text type="secondary">
+                                      Preguntas: {row.questionCount || 0} | Intentos: {row.attemptCount || 0}
+                                    </Text>
+                                  </Space>
+                                ),
+                              },
+                            ]}
+                          />
+                        </Card>
+
+                        {canManageSelectedCourse ? (
+                          <Card title="Crear quiz" style={{ marginTop: 16 }}>
+                            <Space direction="vertical" size={10} style={{ display: 'flex' }}>
+                              <Input
+                                placeholder="Titulo del quiz"
+                                value={quizForm.title}
+                                onChange={(event) => onQuizFieldChange('title', event.target.value)}
+                              />
+                              <Input.TextArea
+                                rows={3}
+                                placeholder="Descripcion"
+                                value={quizForm.description}
+                                onChange={(event) => onQuizFieldChange('description', event.target.value)}
+                              />
+                              <InputNumber
+                                style={{ width: '100%' }}
+                                min={0}
+                                max={100}
+                                value={quizForm.passingScore}
+                                onChange={(value) => onQuizFieldChange('passingScore', value ?? 70)}
+                                addonBefore="Nota minima"
+                                addonAfter="%"
+                              />
+                              <InputNumber
+                                style={{ width: '100%' }}
+                                min={0}
+                                value={quizForm.timeLimitMinutes}
+                                onChange={(value) => onQuizFieldChange('timeLimitMinutes', value ?? 0)}
+                                addonBefore="Limite"
+                                addonAfter="min"
+                              />
+                              <Space>
+                                <Text>Multiples intentos</Text>
+                                <Switch checked={Boolean(quizForm.allowMultipleAttempts)} onChange={(checked) => onQuizFieldChange('allowMultipleAttempts', checked)} />
+                              </Space>
+                              <Space>
+                                <Text>Publicado</Text>
+                                <Switch checked={Boolean(quizForm.isPublished)} onChange={(checked) => onQuizFieldChange('isPublished', checked)} />
+                              </Space>
+                              <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                loading={busyAction === 'quiz-create'}
+                                onClick={onCreateQuiz}
+                              >
+                                Crear quiz
+                              </Button>
+                            </Space>
+                          </Card>
+                        ) : null}
+                      </Col>
+
+                      <Col xs={24} xl={16}>
+                        {selectedQuiz ? (
+                          <Space direction="vertical" size={16} style={{ display: 'flex' }}>
+                            <Card
+                              title={selectedQuiz.title}
+                              extra={(
+                                <Space>
+                                  <Tag color={selectedQuiz.isPublished ? 'green' : 'orange'}>{selectedQuiz.isPublished ? 'Publicado' : 'Borrador'}</Tag>
+                                  <Tag color="blue">Minimo {selectedQuiz.passingScore}%</Tag>
+                                </Space>
+                              )}
+                            >
+                              <Space direction="vertical" size={8} style={{ display: 'flex' }}>
+                                <Text type="secondary">{selectedQuiz.description || 'Sin descripcion'}</Text>
+                                <Row gutter={[12, 12]}>
+                                  <Col xs={24} md={8}>
+                                    <Statistic title="Preguntas" value={quizQuestions.length} />
+                                  </Col>
+                                  <Col xs={24} md={8}>
+                                    <Statistic title="Intentos mios" value={myQuizAttempts.length} />
+                                  </Col>
+                                  <Col xs={24} md={8}>
+                                    <Statistic
+                                      title="Mejor puntaje"
+                                      value={myQuizAttempts.length > 0 ? Math.max(...myQuizAttempts.map((row) => Number(row.scorePercent || 0))) : 0}
+                                      suffix="%"
+                                    />
+                                  </Col>
+                                </Row>
+                              </Space>
+                            </Card>
+
+                            <Card title="Preguntas">
+                              <Table
+                                rowKey="id"
+                                dataSource={quizQuestions}
+                                pagination={{ pageSize: 6, hideOnSinglePage: true }}
+                                columns={canManageSelectedCourse ? quizQuestionColumns : quizQuestionColumns.filter((column) => column.key !== 'action')}
+                                locale={{ emptyText: 'Este quiz no tiene preguntas' }}
+                              />
+                            </Card>
+
+                            {canManageSelectedCourse ? (
+                              <Card title="Agregar pregunta">
+                                <Space direction="vertical" size={10} style={{ display: 'flex' }}>
+                                  <Input.TextArea
+                                    rows={3}
+                                    placeholder="Enunciado de la pregunta"
+                                    value={questionForm.prompt}
+                                    onChange={(event) => onQuestionFieldChange('prompt', event.target.value)}
+                                  />
+                                  <Select
+                                    value={questionForm.questionType}
+                                    onChange={(value) => onQuestionFieldChange('questionType', value)}
+                                    options={[
+                                      { label: 'Multiple choice', value: 'multiple_choice' },
+                                      { label: 'Verdadero/Falso', value: 'true_false' },
+                                      { label: 'Respuesta corta', value: 'short_answer' },
+                                    ]}
+                                  />
+                                  {questionForm.questionType === 'multiple_choice' ? (
+                                    <Input.TextArea
+                                      rows={4}
+                                      placeholder={'Opciones (una por linea)'}
+                                      value={questionForm.optionsText}
+                                      onChange={(event) => onQuestionFieldChange('optionsText', event.target.value)}
+                                    />
+                                  ) : null}
+                                  <Input
+                                    placeholder={questionForm.questionType === 'true_false' ? 'true o false' : 'Respuesta correcta'}
+                                    value={questionForm.correctAnswer}
+                                    onChange={(event) => onQuestionFieldChange('correctAnswer', event.target.value)}
+                                  />
+                                  <Row gutter={[10, 10]}>
+                                    <Col xs={24} md={12}>
+                                      <InputNumber
+                                        style={{ width: '100%' }}
+                                        min={1}
+                                        value={questionForm.points}
+                                        onChange={(value) => onQuestionFieldChange('points', value ?? 1)}
+                                        addonBefore="Puntos"
+                                      />
+                                    </Col>
+                                    <Col xs={24} md={12}>
+                                      <InputNumber
+                                        style={{ width: '100%' }}
+                                        min={1}
+                                        value={questionForm.sortOrder}
+                                        onChange={(value) => onQuestionFieldChange('sortOrder', value ?? 1)}
+                                        addonBefore="Orden"
+                                      />
+                                    </Col>
+                                  </Row>
+                                  <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    loading={busyAction === 'quiz-question-create'}
+                                    onClick={onCreateQuizQuestion}
+                                  >
+                                    Guardar pregunta
+                                  </Button>
+                                </Space>
+                              </Card>
+                            ) : null}
+
+                            <Card title="Resolver quiz">
+                              {quizQuestions.length > 0 ? (
+                                <Space direction="vertical" size={12} style={{ display: 'flex' }}>
+                                  {quizQuestions.map((question, index) => (
+                                    <Card key={question.id} size="small" title={`${index + 1}. ${question.prompt}`}>
+                                      <Space direction="vertical" size={8} style={{ display: 'flex' }}>
+                                        <Text type="secondary">Puntos: {question.points}</Text>
+                                        {question.questionType === 'short_answer' ? (
+                                          <Input
+                                            placeholder="Tu respuesta"
+                                            value={quizAttemptDraft[question.id] || ''}
+                                            onChange={(event) => onQuizAnswerChange(question.id, event.target.value)}
+                                          />
+                                        ) : (
+                                          <Select
+                                            value={quizAttemptDraft[question.id]}
+                                            placeholder="Selecciona una respuesta"
+                                            options={(Array.isArray(question.options) ? question.options : []).map((option) => ({
+                                              label: option,
+                                              value: option,
+                                            }))}
+                                            onChange={(value) => onQuizAnswerChange(question.id, value)}
+                                          />
+                                        )}
+                                      </Space>
+                                    </Card>
+                                  ))}
+                                  <Button
+                                    type="primary"
+                                    icon={<EditOutlined />}
+                                    loading={busyAction === 'quiz-attempt-submit'}
+                                    onClick={onSubmitQuizAttempt}
+                                  >
+                                    Enviar intento
+                                  </Button>
+                                </Space>
+                              ) : (
+                                <Empty description="No hay preguntas para resolver" />
+                              )}
+                            </Card>
+
+                            <Card title="Mis intentos">
+                              <Table
+                                rowKey="id"
+                                dataSource={myQuizAttempts}
+                                pagination={{ pageSize: 5, hideOnSinglePage: true }}
+                                columns={myQuizAttemptColumns}
+                                locale={{ emptyText: 'Aun no tienes intentos' }}
+                              />
+                            </Card>
+
+                            {canReadReports && canManageSelectedCourse ? (
+                              <Card title="Resultados del curso">
+                                <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
+                                  <Col xs={24} md={8}>
+                                    <Statistic title="Intentos totales" value={Number(quizResultsSummary?.totalAttempts || 0)} />
+                                  </Col>
+                                  <Col xs={24} md={8}>
+                                    <Statistic title="Promedio" value={Number(quizResultsSummary?.averageScorePercent || 0)} suffix="%" />
+                                  </Col>
+                                  <Col xs={24} md={8}>
+                                    <Statistic title="Mejor puntaje" value={Number(quizResultsSummary?.bestScorePercent || 0)} suffix="%" />
+                                  </Col>
+                                </Row>
+                                <Table
+                                  rowKey="attemptId"
+                                  dataSource={quizResultsRows}
+                                  pagination={{ pageSize: 6, hideOnSinglePage: true }}
+                                  columns={quizResultsColumns}
+                                  locale={{ emptyText: 'Sin resultados aun' }}
+                                />
+                              </Card>
+                            ) : null}
+                          </Space>
+                        ) : (
+                          <Card>
+                            <Empty description="Selecciona un quiz para trabajar" />
+                          </Card>
+                        )}
+                      </Col>
+                    </Row>
+                  ) : (
+                    <Card>
+                      <Empty description="Selecciona un curso para gestionar quizzes" />
                     </Card>
                   )
                 ) : null}

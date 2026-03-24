@@ -163,6 +163,74 @@ async function createTables() {
     CREATE INDEX IF NOT EXISTS idx_course_progress_course ON course_progress (course_id);
     CREATE INDEX IF NOT EXISTS idx_course_progress_user ON course_progress (user_id);
 
+    CREATE TABLE IF NOT EXISTS quizzes (
+      id BIGSERIAL PRIMARY KEY,
+      course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      module_id BIGINT REFERENCES course_modules(id) ON DELETE SET NULL,
+      title VARCHAR(220) NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      is_published BOOLEAN NOT NULL DEFAULT TRUE,
+      passing_score INTEGER NOT NULL DEFAULT 60,
+      allow_multiple_attempts BOOLEAN NOT NULL DEFAULT TRUE,
+      time_limit_minutes INTEGER NOT NULL DEFAULT 0,
+      created_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT quizzes_passing_score_check CHECK (passing_score BETWEEN 0 AND 100),
+      CONSTRAINT quizzes_time_limit_check CHECK (time_limit_minutes >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quizzes_course ON quizzes (course_id);
+    CREATE INDEX IF NOT EXISTS idx_quizzes_module ON quizzes (module_id);
+
+    CREATE TABLE IF NOT EXISTS quiz_questions (
+      id BIGSERIAL PRIMARY KEY,
+      quiz_id BIGINT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+      prompt TEXT NOT NULL,
+      question_type VARCHAR(40) NOT NULL DEFAULT 'multiple_choice',
+      options_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+      correct_answer TEXT NOT NULL DEFAULT '',
+      points INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 1,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT quiz_questions_type_check CHECK (question_type IN ('multiple_choice', 'true_false', 'short_answer')),
+      CONSTRAINT quiz_questions_points_check CHECK (points >= 1),
+      CONSTRAINT quiz_questions_sort_order_check CHECK (sort_order >= 1)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz ON quiz_questions (quiz_id, sort_order, id);
+
+    CREATE TABLE IF NOT EXISTS quiz_attempts (
+      id BIGSERIAL PRIMARY KEY,
+      quiz_id BIGINT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      score_points INTEGER NOT NULL DEFAULT 0,
+      total_points INTEGER NOT NULL DEFAULT 0,
+      score_percent INTEGER NOT NULL DEFAULT 0,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      submitted_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT quiz_attempts_score_points_check CHECK (score_points >= 0),
+      CONSTRAINT quiz_attempts_total_points_check CHECK (total_points >= 0),
+      CONSTRAINT quiz_attempts_score_percent_check CHECK (score_percent BETWEEN 0 AND 100)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quiz_attempts_quiz_user ON quiz_attempts (quiz_id, user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS quiz_attempt_answers (
+      id BIGSERIAL PRIMARY KEY,
+      attempt_id BIGINT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+      question_id BIGINT NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
+      answer_text TEXT NOT NULL DEFAULT '',
+      is_correct BOOLEAN NOT NULL DEFAULT FALSE,
+      earned_points INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT quiz_attempt_answers_unique UNIQUE (attempt_id, question_id),
+      CONSTRAINT quiz_attempt_answers_earned_points_check CHECK (earned_points >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_quiz_attempt_answers_attempt ON quiz_attempt_answers (attempt_id);
     CREATE TABLE IF NOT EXISTS activity_events (
       id BIGSERIAL PRIMARY KEY,
       course_id BIGINT REFERENCES courses(id) ON DELETE SET NULL,
@@ -248,6 +316,49 @@ async function seedCourseModulesAndLessons() {
           ($2, 'Leccion mixta', 'Texto, video y recursos combinados', 'mixed', 'Integra conceptos con ejemplos aplicados.', 20, 2, FALSE, TRUE)
       `,
       [moduleA.rows[0].id, moduleB.rows[0].id]
+    );
+  }
+}
+
+
+async function seedQuizzes() {
+  const quizCount = await pool.query("SELECT COUNT(*)::int AS total FROM quizzes");
+  if (quizCount.rows[0].total > 0) {
+    return;
+  }
+
+  const courses = await pool.query("SELECT id, code, title FROM courses ORDER BY id ASC");
+  if (courses.rowCount === 0) {
+    return;
+  }
+
+  for (const course of courses.rows) {
+    const quizInsert = await pool.query(
+      `
+        INSERT INTO quizzes (
+          course_id,
+          title,
+          description,
+          is_published,
+          passing_score,
+          allow_multiple_attempts,
+          time_limit_minutes
+        )
+        VALUES ($1, $2, $3, TRUE, 70, TRUE, 20)
+        RETURNING id
+      `,
+      [course.id, `Evaluacion inicial - ${course.title}`, "Quiz diagnostico para validar conocimientos base."]
+    );
+
+    await pool.query(
+      `
+        INSERT INTO quiz_questions (quiz_id, prompt, question_type, options_json, correct_answer, points, sort_order)
+        VALUES
+          ($1, 'Concepto principal del curso', 'multiple_choice', '["Opcion A", "Opcion B", "Opcion C"]'::jsonb, 'opcion a', 2, 1),
+          ($1, 'Este curso requiere practica continua', 'true_false', '["true", "false"]'::jsonb, 'true', 1, 2),
+          ($1, 'Escribe una palabra clave del curso', 'short_answer', '[]'::jsonb, 'fundamentos', 2, 3)
+      `,
+      [quizInsert.rows[0].id]
     );
   }
 }
@@ -343,6 +454,7 @@ async function initDatabase() {
   await syncUserRolesFromLegacy();
   await seedCourses();
   await seedCourseModulesAndLessons();
+  await seedQuizzes();
   await seedActivityEvents();
   await seedCourseMembers();
 }
