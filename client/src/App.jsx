@@ -14,6 +14,7 @@ import {
   Layout,
   List,
   Menu,
+  Progress,
   Result,
   Row,
   Segmented,
@@ -155,6 +156,27 @@ function formatDateTime(value) {
   return date.toLocaleString()
 }
 
+function formatMinutes(value) {
+  const minutes = Number(value || 0)
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return '0 min'
+  }
+
+  const wholeMinutes = Math.round(minutes)
+  const hours = Math.floor(wholeMinutes / 60)
+  const rest = wholeMinutes % 60
+
+  if (hours === 0) {
+    return `${rest} min`
+  }
+
+  if (rest === 0) {
+    return `${hours} h`
+  }
+
+  return `${hours} h ${rest} min`
+}
+
 function mapActivityRow(row) {
   const type = row.eventType || row.type || 'task'
   return {
@@ -222,6 +244,10 @@ function DashboardWorkspace() {
   const [lessonForm, setLessonForm] = useState(EMPTY_LESSON_FORM)
   const [courseModules, setCourseModules] = useState([])
   const [selectedModuleId, setSelectedModuleId] = useState(null)
+  const [myCourseProgress, setMyCourseProgress] = useState(null)
+  const [lessonProgressMap, setLessonProgressMap] = useState({})
+  const [courseProgressRows, setCourseProgressRows] = useState([])
+  const [progressLoading, setProgressLoading] = useState(false)
   const [adminUserForm, setAdminUserForm] = useState(EMPTY_ADMIN_USER_FORM)
   const [editUserForm, setEditUserForm] = useState(EMPTY_EDIT_USER_FORM)
   const [systemUsers, setSystemUsers] = useState([])
@@ -268,6 +294,8 @@ function DashboardWorkspace() {
   const canDisableUsers = hasPermission('users.disable')
   const canReadRoles = hasPermission('roles.read')
   const canManageRoles = hasPermission('roles.manage')
+  const canReadReports = hasPermission('reports.read')
+  const canManageSelectedCourse = Boolean(selectedCourse && selectedCourse.canManage)
 
   const filteredCourses = useMemo(() => {
     const needle = String(courseQuery || '').trim().toLowerCase()
@@ -404,6 +432,9 @@ function DashboardWorkspace() {
     if (!courseId) {
       setCourseModules([])
       setSelectedModuleId(null)
+      setMyCourseProgress(null)
+      setLessonProgressMap({})
+      setCourseProgressRows([])
       return
     }
 
@@ -419,6 +450,39 @@ function DashboardWorkspace() {
     if (!modules.some((module) => Number(module.id) === Number(selectedModuleId))) {
       setSelectedModuleId(modules[0].id)
     }
+  }
+
+  async function loadMyCourseProgress(authToken, courseId) {
+    if (!courseId) {
+      setMyCourseProgress(null)
+      setLessonProgressMap({})
+      return
+    }
+
+    setProgressLoading(true)
+    try {
+      const response = await apiRequest(`/api/courses/${courseId}/progress/me`, authToken, { method: 'GET' })
+      const progress = response.progress || null
+      const lessons = Array.isArray(response.lessons) ? response.lessons : []
+      const map = {}
+      for (const lesson of lessons) {
+        map[lesson.lessonId] = lesson
+      }
+      setMyCourseProgress(progress)
+      setLessonProgressMap(map)
+    } finally {
+      setProgressLoading(false)
+    }
+  }
+
+  async function loadCourseProgressOverview(authToken, courseId) {
+    if (!courseId || !canReadReports || !canManageSelectedCourse) {
+      setCourseProgressRows([])
+      return
+    }
+
+    const response = await apiRequest(`/api/courses/${courseId}/progress/overview`, authToken, { method: 'GET' })
+    setCourseProgressRows(Array.isArray(response.rows) ? response.rows : [])
   }
 
   async function refreshWorkspace(authToken, role, courseId) {
@@ -570,6 +634,13 @@ function DashboardWorkspace() {
       try {
         if (managerTab === 'modules') {
           await refreshCourseModules(token, selectedCourseId)
+          await loadMyCourseProgress(token, selectedCourseId)
+          await loadCourseProgressOverview(token, selectedCourseId)
+        }
+
+        if (managerTab === 'progress') {
+          await loadMyCourseProgress(token, selectedCourseId)
+          await loadCourseProgressOverview(token, selectedCourseId)
         }
 
         if (managerTab === 'users' && canReadUsers) {
@@ -589,7 +660,7 @@ function DashboardWorkspace() {
     return () => {
       cancelled = true
     }
-  }, [status, token, activeSection, managerTab, canReadUsers, canReadRoles, selectedCourseId])
+  }, [status, token, activeSection, managerTab, canReadUsers, canReadRoles, selectedCourseId, canReadReports, canManageSelectedCourse])
 
   useEffect(() => {
     const current = rolePermissionsMap[selectedRoleCode]
@@ -769,6 +840,31 @@ function DashboardWorkspace() {
       messageApi.success('Leccion eliminada')
     } catch (error) {
       messageApi.error(error.message || 'No se pudo eliminar la leccion')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function onToggleLessonCompletion(lesson, isCompleted) {
+    if (!token || !selectedCourse || !lesson || !user) return
+
+    const actionId = `lesson-progress-${lesson.id}`
+    setBusyAction(actionId)
+    try {
+      await apiRequest(`/api/lessons/${lesson.id}/progress`, token, {
+        method: 'POST',
+        body: JSON.stringify({
+          isCompleted: Boolean(isCompleted),
+          timeSpentMinutes: isCompleted ? Number(lesson.durationMinutes) || 0 : 0,
+        }),
+      })
+
+      await loadMyCourseProgress(token, selectedCourse.id)
+      await loadCourseProgressOverview(token, selectedCourse.id)
+      await refreshCourses(token, user.role)
+      messageApi.success(isCompleted ? 'Leccion completada' : 'Leccion marcada como pendiente')
+    } catch (error) {
+      messageApi.error(error.message || 'No se pudo actualizar el progreso de la leccion')
     } finally {
       setBusyAction('')
     }
@@ -1254,6 +1350,28 @@ function DashboardWorkspace() {
       width: 90,
     },
     {
+      title: 'Mi avance',
+      key: 'myProgress',
+      width: 270,
+      render: (_, row) => {
+        const progressRow = lessonProgressMap[row.id]
+        const isCompleted = Boolean(progressRow?.isCompleted)
+        return (
+          <Space>
+            <Tag color={isCompleted ? 'green' : 'default'}>{isCompleted ? 'Completada' : 'Pendiente'}</Tag>
+            <Button
+              size="small"
+              type={isCompleted ? 'default' : 'primary'}
+              loading={busyAction === `lesson-progress-${row.id}`}
+              onClick={() => onToggleLessonCompletion(row, !isCompleted)}
+            >
+              {isCompleted ? 'Marcar pendiente' : 'Completar'}
+            </Button>
+          </Space>
+        )
+      },
+    },
+    {
       title: 'Acciones',
       key: 'actions',
       width: 190,
@@ -1278,6 +1396,47 @@ function DashboardWorkspace() {
           </Button>
         </Space>
       ),
+    },
+  ]
+
+  const progressOverviewColumns = [
+    {
+      title: 'Usuario',
+      dataIndex: 'fullName',
+      key: 'fullName',
+      render: (value, row) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{value}</Text>
+          <Text type="secondary">{row.email}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Rol',
+      dataIndex: 'memberRole',
+      key: 'memberRole',
+      width: 130,
+      render: (value) => <Tag color="blue">{value}</Tag>,
+    },
+    {
+      title: 'Lecciones',
+      key: 'lessons',
+      width: 150,
+      render: (_, row) => `${row.completedLessons}/${row.totalLessons}`,
+    },
+    {
+      title: 'Avance',
+      dataIndex: 'progressPercent',
+      key: 'progressPercent',
+      width: 260,
+      render: (value) => <Progress percent={Number(value || 0)} size="small" />,
+    },
+    {
+      title: 'Ultima actualizacion',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      width: 220,
+      render: (value) => formatDateTime(value),
     },
   ]
 
@@ -1381,7 +1540,6 @@ function DashboardWorkspace() {
   }
 
   const canCreateCourse = user.role === 'admin' || user.role === 'teacher'
-  const canManageSelectedCourse = Boolean(selectedCourse && selectedCourse.canManage)
 
   return (
     <div className="app-shell">
@@ -1590,6 +1748,7 @@ function DashboardWorkspace() {
                       { label: 'Miembros', value: 'members' },
                       { label: 'Actividades', value: 'activities' },
                       { label: 'Modulos', value: 'modules' },
+                      { label: 'Progreso', value: 'progress' },
                       { label: 'Usuarios', value: 'users' },
                       { label: 'Roles y Permisos', value: 'roles' },
                     ]}
@@ -2010,6 +2169,89 @@ function DashboardWorkspace() {
                   ) : (
                     <Card>
                       <Empty description="Selecciona un curso para gestionar modulos y lecciones" />
+                    </Card>
+                  )
+                ) : null}
+
+                {managerTab === 'progress' ? (
+                  selectedCourse ? (
+                    <Space direction="vertical" size={16} style={{ display: 'flex' }}>
+                      <Card
+                        title={`Mi progreso en ${selectedCourse.title}`}
+                        extra={(
+                          <Button
+                            icon={<ReloadOutlined />}
+                            loading={progressLoading}
+                            onClick={async () => {
+                              await loadMyCourseProgress(token, selectedCourse.id)
+                              await loadCourseProgressOverview(token, selectedCourse.id)
+                            }}
+                          >
+                            Recargar
+                          </Button>
+                        )}
+                      >
+                        <Row gutter={[16, 16]}>
+                          <Col xs={24} md={8}>
+                            <Statistic
+                              title="Porcentaje"
+                              value={Number(myCourseProgress?.progressPercent || 0)}
+                              suffix="%"
+                            />
+                          </Col>
+                          <Col xs={24} md={8}>
+                            <Statistic
+                              title="Lecciones completadas"
+                              value={`${Number(myCourseProgress?.completedLessons || 0)}/${Number(myCourseProgress?.totalLessons || 0)}`}
+                            />
+                          </Col>
+                          <Col xs={24} md={8}>
+                            <Statistic
+                              title="Tiempo invertido"
+                              value={formatMinutes(
+                                Object.values(lessonProgressMap).reduce((sum, row) => sum + Number(row?.timeSpentMinutes || 0), 0)
+                              )}
+                            />
+                          </Col>
+                        </Row>
+                        <Progress
+                          style={{ marginTop: 16 }}
+                          percent={Number(myCourseProgress?.progressPercent || 0)}
+                          status={Number(myCourseProgress?.progressPercent || 0) >= 100 ? 'success' : 'active'}
+                        />
+                        <Space size={18} style={{ marginTop: 12 }}>
+                          <Text type="secondary">Inicio: {formatDateTime(myCourseProgress?.startedAt)}</Text>
+                          <Text type="secondary">Completado: {formatDateTime(myCourseProgress?.completedAt)}</Text>
+                          <Text type="secondary">Actualizado: {formatDateTime(myCourseProgress?.updatedAt)}</Text>
+                        </Space>
+                      </Card>
+
+                      {canReadReports && canManageSelectedCourse ? (
+                        <Card
+                          title="Progreso del curso por alumno"
+                          extra={(
+                            <Button icon={<ReloadOutlined />} onClick={() => loadCourseProgressOverview(token, selectedCourse.id)}>
+                              Actualizar reporte
+                            </Button>
+                          )}
+                        >
+                          <Table
+                            rowKey="userId"
+                            dataSource={courseProgressRows}
+                            pagination={{ pageSize: 8, hideOnSinglePage: true }}
+                            columns={progressOverviewColumns}
+                            locale={{ emptyText: 'Sin datos de progreso todavia' }}
+                          />
+                        </Card>
+                      ) : (
+                        <Card>
+                          <Empty description="No tienes permiso para ver el reporte global del curso" />
+                        </Card>
+                      )}
+                    </Space>
+                  ) : (
+                    <Card>
+                      <Empty description="Selecciona un curso para ver progreso" />
                     </Card>
                   )
                 ) : null}

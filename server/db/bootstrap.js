@@ -126,6 +126,43 @@ async function createTables() {
     CREATE INDEX IF NOT EXISTS idx_module_lessons_module ON module_lessons (module_id);
     CREATE INDEX IF NOT EXISTS idx_module_lessons_order ON module_lessons (module_id, sort_order, id);
 
+    CREATE TABLE IF NOT EXISTS lesson_progress (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      lesson_id BIGINT NOT NULL REFERENCES module_lessons(id) ON DELETE CASCADE,
+      course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+      time_spent_minutes INTEGER NOT NULL DEFAULT 0,
+      last_viewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT lesson_progress_unique UNIQUE (user_id, lesson_id),
+      CONSTRAINT lesson_progress_time_spent_check CHECK (time_spent_minutes >= 0)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_course ON lesson_progress (user_id, course_id);
+    CREATE INDEX IF NOT EXISTS idx_lesson_progress_course ON lesson_progress (course_id);
+
+    CREATE TABLE IF NOT EXISTS course_progress (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      course_id BIGINT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      completed_lessons INTEGER NOT NULL DEFAULT 0,
+      total_lessons INTEGER NOT NULL DEFAULT 0,
+      progress_percent INTEGER NOT NULL DEFAULT 0,
+      started_at TIMESTAMPTZ,
+      completed_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT course_progress_unique UNIQUE (user_id, course_id),
+      CONSTRAINT course_progress_completed_check CHECK (completed_lessons >= 0),
+      CONSTRAINT course_progress_total_check CHECK (total_lessons >= 0),
+      CONSTRAINT course_progress_percent_check CHECK (progress_percent BETWEEN 0 AND 100)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_course_progress_course ON course_progress (course_id);
+    CREATE INDEX IF NOT EXISTS idx_course_progress_user ON course_progress (user_id);
+
     CREATE TABLE IF NOT EXISTS activity_events (
       id BIGSERIAL PRIMARY KEY,
       course_id BIGINT REFERENCES courses(id) ON DELETE SET NULL,

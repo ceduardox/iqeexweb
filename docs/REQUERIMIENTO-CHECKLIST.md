@@ -14,7 +14,7 @@
 - [~] B. Dashboard por rol (base funcional; faltan metricas avanzadas y widgets por rol).
 - [~] C. Gestion de cursos (CRUD base + miembros + estado publicado/archivado).
 - [~] D. Modulos y lecciones (base funcional backend+UI lista; falta editor avanzado, reorder drag/drop y preview).
-- [ ] E. Progreso del alumno (pendiente como modulo dedicado).
+- [~] E. Progreso del alumno (base funcional: progreso por leccion y por curso + reporte; faltan continuidad avanzada y analitica extendida).
 - [ ] F. Quizzes/evaluaciones/tareas (pendiente modulo completo).
 - [ ] G. Certificados (pendiente).
 - [ ] H. Biblioteca archivos/videos (pendiente).
@@ -50,8 +50,12 @@
 - [ ] Drag and drop y constructor visual avanzado.
 
 ### 4.5 Progreso alumno
-- [~] Progreso simple por miembro de curso (`progressPercent`).
-- [ ] Motor de progreso por leccion/intentos/continuar donde quedo.
+- [x] Marcar leccion como completada/pendiente desde UI.
+- [x] Persistencia `lesson_progress` y `course_progress` en base de datos.
+- [x] Calculo de porcentaje por curso en backend.
+- [x] Vista de progreso propio del alumno (porcentaje, lecciones y tiempo invertido).
+- [x] Vista de progreso por alumno para admin/profesor con permiso (`reports.read` + `canManage`).
+- [~] Continuar donde quedo y analitica de quizzes/tareas (pendiente siguiente bloque).
 
 ### 4.6 Quizzes y tareas
 - [ ] Pendiente completo.
@@ -80,8 +84,8 @@
 - [ ] Navegacion completa por rol con todas las secciones definidas.
 
 ## 7) Base de datos
-- [~] Tablas base operativas: `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `courses`, `course_members`, `course_modules`, `module_lessons`, `activity_events`.
-- [ ] Tablas LMS avanzadas pendientes (enrollments formales, progress detallado, quizzes, assignments, certificates).
+- [~] Tablas base operativas: `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `courses`, `course_members`, `course_modules`, `module_lessons`, `lesson_progress`, `course_progress`, `activity_events`.
+- [ ] Tablas LMS avanzadas pendientes (enrollments formales, quizzes, assignments, certificates).
 
 ## 8) Estructura de carpetas
 - [~] Separacion backend/frontend y rutas por modulo.
@@ -118,3 +122,11 @@
   - `PATCH /api/lessons/:lessonId`
   - `DELETE /api/lessons/:lessonId`
 - UI en panel para `Modulos` y `Lecciones`.
+- Endpoints de progreso:
+  - `GET /api/courses/:courseId/progress/me`
+  - `POST /api/lessons/:lessonId/progress`
+  - `GET /api/courses/:courseId/progress/overview`
+- UI nueva en `Gestion LMS > Progreso` con:
+  - Barra y metricas de progreso propio.
+  - Tabla de progreso por alumno (admin/profesor con permiso).
+  - Marcado rapido de leccion completada/pendiente en tabla de lecciones.

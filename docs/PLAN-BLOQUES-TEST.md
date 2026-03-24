@@ -39,7 +39,7 @@ Pruebas minimas:
 - Edicion y eliminacion de leccion sin romper curso.
 - Estado actual: cumplido en version base (pendiente drag/drop, preview avanzado y editor enriquecido).
 
-## Bloque 3: Progreso real del alumno
+## Bloque 3 (hecho base): Progreso real del alumno
 Alcance:
 - Marcar leccion completada.
 - Guardar ultima leccion vista.
@@ -50,6 +50,12 @@ Pruebas minimas:
 - Alumno completa lecciones y progreso sube.
 - Profesor ve progreso por alumno en su curso.
 - Reingreso del alumno conserva punto de continuidad.
+
+Estado actual:
+- Implementado backend (`lesson_progress`, `course_progress` + rutas `/progress/me`, `/lessons/:id/progress`, `/progress/overview`).
+- Implementado frontend (tab `Progreso`, barra de avance, reporte por alumno y acciones completar/pendiente).
+- Smoke test E2E completado (registro -> cursos -> modulos -> marcar leccion -> progreso sube de 0 a 25 en entorno local con Railway).
+- Pendiente en este bloque: algoritmo de "continuar donde quedo" por leccion exacta y eventos de tiempo por reproduccion real de video.
 
 ## Bloque 4: Quizzes y tareas
 Alcance:
