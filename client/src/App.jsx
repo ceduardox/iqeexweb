@@ -715,12 +715,16 @@ function DashboardWorkspace() {
       }
 
       try {
-        await refreshCourseDetails(token, selectedCourseId)
+        await Promise.all([
+          refreshCourseDetails(token, selectedCourseId),
+          refreshCourseQuizzes(token, selectedCourseId),
+        ])
       } catch (error) {
         if (cancelled) return
         if (error.status === 403 || error.status === 404) {
           setCourseMembers([])
           setCourseActivities([])
+          setCourseQuizzes([])
           return
         }
         messageApi.error(error.message || 'No se pudo cargar el detalle del curso')
@@ -1955,39 +1959,66 @@ function DashboardWorkspace() {
                 onChange={(event) => setCourseQuery(event.target.value)}
                 prefix={<BookOutlined />}
               />
+              <Select
+                style={{ width: '100%', marginTop: 10 }}
+                showSearch
+                placeholder="Selecciona curso activo"
+                value={selectedCourseId}
+                optionFilterProp="label"
+                onChange={(value) => setSelectedCourseId(value)}
+                options={filteredCourses.map((course) => ({
+                  label: `${course.title} - ${course.code}`,
+                  value: course.id,
+                }))}
+              />
             </div>
           ) : null}
 
           <div className="sider-section">
-            {!collapsed ? <Text className="sider-label">Cursos ({courses.length})</Text> : null}
-            <List
-              className="course-list"
-              dataSource={filteredCourses}
-              locale={{ emptyText: collapsed ? '-' : 'No hay cursos' }}
-              renderItem={(course) => {
-                const selected = Number(course.id) === Number(selectedCourseId)
-                return (
-                  <List.Item
-                    className={`course-item ${selected ? 'active' : ''}`}
-                    onClick={() => setSelectedCourseId(course.id)}
-                  >
-                    {collapsed ? (
-                      <Avatar size="small">{String(course.title || 'C').slice(0, 1).toUpperCase()}</Avatar>
-                    ) : (
-                      <div className="course-item-content">
-                        <Space direction="vertical" size={0}>
-                          <Text className="course-title">{course.title}</Text>
-                          <Text className="course-subtitle">
-                            {course.code} - {course.category}
-                          </Text>
-                        </Space>
-                        {course.isPublished === false ? <Tag color="orange">Archivado</Tag> : <Tag color="green">Activo</Tag>}
-                      </div>
-                    )}
-                  </List.Item>
-                )
-              }}
-            />
+            {!collapsed ? <Text className="sider-label">Accesos rapidos</Text> : null}
+            {!collapsed ? (
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                <div className="quick-metrics-grid">
+                  <Card size="small" className="quick-metric-card">
+                    <Text type="secondary">Cursos</Text>
+                    <Title level={5} style={{ margin: 0 }}>{courses.length}</Title>
+                  </Card>
+                  <Card size="small" className="quick-metric-card">
+                    <Text type="secondary">Alumnos</Text>
+                    <Title level={5} style={{ margin: 0 }}>{Number(selectedCourse?.memberCount || 0)}</Title>
+                  </Card>
+                  <Card size="small" className="quick-metric-card">
+                    <Text type="secondary">Quizzes</Text>
+                    <Title level={5} style={{ margin: 0 }}>{courseQuizzes.length}</Title>
+                  </Card>
+                  <Card size="small" className="quick-metric-card">
+                    <Text type="secondary">Eventos</Text>
+                    <Title level={5} style={{ margin: 0 }}>{timelineItems.length}</Title>
+                  </Card>
+                </div>
+
+                <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('courses') }}>
+                  Cursos
+                </Button>
+                <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('members') }}>
+                  Alumnos y miembros
+                </Button>
+                <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('quizzes') }}>
+                  Quizzes y evaluaciones
+                </Button>
+                <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('progress') }}>
+                  Progreso
+                </Button>
+                <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('modules') }}>
+                  Modulos y lecciones
+                </Button>
+              </Space>
+            ) : (
+              <Space direction="vertical" size={8}>
+                <Avatar size="small">{courses.length}</Avatar>
+                <Avatar size="small">{courseQuizzes.length}</Avatar>
+              </Space>
+            )}
           </div>
 
           <Menu

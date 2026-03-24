@@ -119,6 +119,43 @@
   font-size: 11px;
 }
 
+.quick-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quick-metric-card {
+  border: 1px solid #253e74 !important;
+  background: #101c37 !important;
+}
+
+.quick-metric-card .ant-card-body {
+  padding: 8px 10px !important;
+}
+
+.quick-metric-card .ant-typography {
+  color: #e6eeff;
+}
+
+.quick-metric-card .ant-typography-secondary {
+  color: #8ea2d1 !important;
+}
+
+.sider-section .ant-btn {
+  justify-content: flex-start;
+  border-color: #253e74;
+  background: #101c37;
+  color: #dbe6ff;
+}
+
+.sider-section .ant-btn:hover {
+  border-color: #4f62ff !important;
+  color: #ffffff !important;
+  background: #1a2a52 !important;
+}
+
 .lms-sider .ant-menu {
   background: transparent !important;
   border-inline-end: none !important;
