@@ -198,7 +198,7 @@ function DashLeftMenu() {
       )}>
         <Link
           className={cn("flex items-center transition-opacity hover:opacity-70", isCollapsed ? "" : "space-x-3")}
-          href={'/'}
+          href={getUriWithOrg(org.slug, '/dash')}
         >
           {plan === 'enterprise' && org?.logo_image ? (
             <img
@@ -824,7 +824,7 @@ function DashLeftMenu() {
                 </div>
                 <HoverMenuSeparator />
                 <HoverMenuItem asChild>
-                  <Link href="/account/general" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-colors">
+                  <Link href={getUriWithOrg(org?.slug, '/account/general')} className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.08] cursor-pointer transition-colors">
                     <Gear size={16} weight="fill" />
                     <span>{t('common.settings')}</span>
                   </Link>
