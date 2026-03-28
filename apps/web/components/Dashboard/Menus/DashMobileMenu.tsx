@@ -24,10 +24,10 @@ function DashMobileMenu() {
     <nav aria-label="Dashboard mobile actions" className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-lg text-white shadow-xl">
       <div className="flex justify-around items-center h-16 px-2">
         <AdminAuthorization authorizationMode="component">
-          <ToolTip content={t('common.home')} slateBlack sideOffset={8} side="top">
-            <Link href={`/`} className="flex flex-col items-center p-2" aria-label="Go to dashboard home">
+          <ToolTip content={showPlaygrounds ? 'Playgrounds' : t('common.home')} slateBlack sideOffset={8} side="top">
+            <Link href={showPlaygrounds ? `/dash/playgrounds` : `/dash`} className="flex flex-col items-center p-2" aria-label="Go to playgrounds">
               <Home size={20} />
-              <span className="text-xs mt-1">{t('common.home')}</span>
+              <span className="text-xs mt-1">{showPlaygrounds ? 'Playgrounds' : t('common.home')}</span>
             </Link>
           </ToolTip>
           <ToolTip content={t('courses.courses')} slateBlack sideOffset={8} side="top">

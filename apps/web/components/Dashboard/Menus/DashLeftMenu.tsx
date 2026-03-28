@@ -198,7 +198,7 @@ function DashLeftMenu() {
       )}>
         <Link
           className={cn("flex items-center transition-opacity hover:opacity-70", isCollapsed ? "" : "space-x-3")}
-          href={getUriWithOrg(org.slug, '/dash')}
+          href={getUriWithOrg(org.slug, '/dash/playgrounds')}
         >
           {plan === 'enterprise' && org?.logo_image ? (
             <img
@@ -249,9 +249,9 @@ function DashLeftMenu() {
         <AdminAuthorization authorizationMode="component">
           <div className="space-y-1">
             <MenuLink
-              href="/dash"
-              icon={<House size={20} weight="fill" />}
-              label={t('common.home')}
+              href={showPlaygrounds ? "/dash/playgrounds" : "/dash"}
+              icon={showPlaygrounds ? <Cube size={20} weight="fill" /> : <House size={20} weight="fill" />}
+              label={showPlaygrounds ? "Playgrounds" : t('common.home')}
               isCollapsed={isCollapsed}
             />
 
@@ -386,14 +386,6 @@ function DashLeftMenu() {
                 href="/dash/boards"
                 icon={<ChalkboardSimple size={20} weight="fill" />}
                 label="Boards"
-                isCollapsed={isCollapsed}
-              />
-            )}
-            {showPlaygrounds && (
-              <MenuLink
-                href="/dash/playgrounds"
-                icon={<Cube size={20} weight="fill" />}
-                label="Playgrounds"
                 isCollapsed={isCollapsed}
               />
             )}

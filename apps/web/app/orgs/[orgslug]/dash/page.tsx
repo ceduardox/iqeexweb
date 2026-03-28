@@ -1,6 +1,5 @@
-'use client'
-import DashboardHome from '@components/Dashboard/Home/DashboardHome'
+import { redirect } from 'next/navigation'
 
 export default function DashboardPage() {
-  return <DashboardHome />
+  redirect('/dash/playgrounds')
 }
