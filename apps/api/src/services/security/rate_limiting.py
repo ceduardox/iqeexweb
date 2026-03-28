@@ -129,7 +129,7 @@ def check_rate_limit(
         # Increment counter
         new_count = r.incr(rate_limit_key)
         return True, new_count, ttl if ttl > 0 else window_seconds
-    except redis.RedisError as exc:
+    except Exception as exc:
         # Fail open if Redis is unavailable so auth/signup don't hard-fail.
         # Security note: rate limiting is temporarily bypassed until Redis is restored.
         logger.warning("Rate limit bypassed because Redis is unavailable: %s", exc)
