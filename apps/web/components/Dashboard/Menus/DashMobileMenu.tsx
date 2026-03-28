@@ -11,11 +11,12 @@ import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 function DashMobileMenu() {
   const { t } = useTranslation()
   const org = useOrg() as any
-  const session = useLHSession() as any
+  useLHSession()
 
   // Feature visibility from API resolved_features
   const rf = org?.config?.config?.resolved_features
   const isEnabled = (feature: string) => rf?.[feature]?.enabled === true
+  const showPlaygrounds = isEnabled('playgrounds')
   const showCommunities = isEnabled('communities')
   const showPodcasts = isEnabled('podcasts')
   const showPayments = isEnabled('payments')
