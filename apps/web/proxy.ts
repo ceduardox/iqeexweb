@@ -334,6 +334,32 @@ export default async function proxy(req: NextRequest) {
     return response;
   }
 
+  // Already scoped org paths should pass through unchanged.
+  if (pathname.startsWith('/orgs/')) {
+    const response = NextResponse.rewrite(new URL(`${pathname}${search}`, req.url))
+    const pathParts = pathname.split('/').filter(Boolean)
+    const orgslugFromPath = pathParts.length >= 2 ? pathParts[1] : undefined
+
+    if (orgslugFromPath) {
+      const cookieDomain = instanceInfo.top_domain == 'localhost' ? '' : `.${instanceInfo.top_domain}`
+      response.cookies.set({
+        name: 'learnhouse_current_orgslug',
+        value: orgslugFromPath,
+        domain: cookieDomain,
+        path: '/',
+      })
+      response.cookies.set({
+        name: 'learnhouse_orgslug',
+        value: orgslugFromPath,
+        domain: cookieDomain,
+        path: '/',
+      })
+    }
+
+    setInstanceCookies(response, instanceInfo)
+    return response
+  }
+
   if (pathname === '/robots.txt') {
     let orgslug: string;
 

@@ -214,10 +214,14 @@ export const getUriWithOrg = (orgslug: string, path: string) => {
   // Client-side: prefer using current origin when appropriate
   if (typeof window !== 'undefined') {
     const multi_org = isMultiOrgModeEnabled()
+    const normalizedPath = path || ''
+    const safePath = normalizedPath
+      ? (normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`)
+      : ''
 
     // In single-org mode or on custom domain, always use current origin
     if (!multi_org || getCustomDomainFromContext()) {
-      return `${window.location.origin}${path}`
+      return `${window.location.origin}${safePath}`
     }
 
     // Multi-org mode: check if we need to change subdomains
@@ -229,16 +233,35 @@ export const getUriWithOrg = (orgslug: string, path: string) => {
     // Check if current hostname matches the target
     const expectedHostname = `${orgslug}.${baseDomain}`
 
-    if (currentHostname === expectedHostname || currentHostname === baseDomain) {
-      // Already on the right host (subdomain or base domain)
-      return `${window.location.origin}${path}`
+    if (currentHostname === expectedHostname) {
+      // Already on the right subdomain host
+      return `${window.location.origin}${safePath}`
+    }
+
+    if (currentHostname === baseDomain) {
+      // Base-domain fallback when wildcard DNS is not configured:
+      // route org-specific links under /orgs/:orgslug to stay inside LMS.
+      if (!safePath || safePath === '/') {
+        return `${window.location.origin}/orgs/${orgslug}`
+      }
+      if (safePath.startsWith('/orgs/')) {
+        return `${window.location.origin}${safePath}`
+      }
+
+      // Keep global auth/home pages without org prefix.
+      const globalPrefixes = ['/login', '/signup', '/forgot', '/reset', '/verify-email', '/auth', '/redirect_from_auth', '/home']
+      if (globalPrefixes.some((prefix) => safePath === prefix || safePath.startsWith(`${prefix}/`))) {
+        return `${window.location.origin}${safePath}`
+      }
+
+      return `${window.location.origin}/orgs/${orgslug}${safePath}`
     }
 
     // Different subdomain needed - construct URL with current port
     const protocol = window.location.protocol + '//'
     const port = window.location.port
     const portSuffix = port && port !== '80' && port !== '443' ? `:${port}` : ''
-    return `${protocol}${orgslug}.${baseDomain}${portSuffix}${path}`
+    return `${protocol}${orgslug}.${baseDomain}${portSuffix}${safePath}`
   }
 
   // Server-side fallback to config-based URL construction
