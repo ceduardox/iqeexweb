@@ -54,6 +54,7 @@ function OpenSignUpComponent() {
   const router = useRouter()
   const [error, setError] = React.useState('')
   const [message, setMessage] = React.useState('')
+  const [shouldVerifyEmail, setShouldVerifyEmail] = React.useState(false)
   const formik = useFormik({
     initialValues: {
       org_slug: org?.slug,
@@ -70,11 +71,13 @@ function OpenSignUpComponent() {
     onSubmit: async (values) => {
       setError('')
       setMessage('')
+      setShouldVerifyEmail(false)
       setIsSubmitting(true)
       let res = await signup(values)
       let message = await res.json()
       if (res.status == 200) {
         setMessage(t('auth.account_created_success'))
+        setShouldVerifyEmail(message?.email_verified === false)
         setIsSubmitting(false)
       } else if (
         res.status == 401 ||
@@ -127,10 +130,14 @@ function OpenSignUpComponent() {
         <div className="flex flex-col gap-4 bg-green-100 rounded-xl text-green-900 p-4 mb-6 nice-shadow">
           <div className="flex items-center gap-2">
             <Mail size={18} />
-            <div className="font-bold text-sm">{t('auth.check_email_for_verification')}</div>
+            <div className="font-bold text-sm">
+              {shouldVerifyEmail ? t('auth.check_email_for_verification') : t('auth.account_created_success')}
+            </div>
           </div>
           <p className="text-xs text-green-800">
-            {t('auth.verification_email_sent_message')}
+            {shouldVerifyEmail
+              ? t('auth.verification_email_sent_message')
+              : t('auth.account_created_success')}
           </p>
           <hr className="border-green-200" />
           <Link className="flex items-center gap-2 text-sm font-medium hover:underline" href="/login">
