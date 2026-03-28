@@ -299,24 +299,39 @@ export default async function proxy(req: NextRequest) {
   }
 
   // Podcast RSS Feed rewrite
-  if (pathname.match(/^\/podcast\/([^\/]+)\/feed$/)) {
-    let orgslug: string;
-    if (isCustomDomain(fullhost, instanceInfo.frontend_domain)) {
+  // Supports both:
+  // - /podcast/:podcastuuid/feed
+  // - /orgs/:orgslug/podcast/:podcastuuid/feed
+  const rootFeedMatch = pathname.match(/^\/podcast\/([^\/]+)\/feed$/)
+  const orgFeedMatch = pathname.match(/^\/orgs\/([^\/]+)\/podcast\/([^\/]+)\/feed$/)
+  if (rootFeedMatch || orgFeedMatch) {
+    const podcastuuid = rootFeedMatch ? rootFeedMatch[1] : (orgFeedMatch as RegExpMatchArray)[2]
+    let orgslug: string
+
+    if (orgFeedMatch) {
+      // Explicit org path is the source of truth.
+      orgslug = orgFeedMatch[1]
+    } else if (isCustomDomain(fullhost, instanceInfo.frontend_domain)) {
       const resolvedOrg = await getResolvedCustomDomain(fullhost as string)
       if (resolvedOrg) {
-        orgslug = resolvedOrg.slug;
+        orgslug = resolvedOrg.slug
       } else {
-        orgslug = default_org as string;
+        orgslug = default_org as string
       }
     } else if (hosting_mode === 'multi') {
-      orgslug = extractSubdomain(fullhost, instanceInfo.frontend_domain) || (default_org as string);
+      orgslug = extractSubdomain(fullhost, instanceInfo.frontend_domain) || (default_org as string)
     } else {
-      orgslug = default_org as string;
+      orgslug = default_org as string
     }
-    const feedUrl = new URL(`/api${pathname}`, req.url);
-    const response = NextResponse.rewrite(feedUrl);
-    response.headers.set('X-Feed-Orgslug', orgslug);
-    return response;
+
+    const feedUrl = new URL(`/api/podcast/${podcastuuid}/feed`, req.url)
+    if (search) {
+      feedUrl.search = search
+    }
+    const response = NextResponse.rewrite(feedUrl)
+    response.headers.set('X-Feed-Orgslug', orgslug)
+    setInstanceCookies(response, instanceInfo)
+    return response
   }
 
   if (pathname.startsWith('/sitemap.xml')) {
