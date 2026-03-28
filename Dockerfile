@@ -109,6 +109,15 @@ WORKDIR /app
 COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./apps/api/docker-entrypoint.sh /app/api/docker-entrypoint.sh
 COPY ./docker/start.sh /app/start.sh
+
+# Copy legacy IQeXponencial marketing site to serve on the root domain
+COPY ./assets /app/static/assets
+COPY ./*.html /app/static/
+COPY ./*.css /app/static/
+COPY ./*.js /app/static/
+COPY ./robots.txt /app/static/robots.txt
+COPY ./sitemap.xml /app/static/sitemap.xml
+
 RUN chmod +x /app/api/docker-entrypoint.sh /app/start.sh
 
 ENV PORT=8080 LEARNHOUSE_WEB_INTERNAL_PORT=8000 LEARNHOUSE_PORT=9000 COLLAB_PORT=4000 HOSTNAME=0.0.0.0 LEARNHOUSE_OSS=true NEXT_PUBLIC_LEARNHOUSE_OSS=true

@@ -1,0 +1,19 @@
+# IQeXponencial
+
+Website: https://iqexponencial.com/
+Language: es
+Description: Plataforma de entrenamiento cognitivo con evaluaciones, ejercicios y contenido sobre aceleracion mental.
+
+## Main Pages
+- https://iqexponencial.com/
+- https://iqexponencial.com/metodox.html
+- https://iqexponencial.com/training.html
+- https://iqexponencial.com/tests.html
+- https://iqexponencial.com/blog.html
+- https://iqexponencial.com/contacto.html
+
+## Cognitive Exercises
+- https://iqexponencial.com/atencionselectiva.html
+- https://iqexponencial.com/periferico.html
+- https://iqexponencial.com/taquistoscopia.html
+- https://iqexponencial.com/visual.html
