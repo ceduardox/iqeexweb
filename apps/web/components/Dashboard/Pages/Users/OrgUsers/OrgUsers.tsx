@@ -7,12 +7,14 @@ import Toast from '@components/Objects/StyledElements/Toast/Toast'
 import UserAvatar from '@components/Objects/UserAvatar'
 import { getAPIUrl } from '@services/config/config'
 import { removeUserFromOrg, removeUsersFromOrg, updateUserRole } from '@services/organizations/orgs'
+import { adminResetUserPassword, updateUserProfile } from '@services/users/users'
 import { swrFetcher } from '@services/utils/ts/requests'
-import { LogOut, Search, ChevronLeft, ChevronRight, Shield, User, Crown, Users, CheckCircle2, XCircle, Mail, Globe, ArrowUpDown, ArrowUp, ArrowDown, X, Filter } from 'lucide-react'
+import { LogOut, Search, ChevronLeft, ChevronRight, Shield, User, Crown, Users, CheckCircle2, XCircle, Mail, Globe, ArrowUpDown, ArrowUp, ArrowDown, X, Filter, Pencil, KeyRound } from 'lucide-react'
 import React, { useState, useCallback, useRef, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import useSWR, { mutate } from 'swr'
 import { useTranslation } from 'react-i18next'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -52,6 +54,20 @@ function OrgUsers() {
   const [filterRole, setFilterRole] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [filterGroupId, setFilterGroupId] = useState<string>('')
+  const [editingUser, setEditingUser] = useState<any | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editForm, setEditForm] = useState({
+    username: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+  })
+  const [passwordForm, setPasswordForm] = useState({
+    new_password: '',
+    confirm_password: '',
+  })
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
 
   // Track whether revalidation on focus is allowed
   const revalidateRef = useRef(shouldRevalidate)
@@ -209,6 +225,86 @@ function OrgUsers() {
     setter(value === 'all' ? '' : value)
     setPage(1)
     setSelectedUserIds(new Set())
+  }
+
+  const openEditModal = (userRow: any) => {
+    setEditingUser(userRow)
+    setEditForm({
+      username: userRow?.user?.username || '',
+      first_name: userRow?.user?.first_name || '',
+      last_name: userRow?.user?.last_name || '',
+      email: userRow?.user?.email || '',
+    })
+    setPasswordForm({
+      new_password: '',
+      confirm_password: '',
+    })
+    setEditModalOpen(true)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!editingUser?.user?.id) return
+    if (!editForm.username.trim() || !editForm.email.trim()) {
+      toast.error('Username y correo son obligatorios')
+      return
+    }
+
+    setIsSavingProfile(true)
+    const toastId = toast.loading('Guardando datos del usuario...')
+    const res = await updateUserProfile(
+      editingUser.user.id,
+      {
+        username: editForm.username.trim(),
+        first_name: editForm.first_name.trim(),
+        last_name: editForm.last_name.trim(),
+        email: editForm.email.trim(),
+      },
+      access_token
+    )
+
+    if (res.status === 200) {
+      await mutate(usersUrl)
+      toast.success('Datos actualizados', { id: toastId })
+      setEditModalOpen(false)
+      setEditingUser(null)
+    } else {
+      const detail = typeof res.data?.detail === 'string'
+        ? res.data.detail
+        : (res.data?.detail?.message || res.data?.message || 'Error al actualizar')
+      toast.error(detail, { id: toastId })
+    }
+    setIsSavingProfile(false)
+  }
+
+  const handleResetPassword = async () => {
+    if (!editingUser?.user?.id) return
+    if (!passwordForm.new_password.trim()) {
+      toast.error('Ingresa una nueva contrasena')
+      return
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast.error('Las contrasenas no coinciden')
+      return
+    }
+
+    setIsSavingPassword(true)
+    const toastId = toast.loading('Actualizando contrasena...')
+    const res = await adminResetUserPassword(
+      editingUser.user.id,
+      passwordForm.new_password,
+      access_token
+    )
+
+    if (res.status === 200) {
+      toast.success('Contrasena actualizada', { id: toastId })
+      setPasswordForm({ new_password: '', confirm_password: '' })
+    } else {
+      const detail = typeof res.data?.detail === 'string'
+        ? res.data.detail
+        : (res.data?.detail?.message || res.data?.message || 'Error al actualizar contrasena')
+      toast.error(detail, { id: toastId })
+    }
+    setIsSavingPassword(false)
   }
 
   return (
@@ -562,6 +658,15 @@ function OrgUsers() {
 
                         {/* Actions */}
                         <td className="px-6 py-4 text-right">
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="inline-flex items-center gap-1.5 h-8 px-3 bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-md text-xs font-medium nice-shadow transition-all"
+                              title="Editar usuario"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Editar</span>
+                            </button>
                           <ConfirmationModal
                             confirmationButtonText={t('dashboard.users.active_users.modals.remove_user.button')}
                             confirmationMessage={t('dashboard.users.active_users.modals.remove_user.message')}
@@ -580,6 +685,7 @@ function OrgUsers() {
                             }}
                             status="warning"
                           />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -621,6 +727,114 @@ function OrgUsers() {
               </div>
             )}
           </div>
+
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b border-gray-100">
+            <DialogTitle>Editar usuario</DialogTitle>
+            <DialogDescription>
+              Actualiza datos personales y restablece contrasena.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 py-5 space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-800">Datos personales</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500">Username</label>
+                  <input
+                    value={editForm.username}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, username: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Nombre</label>
+                  <input
+                    value={editForm.first_name}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, first_name: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Apellido</label>
+                  <input
+                    value={editForm.last_name}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, last_name: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500">Correo</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile}
+                  className="inline-flex items-center gap-2 h-9 px-4 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <Pencil className="w-4 h-4" />
+                  {isSavingProfile ? 'Guardando...' : 'Guardar datos'}
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-5 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-800">Restablecer contrasena</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500">Nueva contrasena</label>
+                  <input
+                    type="password"
+                    value={passwordForm.new_password}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, new_password: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Confirmar contrasena</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirm_password}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirm_password: e.target.value }))}
+                    className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleResetPassword}
+                  disabled={isSavingPassword}
+                  className="inline-flex items-center gap-2 h-9 px-4 bg-gray-900 text-white rounded-md text-sm font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  {isSavingPassword ? 'Actualizando...' : 'Actualizar contrasena'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="px-6 pb-6 pt-0">
+            <button
+              onClick={() => {
+                setEditModalOpen(false)
+                setEditingUser(null)
+              }}
+              className="h-9 px-4 rounded-md border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-all"
+            >
+              Cerrar
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

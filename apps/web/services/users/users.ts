@@ -64,3 +64,38 @@ export async function updateUserAvatar(
   const res = await getResponseMetadata(result)
   return res
 }
+
+export async function updateUserProfile(
+  user_id: number | string,
+  data: {
+    username: string
+    first_name?: string
+    last_name?: string
+    email: string
+    avatar_image?: string
+    bio?: string
+    details?: Record<string, any>
+    profile?: Record<string, any>
+  },
+  access_token: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}users/${user_id}`,
+    RequestBodyWithAuthHeader('PUT', data, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function adminResetUserPassword(
+  user_id: number | string,
+  new_password: string,
+  access_token: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}users/admin/change_password/${user_id}`,
+    RequestBodyWithAuthHeader('PUT', { new_password }, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}

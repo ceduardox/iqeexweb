@@ -343,7 +343,8 @@ async def update_user(
     username_user = db_session.exec(statement).first()
 
     if username_user:
-        isSameUser = username_user.id == current_user.id
+        # Compare against the target user being updated, not the actor.
+        isSameUser = username_user.id == user.id
         if not isSameUser:
             raise HTTPException(
                 status_code=400,
@@ -355,7 +356,8 @@ async def update_user(
     email_user = db_session.exec(statement).first()
 
     if email_user:
-        isSameUser = email_user.id == current_user.id
+        # Compare against the target user being updated, not the actor.
+        isSameUser = email_user.id == user.id
         if not isSameUser:
             raise HTTPException(
                 status_code=400,
@@ -485,6 +487,54 @@ async def update_user_password(
     user = UserRead.model_validate(user)
 
     return user
+
+
+async def update_user_password_admin(
+    request: Request,
+    db_session: Session,
+    current_user: PublicUser | AnonymousUser,
+    user_id: int,
+    new_password: str,
+):
+    """
+    Admin password reset for a target user.
+
+    SECURITY:
+    - Requires RBAC `update` permission on the target user resource.
+    - Enforces password complexity rules.
+    - Does not require the target user's current password.
+    """
+    validation_result = validate_password_complexity(new_password)
+    if not validation_result.is_valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "WEAK_PASSWORD",
+                "message": "Password does not meet security requirements",
+                "errors": validation_result.errors,
+                "requirements": validation_result.requirements,
+            },
+        )
+
+    statement = select(User).where(User.id == user_id)
+    user = db_session.exec(statement).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="User does not exist",
+        )
+
+    await rbac_check(request, current_user, "update", user.user_uuid, db_session)
+
+    user.password = security_hash_password(new_password)
+    user.update_date = str(datetime.now())
+
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    return UserRead.model_validate(user)
 
 
 async def read_user_by_id(

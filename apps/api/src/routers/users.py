@@ -40,6 +40,7 @@ from src.services.users.users import (
     read_user_by_username,
     update_user,
     update_user_avatar,
+    update_user_password_admin,
     update_user_password,
 )
 from src.services.courses.courses import get_user_courses
@@ -326,6 +327,30 @@ async def api_update_user_password(
     Update User Password
     """
     return await update_user_password(request, db_session, current_user, user_id, form)
+
+
+class AdminPasswordResetRequest(BaseModel):
+    new_password: str
+
+
+@router.put("/admin/change_password/{user_id}", response_model=UserRead, tags=["users"])
+async def api_admin_reset_user_password(
+    *,
+    request: Request,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+    user_id: int,
+    form: AdminPasswordResetRequest,
+) -> UserRead:
+    """
+    Reset another user's password.
+    Requires RBAC update permission on the target user.
+    """
+    result = await update_user_password_admin(
+        request, db_session, current_user, user_id, form.new_password
+    )
+    _invalidate_session_cache(user_id)
+    return result
 
 
 class ResetPasswordRequest(BaseModel):
