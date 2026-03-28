@@ -262,7 +262,7 @@
           persistSession(result);
           setMessage('Cuenta creada. Redirigiendo al panel...', 'ok');
           registerForm.reset();
-          setTimeout(function(){ window.location.href = '/login'; }, 500);
+          setTimeout(function(){ window.location.href = '/lms/login'; }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo registrar la cuenta', 'error');
         }
@@ -282,7 +282,7 @@
           const result = await requestJson('/api/auth/login', payload);
           persistSession(result);
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
-          setTimeout(function(){ window.location.href = '/login'; }, 500);
+          setTimeout(function(){ window.location.href = '/lms/login'; }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo iniciar sesion', 'error');
         }
