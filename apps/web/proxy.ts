@@ -259,9 +259,17 @@ export default async function proxy(req: NextRequest) {
 
   // Auth Redirects
   if (pathname == '/redirect_from_auth') {
-    const searchParams = req.nextUrl.searchParams
+    const searchParams = new URLSearchParams(req.nextUrl.searchParams)
+    const requestedRedirect = searchParams.get('redirect') || searchParams.get('next')
+    const redirectPathname =
+      requestedRedirect && requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//')
+        ? requestedRedirect
+        : '/home'
+
+    // Do not keep control params in the final URL.
+    searchParams.delete('redirect')
+    searchParams.delete('next')
     const queryString = searchParams.toString()
-    const redirectPathname = '/'
 
     // Check if we have a custom domain cookie
     const customDomain = req.cookies.get('learnhouse_custom_domain')?.value
