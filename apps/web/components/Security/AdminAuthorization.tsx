@@ -64,7 +64,7 @@ const AdminAuthorization: React.FC<AuthorizationProps> = ({ children, authorizat
           setIsAuthorized(true);
         } else {
           setIsAuthorized(false);
-          router.push('/dash');
+          router.push(getUriWithOrg(org.slug, '/dash'));
         }
       } else {
         setIsAuthorized(true);
@@ -72,7 +72,7 @@ const AdminAuthorization: React.FC<AuthorizationProps> = ({ children, authorizat
     } else if (authorizationMode === 'component') {
       setIsAuthorized(isAdmin);
     }
-  }, [loading, isUserAuthenticated, isAdmin, isAdminPath, authorizationMode, router]);
+  }, [loading, isUserAuthenticated, isAdmin, isAdminPath, authorizationMode, router, org?.slug]);
 
   useEffect(() => {
     authorizeUser();

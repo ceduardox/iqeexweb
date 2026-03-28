@@ -221,14 +221,14 @@ export const HeaderProfileBox = ({ primaryColor = '' }: { primaryColor?: string 
                 <DropdownMenuSeparator />
                 {rights?.dashboard?.action_access && (
                   <DropdownMenuItem asChild>
-                    <Link href="/dash" className="flex items-center space-x-2">
+                    <Link href={getUriWithOrg(org?.slug, '/dash')} className="flex items-center space-x-2">
                       <Shield size={16} weight="fill" />
                       <span>{t('common.dashboard')}</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href="/account/general" className="flex items-center space-x-2">
+                  <Link href={getUriWithOrg(org?.slug, '/account/general')} className="flex items-center space-x-2">
                     <User size={16} weight="fill" />
                     <span>{t('user.user_settings')}</span>
                   </Link>
@@ -262,7 +262,7 @@ export const HeaderProfileBox = ({ primaryColor = '' }: { primaryColor?: string 
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => signOut({ callbackUrl: getUriWithOrg(org?.slug, '/login') })}
                   className="flex items-center space-x-2 text-red-600 focus:text-red-600"
                 >
                   <SignOut size={16} weight="fill" />

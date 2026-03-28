@@ -267,7 +267,7 @@ export const OrgMenu = (props: any) => {
                       const IconComponent = item.icon
                       return (
                         <DropdownMenuItem key={item.id} asChild>
-                          <Link href={item.href} className="flex items-center gap-2">
+                          <Link href={getUriWithOrg(orgslug, item.href)} className="flex items-center gap-2">
                             <IconComponent size={16} weight="fill" />
                             <span>{t(item.labelKey)}</span>
                           </Link>

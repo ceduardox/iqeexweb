@@ -15,6 +15,7 @@ import { usePathname } from 'next/navigation'
 import { isOSSMode } from '@services/config/config'
 import { usePlan } from '@components/Hooks/usePlan'
 import { getGoogleFontUrl, DEFAULT_FONT } from '@/lib/fonts'
+import { getOrgFaviconMediaDirectory, getOrgLogoMediaDirectory } from '@services/media/media'
 
 // Helper to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
@@ -58,6 +59,7 @@ function LayoutContent({ children, orgslug }: { children: React.ReactNode; orgsl
   const org = useOrg() as any
   const primaryColor = org?.config?.config?.customization?.general?.color || org?.config?.config?.general?.color || ''
   const customFont = org?.config?.config?.customization?.general?.font || org?.config?.config?.general?.font || ''
+  const faviconImage = org?.config?.config?.customization?.general?.favicon_image || org?.config?.config?.general?.favicon_image || ''
   const pathname = usePathname()
 
   // Inject Google Font stylesheet into document head
@@ -93,6 +95,39 @@ function LayoutContent({ children, orgslug }: { children: React.ReactNode; orgsl
       if (existing) document.head.removeChild(existing)
     }
   }, [customFont])
+
+  // Keep browser favicon in sync with org branding (and bust cache when file changes).
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    const appendVersion = (url: string, versionKey: string) => {
+      if (!versionKey) return url
+      const sep = url.includes('?') ? '&' : '?'
+      return `${url}${sep}v=${encodeURIComponent(versionKey)}`
+    }
+
+    const faviconHref = faviconImage && org?.org_uuid
+      ? appendVersion(getOrgFaviconMediaDirectory(org.org_uuid, faviconImage), faviconImage)
+      : '/iqex-favicon.png'
+
+    const appleTouchHref = org?.logo_image && org?.org_uuid
+      ? appendVersion(getOrgLogoMediaDirectory(org.org_uuid, org.logo_image), org.logo_image)
+      : '/iqex-logo.png'
+
+    const upsertLink = (selectorRel: string, rel: string, href: string) => {
+      let link = document.head.querySelector(`link[rel="${selectorRel}"]`) as HTMLLinkElement | null
+      if (!link) {
+        link = document.createElement('link')
+        link.rel = rel
+        document.head.appendChild(link)
+      }
+      link.href = href
+    }
+
+    upsertLink('icon', 'icon', faviconHref)
+    upsertLink('shortcut icon', 'shortcut icon', faviconHref)
+    upsertLink('apple-touch-icon', 'apple-touch-icon', appleTouchHref)
+  }, [org?.org_uuid, org?.logo_image, faviconImage])
 
   const pathParts = pathname?.split('/').filter(Boolean) || []
 
