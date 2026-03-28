@@ -85,7 +85,14 @@ fi
 # Start the services
 # Use server-wrapper.js for runtime environment variable injection
 PORT="$WEB_INTERNAL_PORT" pm2 start server-wrapper.js --cwd /app/web --name learnhouse-web > /dev/null 2>&1
-pm2 start uv --cwd /app/api --name learnhouse-api -- run app.py
+
+# Start API with project virtualenv when available (most reliable in production).
+if [ -x "/app/api/.venv/bin/python" ]; then
+    pm2 start /app/api/.venv/bin/python --cwd /app/api --name learnhouse-api -- -m uvicorn app:app --host 0.0.0.0 --port "$LEARNHOUSE_PORT"
+else
+    pm2 start uv --cwd /app/api --name learnhouse-api -- run app.py
+fi
+
 pm2 start node --cwd /app/collab --name learnhouse-collab -- dist/index.js
 
 # Check if the services are running and log the status
