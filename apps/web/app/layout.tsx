@@ -25,6 +25,10 @@ export default function RootLayout({
   return (
     <html className={wixMadeforText.variable} lang="en">
       <head>
+        <link rel="icon" type="image/png" href="/iqex-favicon.png" />
+        <link rel="shortcut icon" href="/iqex-favicon.png" />
+        <link rel="apple-touch-icon" href="/iqex-logo.png" />
+        <meta name="theme-color" content="#0b1b4a" />
         {/* Synchronous script — blocks parsing to guarantee window.__RUNTIME_CONFIG__ exists before any JS runs.
             Next.js <Script strategy="beforeInteractive"> is not truly blocking in all browsers (Safari). */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
