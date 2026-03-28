@@ -2,7 +2,6 @@
 import { use, useEffect } from "react";
 import '@styles/globals.css'
 import { SessionProvider } from '@components/Contexts/AuthContext'
-import Watermark from '@components/Objects/Watermark'
 import { OrgMenu } from '@components/Objects/Menus/OrgMenu'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { OrgJoinBanner, OrgJoinBannerProvider } from '@components/Objects/Banners/OrgJoinBanner'
@@ -116,7 +115,6 @@ function LayoutContent({ children, orgslug }: { children: React.ReactNode; orgsl
         {children}
       </div>
       {!isFullBleedPage && <OrgFooter />}
-      {!isFullBleedPage && <Watermark />}
     </div>
   )
 }

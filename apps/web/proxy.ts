@@ -212,6 +212,14 @@ export default async function proxy(req: NextRequest) {
     return response
   }
 
+  // Admin path routes in same-domain deployments (e.g. /lms/admin/* via nginx rewrite)
+  // should bypass org slug rewriting.
+  if (pathname.startsWith('/admin')) {
+    const response = NextResponse.rewrite(new URL(`${pathname}${search}`, req.url))
+    setInstanceCookies(response, instanceInfo)
+    return response
+  }
+
   // Dynamic Pages Editor
   if (pathname.match(/^\/course\/[^/]+\/activity\/[^/]+\/edit$/)) {
     return NextResponse.rewrite(new URL(`/editor${pathname}`, req.url))
