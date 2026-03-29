@@ -42,6 +42,14 @@ interface PlaygroundsListClientProps {
   orgslug: string
 }
 
+function getErrorMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') return 'Failed to create playground'
+  const e = error as { detail?: unknown; message?: unknown }
+  if (typeof e.detail === 'string' && e.detail.trim()) return e.detail
+  if (typeof e.message === 'string' && e.message.trim()) return e.message
+  return 'Failed to create playground'
+}
+
 export default function PlaygroundsListClient({ org_id, orgslug }: PlaygroundsListClientProps) {
   const org = useOrg() as any
   const session = useLHSession() as any
@@ -138,8 +146,9 @@ export default function PlaygroundsListClient({ org_id, orgslug }: PlaygroundsLi
       const pg = await createPlayground(org_id, { name, access_type: 'authenticated' }, access_token)
       if (playgroundsKey) mutate(playgroundsKey)
       router.push(`/editor/playground/${pg.playground_uuid}/edit`)
-    } catch {
-      toast.error('Failed to create playground')
+    } catch (error) {
+      console.error('Failed to create playground:', error)
+      toast.error(getErrorMessage(error))
     } finally {
       setIsCreating(false)
     }

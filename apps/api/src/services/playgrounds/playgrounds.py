@@ -134,9 +134,10 @@ async def create_playground(
         raise HTTPException(status_code=404, detail="Organization not found")
 
     # Check rights
+    is_admin = _is_org_admin(current_user.id, org_id, db_session)
     rights = _get_user_rights(current_user.id, org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
-    if not pg_rights.get("action_create", False):
+    if not (pg_rights.get("action_create", False) or is_admin):
         raise HTTPException(status_code=403, detail="Insufficient permissions to create playgrounds")
 
     # Resolve course_id if course_uuid provided
@@ -225,11 +226,12 @@ async def update_playground(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
 
     is_owner = playground.created_by == current_user.id
-    can_update = pg_rights.get("action_update", False) or (
+    can_update = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_update:
@@ -273,11 +275,12 @@ async def delete_playground(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
 
     is_owner = playground.created_by == current_user.id
-    can_delete = pg_rights.get("action_delete", False) or (
+    can_delete = is_admin or pg_rights.get("action_delete", False) or (
         is_owner and pg_rights.get("action_delete_own", False)
     )
     if not can_delete:
@@ -309,9 +312,10 @@ async def duplicate_playground(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
-    if not pg_rights.get("action_create", False):
+    if not (pg_rights.get("action_create", False) or is_admin):
         raise HTTPException(status_code=403, detail="Insufficient permissions to create playgrounds")
 
     now = datetime.utcnow().isoformat()
@@ -349,10 +353,11 @@ async def add_usergroup_to_playground(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
     is_owner = playground.created_by == current_user.id
-    can_update = pg_rights.get("action_update", False) or (
+    can_update = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_update:
@@ -400,10 +405,11 @@ async def remove_usergroup_from_playground(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
     is_owner = playground.created_by == current_user.id
-    can_update = pg_rights.get("action_update", False) or (
+    can_update = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_update:
@@ -443,10 +449,11 @@ async def update_playground_thumbnail(
     if not playground:
         raise HTTPException(status_code=404, detail="Playground not found")
 
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
     is_owner = playground.created_by == current_user.id
-    can_update = pg_rights.get("action_update", False) or (
+    can_update = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_update:

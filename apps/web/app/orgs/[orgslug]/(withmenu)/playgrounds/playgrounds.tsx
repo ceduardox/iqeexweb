@@ -19,6 +19,14 @@ interface PlaygroundsClientProps {
   initialPlaygrounds: Playground[]
 }
 
+function getErrorMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') return 'Failed to create playground'
+  const e = error as { detail?: unknown; message?: unknown }
+  if (typeof e.detail === 'string' && e.detail.trim()) return e.detail
+  if (typeof e.message === 'string' && e.message.trim()) return e.message
+  return 'Failed to create playground'
+}
+
 export default function PlaygroundsClient({
   orgslug,
   org_id,
@@ -101,8 +109,9 @@ export default function PlaygroundsClient({
       )
       setPlaygrounds((prev) => [newPlayground, ...prev])
       router.push(`/editor/playground/${newPlayground.playground_uuid}/edit`)
-    } catch {
-      toast.error('Failed to create playground')
+    } catch (error) {
+      console.error('Failed to create playground:', error)
+      toast.error(getErrorMessage(error))
     } finally {
       setIsCreating(false)
     }
