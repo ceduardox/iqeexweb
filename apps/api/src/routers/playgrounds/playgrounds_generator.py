@@ -102,12 +102,13 @@ async def start_playground_session(
     if not org or org.id is None:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    # Verify user can edit (must be creator or have update rights)
-    from src.services.playgrounds.playgrounds import _get_user_rights
+    # Verify user can edit (must be creator, admin/maintainer, or have update rights)
+    from src.services.playgrounds.playgrounds import _get_user_rights, _is_org_admin
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
     is_owner = playground.created_by == current_user.id
-    can_edit = pg_rights.get("action_update", False) or (
+    can_edit = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_edit:
@@ -183,12 +184,13 @@ async def iterate_playground_session(
     if not org or org.id is None:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    # Verify user can edit
-    from src.services.playgrounds.playgrounds import _get_user_rights
+    # Verify user can edit (must be creator, admin/maintainer, or have update rights)
+    from src.services.playgrounds.playgrounds import _get_user_rights, _is_org_admin
+    is_admin = _is_org_admin(current_user.id, playground.org_id, db_session)
     rights = _get_user_rights(current_user.id, playground.org_id, db_session)
     pg_rights = rights.get("playgrounds", {})
     is_owner = playground.created_by == current_user.id
-    can_edit = pg_rights.get("action_update", False) or (
+    can_edit = is_admin or pg_rights.get("action_update", False) or (
         is_owner and pg_rights.get("action_update_own", False)
     )
     if not can_edit:

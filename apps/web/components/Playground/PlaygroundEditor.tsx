@@ -22,6 +22,7 @@ import PlaygroundChatPanel from './PlaygroundChatPanel'
 import PlaygroundOptionsModal from './PlaygroundOptionsModal'
 import { startPlaygroundSession, iteratePlayground } from '@services/playgrounds/generator'
 import { updatePlayground, Playground } from '@services/playgrounds/playgrounds'
+import toast from 'react-hot-toast'
 
 interface Course {
   course_uuid: string
@@ -157,10 +158,11 @@ export default function PlaygroundEditor({
         setMessages((prev) => [...prev, { role: 'model' as const, content: accumulated }])
       }
 
-      const onError = (_error: string) => {
+      const onError = (error: string) => {
+        console.error('Playground generation failed:', error)
+        toast.error(error || 'Failed to generate playground')
         setIsStreaming(false)
         setStreamingHtml('')
-        setMessages((prev) => prev.slice(0, -1))
       }
 
       if (!sessionUuid) {
