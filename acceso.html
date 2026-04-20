@@ -135,7 +135,7 @@
     <section class="info">
       <a class="back-link" href="index.html">VOLVER AL INICIO</a>
       <h1 class="brand">Panel de <span class="x">Acceso</span></h1>
-      <p class="subtitle">Base inicial estilo LMS para administradores, profesores y alumnos. Empieza creando tu cuenta o iniciando sesion.</p>
+      <p class="subtitle">Base inicial estilo LMS para administradores, profesores y alumnos. Empieza creando tu cuenta o iniciando sesión.</p>
       <div class="chips">
         <span class="chip">Roles</span>
         <span class="chip">Cursos</span>
@@ -146,7 +146,7 @@
 
     <section class="card">
       <div class="tabs" role="tablist" aria-label="Acceso">
-        <button class="tab active" type="button" id="tabLogin">Iniciar Sesion</button>
+        <button class="tab active" type="button" id="tabLogin">Iniciar Sesión</button>
         <button class="tab" type="button" id="tabRegister">Registrarme</button>
       </div>
 
@@ -159,11 +159,11 @@
             <input id="loginEmail" name="email" type="email" required />
           </div>
           <div>
-            <label for="loginPassword">Contrasena</label>
+            <label for="loginPassword">Contraseña</label>
             <input id="loginPassword" name="password" type="password" minlength="8" required />
           </div>
           <button class="btn" type="submit">Entrar al Panel</button>
-          <p class="hint">Si no tienes cuenta, usa la pestana <strong>Registrarme</strong>.</p>
+          <p class="hint">Si no tienes cuenta, usa la pestaña <strong>Registrarme</strong>.</p>
         </form>
 
         <form id="registerForm" autocomplete="on">
@@ -184,11 +184,11 @@
             </select>
           </div>
           <div>
-            <label for="registerPassword">Contrasena</label>
+            <label for="registerPassword">Contraseña</label>
             <input id="registerPassword" name="password" type="password" minlength="8" required />
           </div>
           <button class="btn" type="submit">Crear Cuenta</button>
-          <p class="hint">Recomendado: Contrasena de al menos 10 caracteres.</p>
+          <p class="hint">Recomendado: Contraseña de al menos 10 caracteres.</p>
         </form>
       </div>
     </section>
@@ -284,7 +284,7 @@
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
           setTimeout(function(){ window.location.href = '/lms/login'; }, 500);
         } catch (error) {
-          setMessage(error.message || 'No se pudo iniciar sesion', 'error');
+          setMessage(error.message || 'No se pudo iniciar sesión', 'error');
         }
       });
     })();

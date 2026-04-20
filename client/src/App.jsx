@@ -52,7 +52,7 @@ const { Title, Text } = Typography
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: 'content-bank', icon: <AppstoreOutlined />, label: 'Gestion LMS' },
+  { key: 'content-bank', icon: <AppstoreOutlined />, label: 'Gestión LMS' },
 ]
 
 const EMPTY_COURSE_FORM = {
@@ -770,7 +770,7 @@ function DashboardWorkspace() {
         }
       } catch (error) {
         if (cancelled) return
-        messageApi.error(error.message || 'No se pudo cargar el modulo administrativo')
+        messageApi.error(error.message || 'No se pudo cargar el módulo administrativo')
       }
     }
 
@@ -893,9 +893,9 @@ function DashboardWorkspace() {
         setSelectedModuleId(result.module.id)
       }
       setModuleForm(EMPTY_MODULE_FORM)
-      messageApi.success('Modulo creado')
+      messageApi.success('Módulo creado')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo crear el modulo')
+      messageApi.error(error.message || 'No se pudo crear el módulo')
     } finally {
       setBusyAction('')
     }
@@ -915,9 +915,9 @@ function DashboardWorkspace() {
         }),
       })
       await refreshCourseModules(token, selectedCourse.id)
-      messageApi.success('Modulo actualizado')
+      messageApi.success('Módulo actualizado')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo actualizar el modulo')
+      messageApi.error(error.message || 'No se pudo actualizar el módulo')
     } finally {
       setBusyAction('')
     }
@@ -925,15 +925,15 @@ function DashboardWorkspace() {
 
   async function onDeleteModule() {
     if (!token || !selectedModule || !canManageSelectedCourse) return
-    if (!window.confirm(`Eliminar modulo "${selectedModule.title}"?`)) return
+    if (!window.confirm(`Eliminar módulo "${selectedModule.title}"?`)) return
 
     setBusyAction('module-delete')
     try {
       await apiRequest(`/api/modules/${selectedModule.id}`, token, { method: 'DELETE' })
       await refreshCourseModules(token, selectedCourse.id)
-      messageApi.success('Modulo eliminado')
+      messageApi.success('Módulo eliminado')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo eliminar el modulo')
+      messageApi.error(error.message || 'No se pudo eliminar el módulo')
     } finally {
       setBusyAction('')
     }
@@ -960,9 +960,9 @@ function DashboardWorkspace() {
       })
       await refreshCourseModules(token, selectedCourse.id)
       setLessonForm(EMPTY_LESSON_FORM)
-      messageApi.success('Leccion creada')
+      messageApi.success('Lección creada')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo crear la leccion')
+      messageApi.error(error.message || 'No se pudo crear la lección')
     } finally {
       setBusyAction('')
     }
@@ -970,11 +970,11 @@ function DashboardWorkspace() {
 
   async function onRenameLesson(lesson) {
     if (!token || !selectedCourse || !lesson || !canManageSelectedCourse) return
-    const nextTitle = window.prompt('Nuevo titulo de leccion', lesson.title)
+    const nextTitle = window.prompt('Nuevo título de la lección', lesson.title)
     if (nextTitle === null) return
     const normalized = String(nextTitle || '').trim()
     if (normalized.length < 3) {
-      messageApi.error('El titulo debe tener al menos 3 caracteres')
+      messageApi.error('El título debe tener al menos 3 caracteres')
       return
     }
 
@@ -985,9 +985,9 @@ function DashboardWorkspace() {
         body: JSON.stringify({ title: normalized }),
       })
       await refreshCourseModules(token, selectedCourse.id)
-      messageApi.success('Leccion actualizada')
+      messageApi.success('Lección actualizada')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo actualizar la leccion')
+      messageApi.error(error.message || 'No se pudo actualizar la lección')
     } finally {
       setBusyAction('')
     }
@@ -995,15 +995,15 @@ function DashboardWorkspace() {
 
   async function onDeleteLesson(lesson) {
     if (!token || !selectedCourse || !lesson || !canManageSelectedCourse) return
-    if (!window.confirm(`Eliminar leccion "${lesson.title}"?`)) return
+    if (!window.confirm(`Eliminar lección "${lesson.title}"?`)) return
 
     setBusyAction(`lesson-delete-${lesson.id}`)
     try {
       await apiRequest(`/api/lessons/${lesson.id}`, token, { method: 'DELETE' })
       await refreshCourseModules(token, selectedCourse.id)
-      messageApi.success('Leccion eliminada')
+      messageApi.success('Lección eliminada')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo eliminar la leccion')
+      messageApi.error(error.message || 'No se pudo eliminar la lección')
     } finally {
       setBusyAction('')
     }
@@ -1026,9 +1026,9 @@ function DashboardWorkspace() {
       await loadMyCourseProgress(token, selectedCourse.id)
       await loadCourseProgressOverview(token, selectedCourse.id)
       await refreshCourses(token, user.role)
-      messageApi.success(isCompleted ? 'Leccion completada' : 'Leccion marcada como pendiente')
+      messageApi.success(isCompleted ? 'Lección completada' : 'Lección marcada como pendiente')
     } catch (error) {
-      messageApi.error(error.message || 'No se pudo actualizar el progreso de la leccion')
+      messageApi.error(error.message || 'No se pudo actualizar el progreso de la lección')
     } finally {
       setBusyAction('')
     }
@@ -1295,12 +1295,12 @@ function DashboardWorkspace() {
   async function onRenameActivity(activityId, currentTitle) {
     if (!token || !selectedCourse || !user) return
 
-    const nextTitle = window.prompt('Nuevo titulo de actividad', currentTitle)
+    const nextTitle = window.prompt('Nuevo título de la actividad', currentTitle)
     if (nextTitle === null) return
 
     const normalized = nextTitle.trim()
     if (normalized.length < 3) {
-      messageApi.error('El titulo debe tener al menos 3 caracteres')
+      messageApi.error('El título debe tener al menos 3 caracteres')
       return
     }
 
@@ -1486,7 +1486,7 @@ function DashboardWorkspace() {
       render: (value) => `${value}%`,
     },
     {
-      title: 'Accion',
+      title: 'Acción',
       key: 'action',
       width: 120,
       render: (_, row) => (
@@ -1505,13 +1505,13 @@ function DashboardWorkspace() {
 
   const activityColumns = [
     {
-      title: 'Titulo',
+      title: 'Título',
       dataIndex: 'title',
       key: 'title',
       render: (value, row) => (
         <Space direction="vertical" size={0}>
           <Text strong>{value}</Text>
-          <Text type="secondary">{row.description || 'Sin descripcion'}</Text>
+          <Text type="secondary">{row.description || 'Sin descripción'}</Text>
         </Space>
       ),
     },
@@ -1559,13 +1559,13 @@ function DashboardWorkspace() {
 
   const moduleColumns = [
     {
-      title: 'Modulo',
+      title: 'Módulo',
       dataIndex: 'title',
       key: 'title',
       render: (value, row) => (
         <Space direction="vertical" size={0}>
           <Text strong>{value}</Text>
-          <Text type="secondary">{row.description || 'Sin descripcion'}</Text>
+          <Text type="secondary">{row.description || 'Sin descripción'}</Text>
         </Space>
       ),
     },
@@ -1589,7 +1589,7 @@ function DashboardWorkspace() {
       render: (value) => (value ? <Tag color="green">Publicado</Tag> : <Tag color="orange">Borrador</Tag>),
     },
     {
-      title: 'Accion',
+      title: 'Acción',
       key: 'action',
       width: 140,
       render: (_, row) => (
@@ -1602,13 +1602,13 @@ function DashboardWorkspace() {
 
   const lessonColumns = [
     {
-      title: 'Leccion',
+      title: 'Lección',
       dataIndex: 'title',
       key: 'title',
       render: (value, row) => (
         <Space direction="vertical" size={0}>
           <Text strong>{value}</Text>
-          <Text type="secondary">{row.description || 'Sin descripcion'}</Text>
+          <Text type="secondary">{row.description || 'Sin descripción'}</Text>
         </Space>
       ),
     },
@@ -1620,7 +1620,7 @@ function DashboardWorkspace() {
       render: (value) => <Tag>{value}</Tag>,
     },
     {
-      title: 'Duracion',
+      title: 'Duración',
       dataIndex: 'durationMinutes',
       key: 'durationMinutes',
       width: 120,
@@ -1715,7 +1715,7 @@ function DashboardWorkspace() {
       render: (value) => <Progress percent={Number(value || 0)} size="small" />,
     },
     {
-      title: 'Ultima actualizacion',
+      title: 'Última actualización',
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       width: 220,
@@ -1759,7 +1759,7 @@ function DashboardWorkspace() {
         ),
     },
     {
-      title: 'Accion',
+      title: 'Acción',
       key: 'action',
       width: 140,
       render: (_, row) => (
@@ -1902,8 +1902,8 @@ function DashboardWorkspace() {
       <div className="status-shell">
         <Result
           status="warning"
-          title="Sesion requerida"
-          subTitle="Debes iniciar sesion para usar el panel LMS."
+          title="Sesión requerida"
+          subTitle="Debes iniciar sesión para usar el panel LMS."
           extra={
             <Button type="primary" href="/acceso.html">
               Ir a acceso
@@ -1955,7 +1955,7 @@ function DashboardWorkspace() {
               <Input
                 allowClear
                 value={courseQuery}
-                placeholder="Buscar curso por titulo o codigo"
+                placeholder="Buscar curso por título o código"
                 onChange={(event) => setCourseQuery(event.target.value)}
                 prefix={<BookOutlined />}
               />
@@ -1975,7 +1975,7 @@ function DashboardWorkspace() {
           ) : null}
 
           <div className="sider-section">
-            {!collapsed ? <Text className="sider-label">Accesos rapidos</Text> : null}
+            {!collapsed ? <Text className="sider-label">Accesos rápidos</Text> : null}
             {!collapsed ? (
               <Space direction="vertical" size={8} style={{ width: '100%' }}>
                 <div className="quick-metrics-grid">
@@ -2010,7 +2010,7 @@ function DashboardWorkspace() {
                   Progreso
                 </Button>
                 <Button block onClick={() => { setActiveSection('content-bank'); setManagerTab('modules') }}>
-                  Modulos y lecciones
+                  Módulos y lecciones
                 </Button>
               </Space>
             ) : (
@@ -2054,7 +2054,7 @@ function DashboardWorkspace() {
                 <Text type="secondary">{roleLabel(user.role)}</Text>
               </Space>
               <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
-                Cerrar sesion
+                Cerrar sesión
               </Button>
             </Space>
           </Header>
@@ -2148,7 +2148,7 @@ function DashboardWorkspace() {
                 <Card>
                   <Space className="management-header" wrap>
                     <Title level={4} style={{ margin: 0 }}>
-                      Gestion de plataforma
+                      Gestión de plataforma
                     </Title>
                     <Tag color="blue">{selectedCourse ? `Curso activo: ${selectedCourse.title}` : 'Selecciona un curso'}</Tag>
                   </Space>
@@ -2160,7 +2160,7 @@ function DashboardWorkspace() {
                       { label: 'Cursos', value: 'courses' },
                       { label: 'Miembros', value: 'members' },
                       { label: 'Actividades', value: 'activities' },
-                      { label: 'Modulos', value: 'modules' },
+                      { label: 'Módulos', value: 'modules' },
                       { label: 'Progreso', value: 'progress' },
                       { label: 'Quizzes', value: 'quizzes' },
                       { label: 'Usuarios', value: 'users' },
@@ -2215,16 +2215,16 @@ function DashboardWorkspace() {
                     </Col>
 
                     <Col xs={24} xl={10}>
-                      <Card title="Configuracion de curso">
+                      <Card title="Configuración de curso">
                         <Space direction="vertical" size={12} style={{ display: 'flex' }}>
                           <Input
-                            addonBefore="Codigo"
+                            addonBefore="Código"
                             placeholder="BIO-101"
                             value={courseForm.code}
                             onChange={(event) => onCourseFieldChange('code', event.target.value)}
                           />
                           <Input
-                            addonBefore="Titulo"
+                            addonBefore="Título"
                             placeholder="Nombre del curso"
                             value={courseForm.title}
                             onChange={(event) => onCourseFieldChange('title', event.target.value)}
@@ -2361,7 +2361,7 @@ function DashboardWorkspace() {
                         <Card title="Nueva actividad">
                           <Space direction="vertical" size={12} style={{ display: 'flex' }}>
                             <Input
-                              placeholder="Titulo actividad"
+                              placeholder="Título de la actividad"
                               value={activityForm.title}
                               onChange={(event) => onActivityFieldChange('title', event.target.value)}
                             />
@@ -2377,7 +2377,7 @@ function DashboardWorkspace() {
                             />
                             <Input.TextArea
                               rows={4}
-                              placeholder="Descripcion"
+                              placeholder="Descripción"
                               value={activityForm.description}
                               onChange={(event) => onActivityFieldChange('description', event.target.value)}
                             />
@@ -2407,7 +2407,7 @@ function DashboardWorkspace() {
                       <Row gutter={[16, 16]}>
                         <Col xs={24} xl={14}>
                           <Card
-                            title={`Modulos de ${selectedCourse.title}`}
+                            title={`Módulos de ${selectedCourse.title}`}
                             extra={(
                               <Button icon={<ReloadOutlined />} onClick={() => refreshCourseModules(token, selectedCourse.id)}>
                                 Recargar
@@ -2427,16 +2427,16 @@ function DashboardWorkspace() {
                           </Card>
                         </Col>
                         <Col xs={24} xl={10}>
-                          <Card title="Crear/editar modulo">
+                          <Card title="Crear/editar módulo">
                             <Space direction="vertical" size={12} style={{ display: 'flex' }}>
                               <Input
-                                placeholder="Titulo del modulo"
+                                placeholder="Título del módulo"
                                 value={moduleForm.title}
                                 onChange={(event) => onModuleFieldChange('title', event.target.value)}
                               />
                               <Input.TextArea
                                 rows={3}
-                                placeholder="Descripcion"
+                                placeholder="Descripción"
                                 value={moduleForm.description}
                                 onChange={(event) => onModuleFieldChange('description', event.target.value)}
                               />
@@ -2459,7 +2459,7 @@ function DashboardWorkspace() {
                                   disabled={!canManageSelectedCourse}
                                   onClick={onCreateModule}
                                 >
-                                  Crear modulo
+                                  Crear módulo
                                 </Button>
                                 <Button
                                   icon={<EditOutlined />}
@@ -2486,7 +2486,7 @@ function DashboardWorkspace() {
 
                       <Row gutter={[16, 16]}>
                         <Col xs={24} xl={15}>
-                          <Card title={selectedModule ? `Lecciones de ${selectedModule.title}` : 'Lecciones del modulo'}>
+                          <Card title={selectedModule ? `Lecciones de ${selectedModule.title}` : 'Lecciones del módulo'}>
                             {selectedModule ? (
                               <Table
                                 rowKey="id"
@@ -2495,22 +2495,22 @@ function DashboardWorkspace() {
                                 columns={lessonColumns}
                               />
                             ) : (
-                              <Empty description="Selecciona un modulo para ver lecciones" />
+                              <Empty description="Selecciona un módulo para ver lecciones" />
                             )}
                           </Card>
                         </Col>
                         <Col xs={24} xl={9}>
-                          <Card title="Crear leccion">
+                          <Card title="Crear lección">
                             {selectedModule ? (
                               <Space direction="vertical" size={12} style={{ display: 'flex' }}>
                                 <Input
-                                  placeholder="Titulo de leccion"
+                                  placeholder="Título de la lección"
                                   value={lessonForm.title}
                                   onChange={(event) => onLessonFieldChange('title', event.target.value)}
                                 />
                                 <Input.TextArea
                                   rows={3}
-                                  placeholder="Descripcion"
+                                  placeholder="Descripción"
                                   value={lessonForm.description}
                                   onChange={(event) => onLessonFieldChange('description', event.target.value)}
                                 />
@@ -2545,7 +2545,7 @@ function DashboardWorkspace() {
                                   min={0}
                                   value={lessonForm.durationMinutes}
                                   onChange={(value) => onLessonFieldChange('durationMinutes', value ?? 0)}
-                                  addonBefore="Duracion"
+                                  addonBefore="Duración"
                                   addonAfter="min"
                                 />
                                 <InputNumber
@@ -2570,11 +2570,11 @@ function DashboardWorkspace() {
                                   disabled={!canManageSelectedCourse}
                                   onClick={onCreateLesson}
                                 >
-                                  Crear leccion
+                                  Crear lección
                                 </Button>
                               </Space>
                             ) : (
-                              <Empty description="Selecciona un modulo primero" />
+                              <Empty description="Selecciona un módulo primero" />
                             )}
                           </Card>
                         </Col>
@@ -2582,7 +2582,7 @@ function DashboardWorkspace() {
                     </Space>
                   ) : (
                     <Card>
-                      <Empty description="Selecciona un curso para gestionar modulos y lecciones" />
+                      <Empty description="Selecciona un curso para gestionar módulos y lecciones" />
                     </Card>
                   )
                 ) : null}
@@ -2654,7 +2654,7 @@ function DashboardWorkspace() {
                             dataSource={courseProgressRows}
                             pagination={{ pageSize: 8, hideOnSinglePage: true }}
                             columns={progressOverviewColumns}
-                            locale={{ emptyText: 'Sin datos de progreso todavia' }}
+                            locale={{ emptyText: 'Sin datos de progreso todavía' }}
                           />
                         </Card>
                       ) : (
@@ -2714,13 +2714,13 @@ function DashboardWorkspace() {
                           <Card title="Crear quiz" style={{ marginTop: 16 }}>
                             <Space direction="vertical" size={10} style={{ display: 'flex' }}>
                               <Input
-                                placeholder="Titulo del quiz"
+                                placeholder="Título del quiz"
                                 value={quizForm.title}
                                 onChange={(event) => onQuizFieldChange('title', event.target.value)}
                               />
                               <Input.TextArea
                                 rows={3}
-                                placeholder="Descripcion"
+                                placeholder="Descripción"
                                 value={quizForm.description}
                                 onChange={(event) => onQuizFieldChange('description', event.target.value)}
                               />
@@ -2730,7 +2730,7 @@ function DashboardWorkspace() {
                                 max={100}
                                 value={quizForm.passingScore}
                                 onChange={(value) => onQuizFieldChange('passingScore', value ?? 70)}
-                                addonBefore="Nota minima"
+                                addonBefore="Nota mínima"
                                 addonAfter="%"
                               />
                               <InputNumber
@@ -2738,11 +2738,11 @@ function DashboardWorkspace() {
                                 min={0}
                                 value={quizForm.timeLimitMinutes}
                                 onChange={(value) => onQuizFieldChange('timeLimitMinutes', value ?? 0)}
-                                addonBefore="Limite"
+                                addonBefore="Límite"
                                 addonAfter="min"
                               />
                               <Space>
-                                <Text>Multiples intentos</Text>
+                                <Text>Múltiples intentos</Text>
                                 <Switch checked={Boolean(quizForm.allowMultipleAttempts)} onChange={(checked) => onQuizFieldChange('allowMultipleAttempts', checked)} />
                               </Space>
                               <Space>
@@ -2770,18 +2770,18 @@ function DashboardWorkspace() {
                               extra={(
                                 <Space>
                                   <Tag color={selectedQuiz.isPublished ? 'green' : 'orange'}>{selectedQuiz.isPublished ? 'Publicado' : 'Borrador'}</Tag>
-                                  <Tag color="blue">Minimo {selectedQuiz.passingScore}%</Tag>
+                                  <Tag color="blue">Mínimo {selectedQuiz.passingScore}%</Tag>
                                 </Space>
                               )}
                             >
                               <Space direction="vertical" size={8} style={{ display: 'flex' }}>
-                                <Text type="secondary">{selectedQuiz.description || 'Sin descripcion'}</Text>
+                                <Text type="secondary">{selectedQuiz.description || 'Sin descripción'}</Text>
                                 <Row gutter={[12, 12]}>
                                   <Col xs={24} md={8}>
                                     <Statistic title="Preguntas" value={quizQuestions.length} />
                                   </Col>
                                   <Col xs={24} md={8}>
-                                    <Statistic title="Intentos mios" value={myQuizAttempts.length} />
+                                    <Statistic title="Intentos míos" value={myQuizAttempts.length} />
                                   </Col>
                                   <Col xs={24} md={8}>
                                     <Statistic
@@ -2825,7 +2825,7 @@ function DashboardWorkspace() {
                                   {questionForm.questionType === 'multiple_choice' ? (
                                     <Input.TextArea
                                       rows={4}
-                                      placeholder={'Opciones (una por linea)'}
+                                      placeholder={'Opciones (una por línea)'}
                                       value={questionForm.optionsText}
                                       onChange={(event) => onQuestionFieldChange('optionsText', event.target.value)}
                                     />
@@ -2914,7 +2914,7 @@ function DashboardWorkspace() {
                                 dataSource={myQuizAttempts}
                                 pagination={{ pageSize: 5, hideOnSinglePage: true }}
                                 columns={myQuizAttemptColumns}
-                                locale={{ emptyText: 'Aun no tienes intentos' }}
+                                locale={{ emptyText: 'Aún no tienes intentos' }}
                               />
                             </Card>
 
@@ -2936,7 +2936,7 @@ function DashboardWorkspace() {
                                   dataSource={quizResultsRows}
                                   pagination={{ pageSize: 6, hideOnSinglePage: true }}
                                   columns={quizResultsColumns}
-                                  locale={{ emptyText: 'Sin resultados aun' }}
+                                  locale={{ emptyText: 'Sin resultados aún' }}
                                 />
                               </Card>
                             ) : null}
@@ -3036,7 +3036,7 @@ function DashboardWorkspace() {
                               onChange={(event) => onAdminUserFormChange('email', event.target.value)}
                             />
                             <Input.Password
-                              placeholder="Contrasena inicial"
+                              placeholder="Contraseña inicial"
                               value={adminUserForm.password}
                               onChange={(event) => onAdminUserFormChange('password', event.target.value)}
                             />
