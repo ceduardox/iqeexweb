@@ -325,18 +325,14 @@ const ActivityElementOptions = ({ activity, isMobile }: { activity: any; isMobil
     <>
       {activity.activity_type === 'TYPE_DYNAMIC' && (
         <Link
-          href={
-            getUriWithOrg(org.slug, '') +
-            `/course/${course?.courseStructure.course_uuid.replace(
-              'course_',
-              ''
-            )}/activity/${activity.activity_uuid.replace(
-              'activity_',
-              ''
-            )}/edit`
-          }
+          href={`/course/${course?.courseStructure.course_uuid.replace(
+            'course_',
+            ''
+          )}/activity/${activity.activity_uuid.replace(
+            'activity_',
+            ''
+          )}/edit`}
           className="h-7 px-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md flex items-center gap-1 text-xs font-bold transition-colors border border-blue-200 shadow-sm shadow-blue-300/20"
-          target='_blank'
         >
           <FilePenLine size={12} />
           <span className="hidden sm:inline">{t('dashboard.courses.structure.actions.edit_page')}</span>

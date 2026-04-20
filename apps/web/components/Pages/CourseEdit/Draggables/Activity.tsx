@@ -149,14 +149,10 @@ function Activity(props: any) {
             {props.activity.type === 'TYPE_DYNAMIC' && (
               <>
                 <Link
-                  href={
-                    getUriWithOrg(props.orgslug, '') +
-                    `/course/${props.courseid
-                    }/activity/${props.activity.uuid.replace(
-                      'activity_',
-                      ''
-                    )}/edit`
-                  }
+                  href={`/course/${props.courseid}/activity/${props.activity.uuid.replace(
+                    'activity_',
+                    ''
+                  )}/edit`}
                   className=" hover:cursor-pointer p-1 px-3 bg-sky-700 rounded-md items-center"
                   rel="noopener noreferrer"
                 >

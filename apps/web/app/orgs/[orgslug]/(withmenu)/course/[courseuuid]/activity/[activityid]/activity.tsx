@@ -188,6 +188,7 @@ function ActivityClient(props: ActivityClientProps) {
   const [assignment, setAssignment] = React.useState(null) as any;
   const [markStatusButtonActive, setMarkStatusButtonActive] = React.useState(false);
   const [isFocusMode, setIsFocusMode] = React.useState(false);
+  const [courseThumbnailLoadFailed, setCourseThumbnailLoadFailed] = React.useState(false);
   const isInitialRender = useRef(true);
   const { contributorStatus } = useContributorStatus(courseuuid);
   const router = useRouter();
@@ -234,6 +235,19 @@ function ActivityClient(props: ActivityClientProps) {
   // Get previous and next activities
   const prevActivity = currentIndex > 0 ? allActivities[currentIndex - 1] : null;
   const nextActivity = currentIndex < allActivities.length - 1 ? allActivities[currentIndex + 1] : null;
+
+  const courseThumbnailUrl =
+    !courseThumbnailLoadFailed && course.thumbnail_image
+      ? getCourseThumbnailMediaDirectory(
+          org?.org_uuid,
+          course.course_uuid,
+          course.thumbnail_image
+        )
+      : '/empty_thumbnail.png';
+
+  useEffect(() => {
+    setCourseThumbnailLoadFailed(false);
+  }, [course.thumbnail_image, course.course_uuid, org?.org_uuid]);
 
   // Memoize activity content
   const activityContent = useMemo(() => {
@@ -425,15 +439,9 @@ function ActivityClient(props: ActivityClientProps) {
                             >
                               <img
                                 className="w-[60px] h-[34px] rounded-md drop-shadow-md"
-                                src={course.thumbnail_image
-                                  ? getCourseThumbnailMediaDirectory(
-                                      org?.org_uuid,
-                                      course.course_uuid,
-                                      course.thumbnail_image
-                                    )
-                                  : '/empty_thumbnail.png'
-                                }
-                                alt=""
+                                src={courseThumbnailUrl}
+                                onError={() => setCourseThumbnailLoadFailed(true)}
+                                alt={course.name}
                               />
                             </Link>
                           </div>
@@ -603,15 +611,9 @@ function ActivityClient(props: ActivityClientProps) {
                               >
                                 <img
                                   className="w-[60px] h-[34px] sm:w-[100px] sm:h-[57px] rounded-md drop-shadow-md"
-                                  src={course.thumbnail_image
-                                    ? getCourseThumbnailMediaDirectory(
-                                        org?.org_uuid,
-                                        course.course_uuid,
-                                        course.thumbnail_image
-                                      )
-                                    : '/empty_thumbnail.png'
-                                  }
-                                  alt=""
+                                  src={courseThumbnailUrl}
+                                  onError={() => setCourseThumbnailLoadFailed(true)}
+                                  alt={course.name}
                                 />
                               </Link>
                             </div>
@@ -742,7 +744,7 @@ function ActivityClient(props: ActivityClientProps) {
                                     />
                                     {contributorStatus === 'ACTIVE' && activity.activity_type == 'TYPE_DYNAMIC' && (
                                       <Link
-                                        href={getUriWithOrg(orgslug, '') + `/course/${courseuuid}/activity/${activityid}/edit`}
+                                        href={`/course/${courseuuid}/activity/${activityid}/edit`}
                                         className="bg-emerald-600 rounded-full px-5 drop-shadow-md flex items-center space-x-2 p-2.5 text-white hover:cursor-pointer transition delay-150 duration-300 ease-in-out"
                                       >
                                         <Edit2 size={17} />
