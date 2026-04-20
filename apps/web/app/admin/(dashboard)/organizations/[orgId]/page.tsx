@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useMemo, useCallback } from 'react'
 import useSWR, { mutate } from 'swr'
-import { getAPIUrl } from '@services/config/config'
+import { getAPIUrl, getUriWithOrg } from '@services/config/config'
 import {
   getOrgLogoMediaDirectory,
   getUserAvatarMediaDirectory,
@@ -174,7 +174,7 @@ export default function OrgDetailPage() {
                 {org.plan}
               </span>
               <Link
-                href={`/lms/orgs/${org.slug}/dash/org/settings/branding`}
+                href={getUriWithOrg(org.slug, '/dash/org/settings/branding')}
                 className="inline-flex items-center gap-1.5 text-xs text-blue-300 hover:text-blue-200 transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"

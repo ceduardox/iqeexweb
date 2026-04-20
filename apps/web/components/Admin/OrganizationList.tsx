@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import useSWR from 'swr'
-import { getAPIUrl } from '@services/config/config'
+import { getAPIUrl, getUriWithOrg } from '@services/config/config'
 import { getOrgLogoMediaDirectory, getUserAvatarMediaDirectory } from '@services/media/media'
 import { swrFetcher } from '@services/utils/ts/requests'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
@@ -495,7 +495,7 @@ export default function OrganizationList() {
                 </td>
                 <td className="px-4 py-3">
                   <a
-                    href={safeHref(`${orgUrl}/dash`)}
+                    href={safeHref(getUriWithOrg(org.slug, '/dash'))}
                     rel="noopener"
                     className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors"
                     title="Open org dashboard"
