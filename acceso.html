@@ -196,6 +196,7 @@
 
   <script>
     (function initAccessPanel(){
+      const LMS_DEFAULT_ORG = 'default';
       const tabLogin = document.getElementById('tabLogin');
       const tabRegister = document.getElementById('tabRegister');
       const loginForm = document.getElementById('loginForm');
@@ -224,6 +225,19 @@
         if (result && result.user) {
           localStorage.setItem('iqx_auth_user', JSON.stringify(result.user));
         }
+      }
+
+      function persistLmsOrgContext() {
+        const secureAttr = window.location.protocol === 'https:' ? '; Secure' : '';
+        const baseAttributes = '; Path=/; SameSite=Lax' + secureAttr;
+        document.cookie = 'learnhouse_orgslug=' + encodeURIComponent(LMS_DEFAULT_ORG) + baseAttributes;
+        document.cookie = 'learnhouse_current_orgslug=' + encodeURIComponent(LMS_DEFAULT_ORG) + baseAttributes;
+        document.cookie = 'learnhouse_oauth_orgslug=' + encodeURIComponent(LMS_DEFAULT_ORG) + baseAttributes;
+      }
+
+      function redirectToLmsLogin() {
+        persistLmsOrgContext();
+        window.location.href = '/lms/login';
       }
 
       async function requestJson(url, payload){
@@ -262,7 +276,7 @@
           persistSession(result);
           setMessage('Cuenta creada. Redirigiendo al panel...', 'ok');
           registerForm.reset();
-          setTimeout(function(){ window.location.href = '/lms/login'; }, 500);
+          setTimeout(function(){ redirectToLmsLogin(); }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo registrar la cuenta', 'error');
         }
@@ -282,7 +296,7 @@
           const result = await requestJson('/api/auth/login', payload);
           persistSession(result);
           setMessage('Acceso correcto. Redirigiendo al panel...', 'ok');
-          setTimeout(function(){ window.location.href = '/lms/login'; }, 500);
+          setTimeout(function(){ redirectToLmsLogin(); }, 500);
         } catch (error) {
           setMessage(error.message || 'No se pudo iniciar sesión', 'error');
         }
@@ -291,7 +305,6 @@
   </script>
 </body>
 </html>
-
 
 
 

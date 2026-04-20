@@ -141,7 +141,7 @@ export default async function proxy(req: NextRequest) {
     const LEARNHOUSE_DOMAIN = instanceInfo.frontend_domain
     const LEARNHOUSE_TOP_DOMAIN = instanceInfo.top_domain
 
-    // Resolve orgslug: custom domain > subdomain > cookie
+    // Resolve orgslug: custom domain > subdomain > cookie > default org
     let orgslug: string | undefined
     let customDomain: string | undefined
 
@@ -167,8 +167,27 @@ export default async function proxy(req: NextRequest) {
       orgslug = cookie_orgslug
     }
 
+    // 4. Fall back to the instance default org so single-org/base-domain
+    // auth flows don't force users to manually type an organization.
+    if (!orgslug) {
+      orgslug = default_org as string
+    }
+
+    const requestHeaders = new Headers(req.headers)
+    if (orgslug) {
+      requestHeaders.set('x-learnhouse-orgslug', orgslug)
+    }
+    if (customDomain) {
+      requestHeaders.set('x-custom-domain', customDomain)
+    }
+
     const response = NextResponse.rewrite(
-      new URL(`/auth${pathname}${search}`, req.url)
+      new URL(`/auth${pathname}${search}`, req.url),
+      {
+        request: {
+          headers: requestHeaders,
+        },
+      }
     )
 
     // Set cookie if we have an orgslug

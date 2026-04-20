@@ -71,6 +71,8 @@
       if (isIOS) document.documentElement.classList.add('ios-device');
       if (isWindows && !isIOS) document.documentElement.classList.add('windows-device');
     })();
+
+    window.IQX_LMS_DEFAULT_ORG = 'default';
   </script>
   <!-- GSAP + ScrollTrigger -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" referrerpolicy="no-referrer"></script>
@@ -3353,6 +3355,8 @@
       const langMenu = document.getElementById('iqxLangMenu');
       const langButtons = langMenu ? Array.from(langMenu.querySelectorAll('button')) : [];
       const navLinks = overlay ? Array.from(overlay.querySelectorAll('a')) : [];
+      const directAccessLinks = Array.from(document.querySelectorAll('a[href="/lms/login"]'))
+        .filter((link) => !(overlay && overlay.contains(link)));
       const contactBtn = document.getElementById('iqxHeaderContact');
 
       if (!header || !burger || !overlay || !backdrop) return;
@@ -3389,8 +3393,19 @@
           link.classList.add('is-typing');
 
           setTimeout(() => {
+            if (href === '/lms/login') {
+              redirectToDefaultLmsLogin();
+              return;
+            }
             window.location.href = href;
           }, 2000);
+        });
+      });
+
+      directAccessLinks.forEach((link) => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateWithCardSound('/lms/login');
         });
       });
 
@@ -3453,10 +3468,29 @@
       } catch (_) {}
     }
 
+    function persistDefaultOrgForLms() {
+      const orgSlug = (window.IQX_LMS_DEFAULT_ORG || 'default').trim();
+      const secureAttr = window.location.protocol === 'https:' ? '; Secure' : '';
+      const baseAttributes = '; Path=/; SameSite=Lax' + secureAttr;
+
+      document.cookie = 'learnhouse_orgslug=' + encodeURIComponent(orgSlug) + baseAttributes;
+      document.cookie = 'learnhouse_current_orgslug=' + encodeURIComponent(orgSlug) + baseAttributes;
+      document.cookie = 'learnhouse_oauth_orgslug=' + encodeURIComponent(orgSlug) + baseAttributes;
+    }
+
+    function redirectToDefaultLmsLogin() {
+      persistDefaultOrgForLms();
+      window.location.href = '/lms/login';
+    }
+
     function navigateWithCardSound(url, delayMs = 600) {
       if (!url) return;
       playCardClickSound();
       setTimeout(function() {
+        if (url === '/lms/login') {
+          redirectToDefaultLmsLogin();
+          return;
+        }
         window.location.href = url;
       }, delayMs);
     }
@@ -4030,7 +4064,6 @@
 </body>
 
 </html>
-
 
 
 

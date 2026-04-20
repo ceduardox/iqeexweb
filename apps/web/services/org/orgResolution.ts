@@ -213,7 +213,7 @@ async function fetchOrgByUUID(orgUUID: string): Promise<ResolvedOrg | null> {
 
 /**
  * Get just the org slug from available sources (useful for client components)
- * Priority: subdomain > cookie
+ * Priority: subdomain > middleware header > cookie
  */
 export async function getOrgSlug(): Promise<string | null> {
   // Try subdomain first
@@ -224,6 +224,12 @@ export async function getOrgSlug(): Promise<string | null> {
   const sub = extractSubdomain(host, domain)
   if (sub && sub !== 'auth' && sub !== 'www' && sub !== 'api' && sub !== 'admin') {
     return sub
+  }
+
+  // Middleware can inject the resolved/default org for auth routes on first load.
+  const headerOrgSlug = headersList.get('x-learnhouse-orgslug')
+  if (headerOrgSlug) {
+    return headerOrgSlug
   }
 
   // Fall back to cookie
