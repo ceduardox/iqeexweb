@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html className={wixMadeforText.variable} lang="en">
+    <html className={wixMadeforText.variable} lang="es">
       <head>
         <link rel="icon" type="image/png" href="/iqex-favicon.png" />
         <link rel="shortcut icon" href="/iqex-favicon.png" />

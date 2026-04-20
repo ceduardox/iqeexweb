@@ -1,45 +1,49 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import i18n from '../../lib/i18n'
-import { useTranslation } from 'react-i18next'
+import i18n, { ensureLocaleLoaded } from '../../lib/i18n'
 
 export default function I18nProvider({ children }: { children: React.ReactNode }) {
-  const { i18n: i18nInstance } = useTranslation()
-  const [isReady, setIsReady] = useState(i18n.isInitialized)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    // Wait for i18n to be fully initialized
-    if (i18n.isInitialized) {
-      setIsReady(true)
-    } else {
-      const handleInitialized = () => {
+    let isMounted = true
+
+    const syncLocale = async (lng?: string) => {
+      setIsReady(false)
+      await ensureLocaleLoaded(lng ?? i18n.resolvedLanguage ?? i18n.language)
+
+      if (isMounted) {
         setIsReady(true)
       }
-      i18n.on('initialized', handleInitialized)
-      return () => {
-        i18n.off('initialized', handleInitialized)
-      }
     }
-  }, [])
 
-  // Also listen for language changes to trigger re-renders
-  useEffect(() => {
-    const handleLanguageChanged = () => {
-      // Force a re-render when language changes
-      setIsReady(true)
+    const handleInitialized = () => {
+      void syncLocale()
     }
+
+    const handleLanguageChanged = (lng: string) => {
+      void syncLocale(lng)
+    }
+
+    if (i18n.isInitialized) {
+      void syncLocale()
+    } else {
+      i18n.on('initialized', handleInitialized)
+    }
+
     i18n.on('languageChanged', handleLanguageChanged)
+
     return () => {
+      isMounted = false
+      i18n.off('initialized', handleInitialized)
       i18n.off('languageChanged', handleLanguageChanged)
     }
   }, [])
 
-  // Show nothing while i18n is initializing to prevent flash of wrong language
   if (!isReady) {
     return null
   }
 
   return <>{children}</>
 }
-

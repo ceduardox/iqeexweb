@@ -25,15 +25,19 @@ import {
 } from "@components/ui/dropdown-menu"
 import { Languages, Check, LogOut, Settings, User } from 'lucide-react';
 import { AVAILABLE_LANGUAGES } from '@/lib/languages';
+import { normalizeLanguageCode, setAppLanguage } from '@/lib/i18n';
 
 function HomeClient() {
   const { t, i18n } = useTranslation();
   const session = useLHSession() as any;
   const access_token = session?.data?.tokens?.access_token;
   const { data: orgs } = useSWR(`${getAPIUrl()}orgs/user/page/1/limit/10`, (url) => swrFetcher(url, access_token))
+  const currentLanguage = normalizeLanguageCode(
+    i18n.resolvedLanguage || i18n.language
+  )
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng)
+  const changeLanguage = async (lng: string) => {
+    await setAppLanguage(lng)
   }
 
   useEffect(() => {
@@ -78,11 +82,11 @@ function HomeClient() {
                   {AVAILABLE_LANGUAGES.map((language) => (
                     <DropdownMenuItem 
                       key={language.code}
-                      onClick={() => changeLanguage(language.code)} 
+                      onClick={() => void changeLanguage(language.code)} 
                       className="flex items-center justify-between"
                     >
                       <span>{t(language.translationKey)} ({language.nativeName})</span>
-                      {i18n.language === language.code && <Check size={14} />}
+                      {currentLanguage === language.code && <Check size={14} />}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>

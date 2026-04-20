@@ -4,6 +4,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Languages, ChevronDown, Check } from 'lucide-react'
 import { AVAILABLE_LANGUAGES } from '@/lib/languages'
+import { normalizeLanguageCode, setAppLanguage } from '@/lib/i18n'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +17,14 @@ const LanguageSwitcher = ({ primaryColor = '' }: { primaryColor?: string }) => {
   const { i18n, t } = useTranslation()
   const colors = getMenuColorClasses(primaryColor)
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng)
+  const changeLanguage = async (lng: string) => {
+    await setAppLanguage(lng)
   }
 
-  const currentLangCode = i18n.language.split('-')[0].toUpperCase()
+  const currentLanguage = normalizeLanguageCode(
+    i18n.resolvedLanguage || i18n.language
+  )
+  const currentLangCode = currentLanguage.toUpperCase()
 
   return (
     <DropdownMenu>
@@ -40,13 +44,13 @@ const LanguageSwitcher = ({ primaryColor = '' }: { primaryColor?: string }) => {
           <DropdownMenuItem
             key={language.code}
             className="flex items-center justify-between cursor-pointer"
-            onClick={() => changeLanguage(language.code)}
+            onClick={() => void changeLanguage(language.code)}
           >
             <span className="flex items-center space-x-2">
               <span className="text-xs font-mono text-gray-400 w-5">{language.code.toUpperCase()}</span>
               <span>{language.nativeName}</span>
             </span>
-            {i18n.language === language.code && <Check size={14} className="text-black" />}
+            {currentLanguage === language.code && <Check size={14} className="text-black" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

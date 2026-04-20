@@ -24,6 +24,7 @@ import {
 import { signOut } from '@components/Contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { AVAILABLE_LANGUAGES } from '@/lib/languages'
+import { normalizeLanguageCode, setAppLanguage } from '@/lib/i18n'
 import LanguageSwitcher from '@components/Utils/LanguageSwitcher'
 import { getMenuColorClasses } from '@services/utils/ts/colorUtils'
 
@@ -46,9 +47,12 @@ export const HeaderProfileBox = ({ primaryColor = '' }: { primaryColor?: string 
   const org = useOrg() as any
   const { t, i18n } = useTranslation()
   const colors = getMenuColorClasses(primaryColor)
+  const currentLanguage = normalizeLanguageCode(
+    i18n.resolvedLanguage || i18n.language
+  )
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng)
+  const changeLanguage = async (lng: string) => {
+    await setAppLanguage(lng)
   }
 
   useEffect(() => { }
@@ -250,11 +254,11 @@ export const HeaderProfileBox = ({ primaryColor = '' }: { primaryColor?: string 
                       {AVAILABLE_LANGUAGES.map((language) => (
                         <DropdownMenuItem 
                           key={language.code}
-                          onClick={() => changeLanguage(language.code)}
+                          onClick={() => void changeLanguage(language.code)}
                           className="flex items-center justify-between"
                         >
                           <span>{t(language.translationKey)} ({language.nativeName})</span>
-                          {i18n.language === language.code && <Check size={14} weight="bold" />}
+                          {currentLanguage === language.code && <Check size={14} weight="bold" />}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuSubContent>

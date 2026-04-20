@@ -64,6 +64,7 @@ import {
 } from "@components/ui/hover-menu"
 import { FeedbackModal } from '@components/Objects/Modals/FeedbackModal'
 import { AVAILABLE_LANGUAGES } from '@/lib/languages'
+import { normalizeLanguageCode, setAppLanguage } from '@/lib/i18n'
 import { getOrgLogoMediaDirectory } from '@services/media/media'
 import { cn } from '@/lib/utils'
 import useSWR, { mutate } from 'swr'
@@ -81,6 +82,9 @@ function DashLeftMenu() {
   const [recentAssignments, setRecentAssignments] = useState<any[]>([])
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
   const access_token = session?.data?.tokens?.access_token
+  const currentLanguage = normalizeLanguageCode(
+    i18n.resolvedLanguage || i18n.language
+  )
 
   // SWR key for courses
   const coursesKey = org?.slug ? `${getAPIUrl()}courses/org_slug/${org.slug}/page/1/limit/8` : null
@@ -154,8 +158,8 @@ function DashLeftMenu() {
     localStorage.setItem('dash-menu-collapsed', String(newState))
   }
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng)
+  const changeLanguage = async (lng: string) => {
+    await setAppLanguage(lng)
   }
 
   async function logOutUI() {
@@ -714,14 +718,14 @@ function DashLeftMenu() {
                 {AVAILABLE_LANGUAGES.map((language) => (
                   <HoverMenuItem
                     key={language.code}
-                    onClick={() => changeLanguage(language.code)}
+                    onClick={() => void changeLanguage(language.code)}
                     className="flex items-center justify-between px-3 py-2.5 cursor-pointer text-white/70 hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <div className="flex flex-col">
                       <span className="font-medium text-sm">{language.nativeName}</span>
                       <span className="text-xs text-white/40">{t(language.translationKey)}</span>
                     </div>
-                    {i18n.language === language.code && (
+                    {currentLanguage === language.code && (
                       <Check size={16} weight="bold" className="text-green-500" />
                     )}
                   </HoverMenuItem>
