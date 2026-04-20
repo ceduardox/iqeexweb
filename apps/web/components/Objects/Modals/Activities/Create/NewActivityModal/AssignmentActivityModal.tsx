@@ -49,6 +49,7 @@ function NewAssignment({ submitActivity, chapterId, course, closeModal }: any) {
     const handleSubmit = async (e: any) => {
         e.preventDefault()
         setIsSubmitting(true)
+        const toast_loading = toast.loading(t('dashboard.assignments.modals.create.toasts.creating'))
         const activity = {
             name: activityName,
             chapter_id: chapterId,
@@ -58,34 +59,42 @@ function NewAssignment({ submitActivity, chapterId, course, closeModal }: any) {
             course_id: course?.courseStructure.id,
         }
 
-        const activity_res = await createActivity(activity, chapterId, org?.id, session.data?.tokens?.access_token)
-        const res = await createAssignment({
-            title: activityName,
-            description: activityDescription,
-            due_date: dueDate,
-            grading_type: gradingType,
-            course_id: course?.courseStructure.id,
-            org_id: org?.id,
-            chapter_id: chapterId,
-            activity_id: activity_res?.id,
-        }, session.data?.tokens?.access_token)
-        const toast_loading = toast.loading(t('dashboard.assignments.modals.create.toasts.creating'))
+        try {
+            const activity_res = await createActivity(activity, chapterId, org?.id, session.data?.tokens?.access_token)
 
-        if (res.success) {
+            if (!activity_res?.id || !activity_res?.activity_uuid) {
+                throw new Error(activity_res?.detail || 'Failed to create assignment activity')
+            }
+
+            const res = await createAssignment({
+                title: activityName,
+                description: activityDescription,
+                due_date: dueDate,
+                grading_type: gradingType,
+                course_id: course?.courseStructure.id,
+                org_id: org?.id,
+                chapter_id: chapterId,
+                activity_id: activity_res.id,
+            }, session.data?.tokens?.access_token)
+
+            if (!res.success) {
+                await deleteActivity(activity_res.activity_uuid, session.data?.tokens?.access_token)
+                throw new Error(res.data?.detail || 'Failed to create assignment')
+            }
+
+            mutate(`${getAPIUrl()}courses/${course.courseStructure.course_uuid}/meta?with_unpublished_activities=${withUnpublishedActivities}`)
+            // Refresh sidebar courses and assignments cache
+            mutate((key) => typeof key === 'string' && key.includes('/courses/org_slug/'))
+            mutate((key) => typeof key === 'string' && key.includes('/assignments/course/'))
             toast.dismiss(toast_loading)
             toast.success(t('dashboard.assignments.modals.create.toasts.success'))
-        } else {
-            toast.error(res.data.detail)
-            await deleteActivity(activity_res.activity_uuid, session.data?.tokens?.access_token)
-
+            closeModal()
+        } catch (error: any) {
+            toast.dismiss(toast_loading)
+            toast.error(error?.message || 'Failed to create assignment')
+        } finally {
+            setIsSubmitting(false)
         }
-
-        mutate(`${getAPIUrl()}courses/${course.courseStructure.course_uuid}/meta?with_unpublished_activities=${withUnpublishedActivities}`)
-        // Refresh sidebar courses and assignments cache
-        mutate((key) => typeof key === 'string' && key.includes('/courses/org_slug/'))
-        mutate((key) => typeof key === 'string' && key.includes('/assignments/course/'))
-        setIsSubmitting(false)
-        closeModal()
     }
 
 

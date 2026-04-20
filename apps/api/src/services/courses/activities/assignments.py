@@ -4,6 +4,7 @@ from fastapi import HTTPException, Request, UploadFile
 from sqlmodel import Session, select
 
 from src.db.courses.activities import Activity
+from src.db.courses.activities import ActivityTypeEnum
 from src.db.courses.assignments import (
     Assignment,
     AssignmentCreate,
@@ -21,7 +22,10 @@ from src.db.courses.assignments import (
     AssignmentUserSubmissionCreate,
     AssignmentUserSubmissionRead,
     AssignmentUserSubmissionStatus,
+    AssignmentUserSubmissionUpdate,
 )
+from src.db.courses.chapter_activities import ChapterActivity
+from src.db.courses.chapters import Chapter
 from src.db.courses.courses import Course
 from src.db.organizations import Organization
 from src.db.trail_runs import TrailRun
@@ -61,6 +65,64 @@ def _block_api_tokens(current_user: PublicUser | AnonymousUser | APITokenUser) -
         )
 
 
+def _validate_assignment_relations(
+    db_session: Session,
+    course: Course,
+    chapter_id: int,
+    activity_id: int,
+) -> tuple[Chapter, Activity]:
+    statement = select(Chapter).where(Chapter.id == chapter_id)
+    chapter = db_session.exec(statement).first()
+
+    if not chapter:
+        raise HTTPException(
+            status_code=404,
+            detail="Chapter not found",
+        )
+
+    statement = select(Activity).where(Activity.id == activity_id)
+    activity = db_session.exec(statement).first()
+
+    if not activity:
+        raise HTTPException(
+            status_code=404,
+            detail="Activity not found",
+        )
+
+    if chapter.course_id != course.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Chapter does not belong to course",
+        )
+
+    if activity.course_id != course.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Activity does not belong to course",
+        )
+
+    if activity.activity_type != ActivityTypeEnum.TYPE_ASSIGNMENT:
+        raise HTTPException(
+            status_code=400,
+            detail="Activity must be an assignment activity",
+        )
+
+    statement = select(ChapterActivity).where(
+        ChapterActivity.chapter_id == chapter.id,
+        ChapterActivity.activity_id == activity.id,
+        ChapterActivity.course_id == course.id,
+    )
+    chapter_activity = db_session.exec(statement).first()
+
+    if not chapter_activity:
+        raise HTTPException(
+            status_code=400,
+            detail="Activity does not belong to chapter",
+        )
+
+    return chapter, activity
+
+
 ## > Assignments CRUD
 
 
@@ -84,8 +146,12 @@ async def create_assignment(
     # RBAC check
     await check_resource_access(request, db_session, current_user, course.course_uuid, AccessAction.CREATE)
 
-    # Usage check
-    check_limits_with_usage("assignments", course.org_id, db_session)
+    _validate_assignment_relations(
+        db_session,
+        course,
+        assignment_object.chapter_id,
+        assignment_object.activity_id,
+    )
 
     # Create Assignment
     assignment = Assignment(**assignment_object.model_dump())
@@ -94,6 +160,9 @@ async def create_assignment(
     assignment.creation_date = str(datetime.now())
     assignment.update_date = str(datetime.now())
     assignment.org_id = course.org_id
+
+    # Usage check
+    check_limits_with_usage("assignments", course.org_id, db_session)
 
     # Insert Assignment in DB
     db_session.add(assignment)
@@ -203,8 +272,24 @@ async def update_assignment(
             detail="Assignment not found",
         )
 
-    # Check if course exists
-    statement = select(Course).where(Course.id == assignment.course_id)
+    target_course_id = (
+        assignment_object.course_id
+        if assignment_object.course_id is not None
+        else assignment.course_id
+    )
+    target_chapter_id = (
+        assignment_object.chapter_id
+        if assignment_object.chapter_id is not None
+        else assignment.chapter_id
+    )
+    target_activity_id = (
+        assignment_object.activity_id
+        if assignment_object.activity_id is not None
+        else assignment.activity_id
+    )
+
+    # Check if target course exists
+    statement = select(Course).where(Course.id == target_course_id)
     course = db_session.exec(statement).first()
 
     if not course:
@@ -216,11 +301,19 @@ async def update_assignment(
     # RBAC check
     await check_resource_access(request, db_session, current_user, course.course_uuid, AccessAction.UPDATE)
 
+    _validate_assignment_relations(
+        db_session,
+        course,
+        target_chapter_id,
+        target_activity_id,
+    )
+
     # Update only the fields that were passed in
     for var, value in vars(assignment_object).items():
         if value is not None:
             setattr(assignment, var, value)
     assignment.update_date = str(datetime.now())
+    assignment.org_id = course.org_id
 
     # Insert Assignment in DB
     db_session.add(assignment)
@@ -1438,27 +1531,16 @@ async def read_user_assignment_submissions_me(
 
 async def update_assignment_submission(
     request: Request,
+    assignment_uuid: str,
     user_id: str,
-    assignment_user_submission_object: AssignmentUserSubmissionCreate,
+    assignment_user_submission_object: AssignmentUserSubmissionUpdate,
     current_user: PublicUser | AnonymousUser | APITokenUser,
     db_session: Session,
 ):
     _block_api_tokens(current_user)
-    # Check if assignment user submission exists
-    statement = select(AssignmentUserSubmission).where(
-        AssignmentUserSubmission.user_id == user_id
-    )
-    assignment_user_submission = db_session.exec(statement).first()
-
-    if not assignment_user_submission:
-        raise HTTPException(
-            status_code=404,
-            detail="Assignment User Submission not found",
-        )
-
     # Check if assignment exists
     statement = select(Assignment).where(
-        Assignment.id == assignment_user_submission.assignment_id
+        Assignment.assignment_uuid == assignment_uuid
     )
     assignment = db_session.exec(statement).first()
 
@@ -1466,6 +1548,19 @@ async def update_assignment_submission(
         raise HTTPException(
             status_code=404,
             detail="Assignment not found",
+        )
+
+    # Check if assignment user submission exists
+    statement = select(AssignmentUserSubmission).where(
+        AssignmentUserSubmission.user_id == user_id,
+        AssignmentUserSubmission.assignment_id == assignment.id,
+    )
+    assignment_user_submission = db_session.exec(statement).first()
+
+    if not assignment_user_submission:
+        raise HTTPException(
+            status_code=404,
+            detail="Assignment User Submission not found",
         )
 
     # Check if course exists

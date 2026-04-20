@@ -121,15 +121,28 @@ function PublishingState() {
     const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
 
     async function updateAssignmentPublishState(assignmentUUID: string) {
-        const res = await updateAssignment({ published: !assignment?.assignment_object?.published }, assignmentUUID, access_token)
-        const res2 = await updateActivity({ published: !assignment?.assignment_object?.published }, assignment?.activity_object?.activity_uuid, access_token)
         const toast_loading = toast.loading(t('dashboard.assignments.detail.publishing.toasts.updating'))
-        if (res.success && res2) {
+        const currentPublished = !!assignment?.assignment_object?.published
+        const nextPublished = !currentPublished
+        const res = await updateAssignment({ published: nextPublished }, assignmentUUID, access_token)
+
+        if (!res.success) {
+            toast.dismiss(toast_loading)
+            toast.error(t('dashboard.assignments.detail.publishing.toasts.update_error'))
+            return
+        }
+
+        const res2 = await updateActivity({ published: nextPublished }, assignment?.activity_object?.activity_uuid, access_token)
+
+        if (res2.success) {
             mutate(`${getAPIUrl()}assignments/${assignmentUUID}`)
+            mutate(`${getAPIUrl()}activities/${assignment?.activity_object?.activity_uuid}`)
             toast.success(t('dashboard.assignments.detail.publishing.toasts.update_success'))
             toast.dismiss(toast_loading)
         }
         else {
+            await updateAssignment({ published: currentPublished }, assignmentUUID, access_token)
+            toast.dismiss(toast_loading)
             toast.error(t('dashboard.assignments.detail.publishing.toasts.update_error'))
         }
     }

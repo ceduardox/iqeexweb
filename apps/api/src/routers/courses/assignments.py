@@ -7,6 +7,7 @@ from src.db.courses.assignments import (
     AssignmentTaskUpdate,
     AssignmentUpdate,
     AssignmentUserSubmissionCreate,
+    AssignmentUserSubmissionUpdate,
 )
 from src.db.users import PublicUser
 from src.core.events.database import get_db_session
@@ -408,7 +409,7 @@ async def api_update_user_assignment_submissions(
     request: Request,
     assignment_uuid: str,
     user_id: str,
-    assignment_submission: AssignmentUserSubmissionCreate,
+    assignment_submission: AssignmentUserSubmissionUpdate,
     current_user: PublicUser = Depends(get_current_user),
     db_session=Depends(get_db_session),
 ):
@@ -416,7 +417,7 @@ async def api_update_user_assignment_submissions(
     Update submissions for an assignment from a user
     """
     return await update_assignment_submission(
-        request, user_id, assignment_submission, current_user, db_session
+        request, assignment_uuid, user_id, assignment_submission, current_user, db_session
     )
 
 

@@ -13,17 +13,45 @@ import useSWR from 'swr';
 import { useTranslation } from 'react-i18next';
 
 function AssignmentsHome() {
+  const COURSES_PAGE_SIZE = 100
   const { t } = useTranslation()
   const session = useLHSession() as any;
   const access_token = session?.data?.tokens?.access_token;
   const org = useOrg() as any;
   const [courseAssignments, setCourseAssignments] = React.useState<any[]>([])
 
-  const { data: courses } = useSWR(`${getAPIUrl()}courses/org_slug/${org?.slug}/page/1/limit/50`, (url) => swrFetcher(url, access_token))
+  const { data: courses = [] } = useSWR(
+    org?.slug && access_token ? `assignments-courses:${org.slug}` : null,
+    async () => {
+      const allCourses: any[] = []
+      let page = 1
+
+      while (true) {
+        const batch = await swrFetcher(
+          `${getAPIUrl()}courses/org_slug/${org.slug}/page/${page}/limit/${COURSES_PAGE_SIZE}`,
+          access_token
+        )
+
+        if (!Array.isArray(batch) || batch.length === 0) {
+          break
+        }
+
+        allCourses.push(...batch)
+
+        if (batch.length < COURSES_PAGE_SIZE) {
+          break
+        }
+
+        page += 1
+      }
+
+      return allCourses
+    }
+  )
 
   async function getAvailableAssignmentsForCourse(course_uuid: string) {
     const res = await getAssignmentsFromACourse(course_uuid, access_token)
-    return res.data
+    return res.success ? res.data : []
   }
 
   function removeAssignmentPrefix(assignment_uuid: string) {
@@ -36,12 +64,23 @@ function AssignmentsHome() {
 
 
   React.useEffect(() => {
-    if (courses) {
+    let active = true
+
+    if (courses.length > 0) {
       const course_uuids = courses.map((course: any) => course.course_uuid)
       const courseAssignmentsPromises = course_uuids.map((course_uuid: string) => getAvailableAssignmentsForCourse(course_uuid))
-      Promise.all(courseAssignmentsPromises).then((results) => {
-        setCourseAssignments(results)
+      Promise.allSettled(courseAssignmentsPromises).then((results) => {
+        if (!active) return
+        setCourseAssignments(
+          results.map((result) => (result.status === 'fulfilled' && Array.isArray(result.value) ? result.value : []))
+        )
       })
+    } else {
+      setCourseAssignments([])
+    }
+
+    return () => {
+      active = false
     }
   }, [courses])
 
