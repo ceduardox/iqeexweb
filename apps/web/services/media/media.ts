@@ -1,12 +1,53 @@
 import { getBackendUrl, getConfig } from '@services/config/config'
 
-function getMediaUrl() {
-  const mediaUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_MEDIA_URL');
+function normalizeBaseUrl(url: string) {
+  return url.replace(/\/+$/, '')
+}
+
+function buildContentUrl(relativePath: string) {
+  const normalizedPath = relativePath.replace(/^\/+/, '')
+  const mediaUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_MEDIA_URL')
   if (mediaUrl) {
-    return mediaUrl;
-  } else {
-    return getBackendUrl();
+    return `${normalizeBaseUrl(mediaUrl)}/${normalizedPath}`
   }
+
+  const backendUrl = getBackendUrl()
+  if (backendUrl) {
+    try {
+      const parsedBackendUrl = new URL(backendUrl)
+      const isLocalBackend =
+        parsedBackendUrl.hostname === 'localhost' || parsedBackendUrl.hostname === '127.0.0.1'
+
+      if (isLocalBackend) {
+        return `/${normalizedPath}`
+      }
+
+      if (
+        typeof window !== 'undefined' &&
+        parsedBackendUrl.origin === window.location.origin
+      ) {
+        return `/${normalizedPath}`
+      }
+
+      return `${normalizeBaseUrl(backendUrl)}/${normalizedPath}`
+    } catch {
+      return `/${normalizedPath}`
+    }
+  }
+
+  return `/${normalizedPath}`
+}
+
+function getStoredMediaUrl(fileId: string) {
+  if (fileId.startsWith('http://') || fileId.startsWith('https://')) {
+    return fileId
+  }
+
+  if (fileId.startsWith('/content/') || fileId.startsWith('content/')) {
+    return buildContentUrl(fileId)
+  }
+
+  return null
 }
 
 function getApiUrl() {
@@ -59,8 +100,9 @@ export function getCourseThumbnailMediaDirectory(
   courseUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/thumbnails/${fileId}`)
 }
 
 export function getBoardThumbnailMediaDirectory(
@@ -68,8 +110,9 @@ export function getBoardThumbnailMediaDirectory(
   boardUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/boards/${boardUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/boards/${boardUUID}/thumbnails/${fileId}`)
 }
 
 export function getPlaygroundThumbnailMediaDirectory(
@@ -77,8 +120,9 @@ export function getPlaygroundThumbnailMediaDirectory(
   playgroundUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/playgrounds/${playgroundUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/playgrounds/${playgroundUUID}/thumbnails/${fileId}`)
 }
 
 export function getCommunityThumbnailMediaDirectory(
@@ -86,18 +130,21 @@ export function getCommunityThumbnailMediaDirectory(
   communityUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/communities/${communityUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/communities/${communityUUID}/thumbnails/${fileId}`)
 }
 
 export function getOrgLandingMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/landing/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/landing/${fileId}`)
 }
 
 export function getUserAvatarMediaDirectory(userUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/users/${userUUID}/avatars/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/users/${userUUID}/avatars/${fileId}`)
 }
 
 export function getActivityBlockMediaDirectory(
@@ -109,20 +156,16 @@ export function getActivityBlockMediaDirectory(
   type: string
 ) {
   if (type == 'pdfBlock') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/pdfBlock/${blockId}/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/pdfBlock/${blockId}/${fileId}`)
   }
   if (type == 'videoBlock') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/videoBlock/${blockId}/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/videoBlock/${blockId}/${fileId}`)
   }
   if (type == 'imageBlock') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/imageBlock/${blockId}/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/imageBlock/${blockId}/${fileId}`)
   }
   if (type == 'audioBlock') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/audioBlock/${blockId}/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseId}/activities/${activityId}/dynamic/blocks/audioBlock/${blockId}/${fileId}`)
   }
 }
 
@@ -135,8 +178,7 @@ export function getTaskRefFileDir(
   fileID : string
 
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/assignments/${assignmentUUID}/tasks/${assignmentTaskUUID}/${fileID}`
-  return uri
+  return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/assignments/${assignmentUUID}/tasks/${assignmentTaskUUID}/${fileID}`)
 }
 
 export function getTaskFileSubmissionDir(
@@ -147,8 +189,7 @@ export function getTaskFileSubmissionDir(
   assignmentTaskUUID: string,
   fileSubID : string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/assignments/${assignmentUUID}/tasks/${assignmentTaskUUID}/subs/${fileSubID}`
-  return uri
+  return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/assignments/${assignmentUUID}/tasks/${assignmentTaskUUID}/subs/${fileSubID}`)
 }
 
 export function getActivityMediaDirectory(
@@ -159,43 +200,47 @@ export function getActivityMediaDirectory(
   activityType: string
 ) {
   if (activityType == 'video') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/video/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/video/${fileId}`)
   }
   if (activityType == 'documentpdf') {
-    let uri = `${getMediaUrl()}content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/documentpdf/${fileId}`
-    return uri
+    return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/activities/${activityUUID}/documentpdf/${fileId}`)
   }
 }
 
 export function getOrgLogoMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/logos/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/logos/${fileId}`)
 }
 
 export function getOrgThumbnailMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/thumbnails/${fileId}`)
 }
 
 export function getOrgPreviewMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/previews/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/previews/${fileId}`)
 }
 
 export function getOrgOgImageMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/og_images/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/og_images/${fileId}`)
 }
 
 export function getOrgAuthBackgroundMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/auth_backgrounds/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/auth_backgrounds/${fileId}`)
 }
 
 export function getOrgFaviconMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/favicons/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/favicons/${fileId}`)
 }
 
 /**
@@ -221,8 +266,9 @@ export function getPodcastThumbnailMediaDirectory(
   podcastUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/podcasts/${podcastUUID}/thumbnails/${fileId}`)
 }
 
 /**
@@ -234,8 +280,9 @@ export function getEpisodeThumbnailMediaDirectory(
   episodeUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/thumbnails/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/thumbnails/${fileId}`)
 }
 
 /**
@@ -247,8 +294,9 @@ export function getEpisodeAudioMediaDirectory(
   episodeUUID: string,
   fileId: string
 ) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/audio/${fileId}`
-  return uri
+  const storedMediaUrl = getStoredMediaUrl(fileId)
+  if (storedMediaUrl) return storedMediaUrl
+  return buildContentUrl(`content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/audio/${fileId}`)
 }
 
 /**

@@ -54,6 +54,7 @@ export const OrgMenu = (props: any) => {
   const org = useOrg() as any;
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
   const pathname = usePathname()
   const { t } = useTranslation()
   const { rights } = useAdminStatus()
@@ -127,6 +128,10 @@ export const OrgMenu = (props: any) => {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    setLogoLoadFailed(false)
+  }, [org?.org_uuid, org?.logo_image])
+
   function toggleMenu() {
     setIsMenuOpen(!isMenuOpen)
   }
@@ -153,12 +158,13 @@ export const OrgMenu = (props: any) => {
             <div className="logo flex md:w-auto w-full justify-center">
               <Link href={getUriWithOrg(orgslug, '/')}>
                 <div className="flex w-auto h-9 rounded-md items-center m-auto py-1 justify-center">
-                  {org?.logo_image ? (
+                  {org?.logo_image && !logoLoadFailed ? (
                     <img
                       src={`${getOrgLogoMediaDirectory(org.org_uuid, org?.logo_image)}`}
                       alt="Learnhouse"
                       style={{ width: 'auto', height: '100%' }}
                       className="rounded-md"
+                      onError={() => setLogoLoadFailed(true)}
                     />
                   ) : (
                     <LearnHouseLogo logoFilter={colors.logoFilter} />

@@ -26,6 +26,7 @@ function UserAvatar(props: UserAvatarProps) {
   const access_token = session?.data?.tokens?.access_token
   const params = useParams() as any
   const [userData, setUserData] = useState<any>(null)
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -119,12 +120,20 @@ function UserAvatar(props: UserAvatarProps) {
     return getUriWithOrg(params.orgslug, '/empty_avatar.png')
   }
 
+  const fallbackAvatarUrl = getUriWithOrg(params.orgslug, '/empty_avatar.png')
+  const avatarUrl = avatarLoadFailed ? fallbackAvatarUrl : getAvatarUrl()
+
+  useEffect(() => {
+    setAvatarLoadFailed(false)
+  }, [props.avatar_url, props.predefined_avatar, props.userId, props.username, userData?.avatar_image, session?.data?.user?.avatar_image])
+
   const avatarImage = (
     <img
       alt="User Avatar"
       width={props.width ?? 50}
       height={props.width ?? 50}
-      src={getAvatarUrl()}
+      src={avatarUrl}
+      onError={() => setAvatarLoadFailed(true)}
       className={`
         ${props.avatar_url && session?.data?.user?.avatar_image ? '' : 'bg-gray-700'}
         ${props.border ? `border ${props.border}` : ''}
