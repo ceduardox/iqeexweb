@@ -288,18 +288,29 @@ export default async function proxy(req: NextRequest) {
   if (pathname == '/redirect_from_auth') {
     const searchParams = new URLSearchParams(req.nextUrl.searchParams)
     const requestedRedirect = searchParams.get('redirect') || searchParams.get('next')
+    const customDomain = req.cookies.get('learnhouse_custom_domain')?.value
+    const extractedSubdomain = fullhost ? extractSubdomain(fullhost, instanceInfo.frontend_domain) : null
+    const hasOrgSubdomain = !!(
+      extractedSubdomain &&
+      extractedSubdomain !== 'auth' &&
+      extractedSubdomain !== 'www' &&
+      extractedSubdomain !== 'api' &&
+      extractedSubdomain !== 'admin'
+    )
+    const fallbackOrgSlug = cookie_orgslug || (default_org as string)
+    const defaultRedirectPathname = (customDomain || hasOrgSubdomain)
+      ? '/'
+      : `/orgs/${fallbackOrgSlug}`
     const redirectPathname =
       requestedRedirect && requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//')
         ? requestedRedirect
-        : '/home'
+        : defaultRedirectPathname
 
     // Do not keep control params in the final URL.
     searchParams.delete('redirect')
     searchParams.delete('next')
     const queryString = searchParams.toString()
 
-    // Check if we have a custom domain cookie
-    const customDomain = req.cookies.get('learnhouse_custom_domain')?.value
     let redirectUrl: URL
 
     if (customDomain) {
