@@ -48,25 +48,39 @@ const CollectionClient = ({
                 '/course/' + removeCoursePrefix(course.course_uuid)
               )}
             >
-              <div
-                className="inset-0 ring-1 ring-inset ring-black/10 rounded-lg shadow-xl relative w-[249px] h-[131px] bg-cover"
-                style={{
-                  backgroundImage: `url(${course.thumbnail_image
-                    ? getCourseThumbnailMediaDirectory(
-                        org.org_uuid,
-                        course.course_uuid,
-                        course.thumbnail_image
-                      )
-                    : '/empty_thumbnail.png'
-                  })`,
-                }}
-              ></div>
+              <CollectionCourseCardThumbnail course={course} orgUUID={org.org_uuid} />
             </Link>
             <h2 className="font-bold text-lg w-[250px] py-2">{course.name}</h2>
           </div>
         ))}
       </div>
     </GeneralWrapperStyled>
+  )
+}
+
+const CollectionCourseCardThumbnail = ({
+  course,
+  orgUUID,
+}: {
+  course: any
+  orgUUID: string
+}) => {
+  const [thumbnailLoadFailed, setThumbnailLoadFailed] = React.useState(false)
+
+  const thumbnailSrc =
+    !thumbnailLoadFailed && course.thumbnail_image
+      ? getCourseThumbnailMediaDirectory(orgUUID, course.course_uuid, course.thumbnail_image)
+      : '/empty_thumbnail.png'
+
+  return (
+    <div className="inset-0 ring-1 ring-inset ring-black/10 rounded-lg shadow-xl relative w-[249px] h-[131px] overflow-hidden bg-gray-100">
+      <img
+        src={thumbnailSrc}
+        alt={course.name}
+        className="h-full w-full object-cover"
+        onError={() => setThumbnailLoadFailed(true)}
+      />
+    </div>
   )
 }
 

@@ -55,22 +55,11 @@ function CollectionThumbnail(props: PropsType) {
           <div className="flex items-center justify-center h-full w-full bg-gray-100/50 relative p-4">
             <div className="flex -space-x-10 items-center justify-center w-full">
               {courses.slice(0, 3).map((course: any, index: number) => (
-                <div
+                <CollectionCoursePreview
                   key={course.course_uuid}
-                  className="relative h-20 w-32 overflow-hidden rounded-lg border-2 border-white shadow-lg transition-all duration-300 shrink-0"
-                  style={{
-                    backgroundImage: `url(${course.thumbnail_image
-                      ? getCourseThumbnailMediaDirectory(
-                          org?.org_uuid,
-                          course.course_uuid,
-                          course.thumbnail_image
-                        )
-                      : '/empty_thumbnail.png'
-                    })`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    zIndex: 3 - index,
-                  }}
+                  course={course}
+                  orgUUID={org?.org_uuid}
+                  zIndex={3 - index}
                 />
               ))}
             </div>
@@ -113,6 +102,37 @@ function CollectionThumbnail(props: PropsType) {
           </Link>
         </div>
       </div>
+    </div>
+  )
+}
+
+const CollectionCoursePreview = ({
+  course,
+  orgUUID,
+  zIndex,
+}: {
+  course: any
+  orgUUID: string
+  zIndex: number
+}) => {
+  const [thumbnailLoadFailed, setThumbnailLoadFailed] = React.useState(false)
+
+  const thumbnailSrc =
+    !thumbnailLoadFailed && course.thumbnail_image
+      ? getCourseThumbnailMediaDirectory(orgUUID, course.course_uuid, course.thumbnail_image)
+      : '/empty_thumbnail.png'
+
+  return (
+    <div
+      className="relative h-20 w-32 overflow-hidden rounded-lg border-2 border-white shadow-lg transition-all duration-300 shrink-0 bg-gray-100"
+      style={{ zIndex }}
+    >
+      <img
+        src={thumbnailSrc}
+        alt={course.name}
+        className="h-full w-full object-cover"
+        onError={() => setThumbnailLoadFailed(true)}
+      />
     </div>
   )
 }

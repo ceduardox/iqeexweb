@@ -112,6 +112,7 @@ COPY ./docker/start.sh /app/start.sh
 
 # Copy legacy IQeXponencial marketing site to serve on the root domain
 COPY ./assets /app/static/assets
+COPY ./apps/web/public/ /app/static/
 COPY ./*.html /app/static/
 COPY ./*.css /app/static/
 COPY ./*.js /app/static/
