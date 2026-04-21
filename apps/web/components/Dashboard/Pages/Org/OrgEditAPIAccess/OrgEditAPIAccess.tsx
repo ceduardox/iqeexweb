@@ -692,7 +692,7 @@ const PermissionsEditor: React.FC<{
     { key: 'courses', label: 'Courses', hasCrud: true },
     { key: 'activities', label: 'Activities', hasCrud: true },
     { key: 'coursechapters', label: 'Chapters', hasCrud: true },
-    { key: 'collections', label: 'Collections', hasCrud: true },
+    { key: 'collections', label: 'Programas', hasCrud: true },
     { key: 'certifications', label: 'Certifications', hasCrud: true },
     { key: 'usergroups', label: 'User Groups', hasCrud: true },
     { key: 'payments', label: 'Payments', hasCrud: true },
@@ -782,7 +782,7 @@ const PermissionsViewer: React.FC<{ rights: APITokenRights }> = ({ rights }) => 
       <div>Courses: {getPermissionSummary(rights.courses)}</div>
       <div>Activities: {getPermissionSummary(rights.activities)}</div>
       <div>Chapters: {getPermissionSummary(rights.coursechapters)}</div>
-      <div>Collections: {getPermissionSummary(rights.collections)}</div>
+      <div>Programas: {getPermissionSummary(rights.collections)}</div>
       <div>Certs: {getPermissionSummary(rights.certifications)}</div>
       <div>Groups: {getPermissionSummary(rights.usergroups)}</div>
       <div>Payments: {getPermissionSummary(rights.payments)}</div>

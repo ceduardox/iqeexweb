@@ -11,17 +11,15 @@ type MetadataProps = {
 }
 
 export async function generateMetadata(props: MetadataProps): Promise<Metadata> {
-  const params = await props.params;
-  // Get Org context information
+  const params = await props.params
   const org = await getOrganizationContextInfo(params.orgslug, {
     revalidate: 0,
     tags: ['organizations'],
   })
 
-  // SEO
   return {
-    title: `Collections — ${org.name}`,
-    description: `Collections of courses from ${org.name}`,
+    title: `Programas - ${org.name}`,
+    description: `Programas de cursos de ${org.name}`,
     robots: {
       index: true,
       follow: true,
@@ -33,8 +31,8 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
       },
     },
     openGraph: {
-      title: `Collections — ${org.name}`,
-      description: `Collections of courses from ${org.name}`,
+      title: `Programas - ${org.name}`,
+      description: `Programas de cursos de ${org.name}`,
       type: 'website',
       images: [
         {

@@ -110,7 +110,7 @@
         "enable_feature": "Ir a Configuración",
         "names": {
           "courses": "Cursos",
-          "collections": "Colecciones",
+          "collections": "Programas",
           "communities": "Comunidades",
           "podcasts": "Podcasts",
           "payments": "Pagos",
@@ -822,33 +822,33 @@
     "search_results": "{{count}} podcast(s) encontrados para \"{{query}}\""
   },
   "collections": {
-    "collections": "Colecciones",
-    "no_collections": "Aún no hay colecciones",
-    "create_collections_placeholder": "Crea colecciones para agrupar tus cursos",
-    "collection": "Colección",
-    "new_collection": "Nueva colección",
-    "enter_collection_name": "Introduce un nombre para la colección",
-    "collection_created_success": "¡Colección creada con éxito!",
-    "failed_to_create_collection": "Error al crear la colección. Inténtalo de nuevo.",
-    "create_new_collection": "Crear nueva colección",
-    "create_collection_desc": "Agrupa tus cursos en una colección para que sean más fáciles de encontrar y gestionar.",
-    "collection_name": "Nombre de la colección",
-    "enter_collection_name_placeholder": "Nombre de la colección",
-    "public_collection_desc": "Colección pública - Visible para todos",
-    "private_collection_desc": "Colección privada - Solo visible para miembros",
+    "collections": "Programas",
+    "no_collections": "Aún no hay programas",
+    "create_collections_placeholder": "Crea programas para agrupar tus cursos",
+    "collection": "Programa",
+    "new_collection": "Nuevo programa",
+    "enter_collection_name": "Introduce un nombre para el programa",
+    "collection_created_success": "¡Programa creado con éxito!",
+    "failed_to_create_collection": "Error al crear el programa. Inténtalo de nuevo.",
+    "create_new_collection": "Crear nuevo programa",
+    "create_collection_desc": "Agrupa tus cursos en un programa para que sean más fáciles de encontrar y gestionar.",
+    "collection_name": "Nombre del programa",
+    "enter_collection_name_placeholder": "Nombre del programa",
+    "public_collection_desc": "Programa público - Visible para todos",
+    "private_collection_desc": "Programa privado - Solo visible para miembros",
     "description": "Descripción",
-    "enter_collection_description_placeholder": "Descripción de la colección",
+    "enter_collection_description_placeholder": "Descripción del programa",
     "select_courses": "Elegir cursos",
     "no_courses_available_desc": "No hay cursos disponibles. Crea algunos cursos primero.",
     "selected_courses_count": "Cursos seleccionados: {{count}}",
-    "create_collection_btn": "Crear colección",
-    "delete_collection_confirm": "¿Estás seguro de que quieres eliminar esta colección?",
+    "create_collection_btn": "Crear programa",
+    "delete_collection_confirm": "¿Estás seguro de que quieres eliminar este programa?",
     "delete_collection_title": "¿Eliminar {{name}}?",
-    "delete_collection": "Eliminar colección",
+    "delete_collection": "Eliminar programa",
     "enter_description": "Introduce una descripción",
     "select_at_least_one_course": "Selecciona al menos un curso",
     "visibility": "Visibilidad",
-    "empty_collection": "Colección vacía"
+    "empty_collection": "Programa vacío"
   },
   "activities": {
     "video": "Vídeo",
@@ -948,7 +948,7 @@
     "dedication_message": "Tu dedicación ha dado sus frutos. Has dominado todo el contenido de este curso."
   },
   "search": {
-    "search_placeholder": "Buscar cursos, usuarios, colecciones...",
+    "search_placeholder": "Buscar cursos, usuarios, programas...",
     "no_results_found": "No se encontraron resultados",
     "no_results_description": "No encontramos coincidencias para \"{{query}}\". Intenta con otros términos.",
     "found_results": "{{count}} resultados para \"{{query}}\"",
@@ -2204,8 +2204,8 @@
             "description": "Habilitar procesamiento de pagos para cursos y suscripciones"
           },
           "collections": {
-            "title": "Colecciones",
-            "description": "Permitir organizar cursos en colecciones"
+            "title": "Programas",
+            "description": "Permitir organizar cursos en programas"
           },
           "courses": {
             "description": "Habilitar cursos y seguimiento de progreso para tu organización",
@@ -2863,7 +2863,7 @@
                 "courses": "Cursos",
                 "users": "Usuarios",
                 "usergroups": "Grupos de usuarios",
-                "collections": "Colecciones",
+                "collections": "Programas",
                 "organizations": "Organizaciones",
                 "coursechapters": "Capítulos de cursos",
                 "activities": "Actividades",
@@ -2929,7 +2929,7 @@
         "rights": {
           "resources": {
             "activities": "Actividades",
-            "collections": "Colecciones",
+            "collections": "Programas",
             "coursechapters": "Capítulos del curso",
             "courses": "Cursos",
             "dashboard": "Panel de control",

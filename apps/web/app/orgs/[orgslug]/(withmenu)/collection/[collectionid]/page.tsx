@@ -34,8 +34,8 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
     // Collection might not exist or user doesn't have access
   }
 
-  const title = buildPageTitle(collection ? collection.name : 'Collection', org?.name || 'Organization', seoConfig)
-  const description = collection?.description || seoConfig.default_meta_description || `Browse this collection from ${org?.name || 'this organization'}`
+  const title = buildPageTitle(collection ? collection.name : 'Programa', org?.name || 'Organization', seoConfig)
+  const description = collection?.description || seoConfig.default_meta_description || `Explora este programa de ${org?.name || 'esta organizacion'}`
   const ogImageUrl = seoConfig.default_og_image
     ? getOrgOgImageMediaDirectory(org?.org_uuid, seoConfig.default_og_image)
     : null
@@ -67,7 +67,7 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
           url: imageUrl,
           width: 800,
           height: 600,
-          alt: collection?.name || org?.name || 'Collection',
+          alt: collection?.name || org?.name || 'Programa',
         },
       ],
     },
@@ -99,8 +99,8 @@ const CollectionPage = async (props: { params: MetadataProps['params'] }) => {
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: 'Home', url: getCanonicalUrl(params.orgslug, '/') },
-    { name: 'Collections', url: getCanonicalUrl(params.orgslug, '/courses') },
-    { name: collection?.name || 'Collection', url: getCanonicalUrl(params.orgslug, `/collection/${params.collectionid}`) },
+    { name: 'Programas', url: getCanonicalUrl(params.orgslug, '/courses') },
+    { name: collection?.name || 'Programa', url: getCanonicalUrl(params.orgslug, `/collection/${params.collectionid}`) },
   ])
 
   return (
