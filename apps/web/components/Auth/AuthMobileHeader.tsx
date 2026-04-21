@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import learnhouseIcon from 'public/learnhouse_bigicon_1.png'
 import { getOrgLogoMediaDirectory, getOrgAuthBackgroundMediaDirectory } from '@services/media/media'
+import { clearFailedOrgLogo, hasFailedOrgLogo, rememberFailedOrgLogo } from '@services/media/orgLogoFallback'
 import { getUriWithOrg } from '@services/config/config'
 
 interface AuthMobileHeaderProps {
@@ -11,6 +12,7 @@ interface AuthMobileHeaderProps {
 }
 
 export default function AuthMobileHeader({ org }: AuthMobileHeaderProps) {
+  const [logoLoadFailed, setLogoLoadFailed] = React.useState(false)
   const authBranding = org?.config?.config?.customization?.auth_branding || org?.config?.config?.general?.auth_branding || {}
   const {
     background_type = 'gradient',
@@ -44,6 +46,10 @@ export default function AuthMobileHeader({ org }: AuthMobileHeaderProps) {
 
   const hasCustomBackground = background_type !== 'gradient' && background_image
 
+  React.useEffect(() => {
+    setLogoLoadFailed(hasFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date))
+  }, [org?.org_uuid, org?.logo_image, org?.update_date])
+
   return (
     <div
       className="relative flex items-center gap-4 px-5 py-4"
@@ -55,11 +61,16 @@ export default function AuthMobileHeader({ org }: AuthMobileHeaderProps) {
 
       <Link prefetch href={getUriWithOrg(org?.slug, '/')} className="relative z-10">
         <div className="w-10 h-10 rounded-lg ring-1 ring-inset ring-white/10 bg-white flex items-center justify-center overflow-hidden shrink-0">
-          {org?.logo_image ? (
+          {org?.logo_image && !logoLoadFailed ? (
             <img
               src={getOrgLogoMediaDirectory(org.org_uuid, org.logo_image)}
               alt={org.name}
               className="w-full h-full object-contain p-1.5"
+              onLoad={() => clearFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)}
+              onError={() => {
+                rememberFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)
+                setLogoLoadFailed(true)
+              }}
             />
           ) : (
             <Image

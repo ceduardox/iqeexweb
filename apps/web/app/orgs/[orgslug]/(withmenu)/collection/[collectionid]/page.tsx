@@ -108,7 +108,7 @@ const CollectionPage = async (props: { params: MetadataProps['params'] }) => {
       <JsonLd data={breadcrumbJsonLd} />
       <CollectionClient
         orgslug={params.orgslug}
-        collectionid={params.collectionid}
+        collection={collection}
       />
     </>
   )

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import learnhouseIcon from 'public/learnhouse_bigicon_1.png'
 import { getOrgLogoMediaDirectory, getOrgAuthBackgroundMediaDirectory } from '@services/media/media'
+import { clearFailedOrgLogo, hasFailedOrgLogo, rememberFailedOrgLogo } from '@services/media/orgLogoFallback'
 import { getUriWithOrg } from '@services/config/config'
 import { cn } from '@/lib/utils'
 import { isOSSMode } from '@services/config/config'
@@ -15,6 +16,7 @@ interface AuthBrandingPanelProps {
 }
 
 export default function AuthBrandingPanel({ org, welcomeText }: AuthBrandingPanelProps) {
+  const [logoLoadFailed, setLogoLoadFailed] = React.useState(false)
   const authBranding = org?.config?.config?.customization?.auth_branding || org?.config?.config?.general?.auth_branding || {}
   const {
     welcome_message = '',
@@ -57,6 +59,10 @@ export default function AuthBrandingPanel({ org, welcomeText }: AuthBrandingPane
   const displayMessage = welcome_message || welcomeText || ''
   const hasCustomBackground = background_type !== 'gradient' && background_image
 
+  React.useEffect(() => {
+    setLogoLoadFailed(hasFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date))
+  }, [org?.org_uuid, org?.logo_image, org?.update_date])
+
   return (
     <div
       className="relative flex flex-col h-full w-full"
@@ -96,11 +102,16 @@ export default function AuthBrandingPanel({ org, welcomeText }: AuthBrandingPane
             {/* Organization logo */}
             <Link prefetch href={getUriWithOrg(org?.slug, '/')}>
               <div className="w-24 h-24 rounded-2xl ring-1 ring-inset ring-white/10 bg-white flex items-center justify-center overflow-hidden">
-                {org?.logo_image ? (
+                {org?.logo_image && !logoLoadFailed ? (
                   <img
                     src={getOrgLogoMediaDirectory(org.org_uuid, org.logo_image)}
                     alt={org.name}
                     className="w-full h-full object-contain p-3"
+                    onLoad={() => clearFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)}
+                    onError={() => {
+                      rememberFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)
+                      setLogoLoadFailed(true)
+                    }}
                   />
                 ) : (
                   <Image

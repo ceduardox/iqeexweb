@@ -66,6 +66,7 @@ import { FeedbackModal } from '@components/Objects/Modals/FeedbackModal'
 import { AVAILABLE_LANGUAGES } from '@/lib/languages'
 import { normalizeLanguageCode, setAppLanguage } from '@/lib/i18n'
 import { getOrgLogoMediaDirectory } from '@services/media/media'
+import { clearFailedOrgLogo, hasFailedOrgLogo, rememberFailedOrgLogo } from '@services/media/orgLogoFallback'
 import { cn } from '@/lib/utils'
 import useSWR, { mutate } from 'swr'
 import { swrFetcher } from '@services/utils/ts/requests'
@@ -81,6 +82,7 @@ function DashLeftMenu() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [recentAssignments, setRecentAssignments] = useState<any[]>([])
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
   const access_token = session?.data?.tokens?.access_token
   const currentLanguage = normalizeLanguageCode(
     i18n.resolvedLanguage || i18n.language
@@ -152,6 +154,10 @@ function DashLeftMenu() {
     }
   }, [])
 
+  useEffect(() => {
+    setLogoLoadFailed(hasFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date))
+  }, [org?.org_uuid, org?.logo_image, org?.update_date])
+
   const toggleCollapse = () => {
     const newState = !isCollapsed
     setIsCollapsed(newState)
@@ -205,11 +211,16 @@ function DashLeftMenu() {
           className={cn("flex items-center transition-opacity hover:opacity-70", isCollapsed ? "" : "space-x-3")}
           href={getUriWithOrg(org.slug, '/dash/playgrounds')}
         >
-          {plan === 'enterprise' && org?.logo_image ? (
+          {plan === 'enterprise' && org?.logo_image && !logoLoadFailed ? (
             <img
               src={getOrgLogoMediaDirectory(org.org_uuid, org.logo_image)}
               alt={org?.name}
               className="h-9 w-9 object-contain rounded-lg"
+              onLoad={() => clearFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)}
+              onError={() => {
+                rememberFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)
+                setLogoLoadFailed(true)
+              }}
             />
           ) : (
             <img

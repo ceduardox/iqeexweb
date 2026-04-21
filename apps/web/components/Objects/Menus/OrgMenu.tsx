@@ -9,6 +9,7 @@ import { fetchRAGChatSessions, RAGChatSession } from '@services/ai/ai'
 import { HeaderProfileBox } from '@components/Security/HeaderProfileBox'
 import MenuLinks from './OrgMenuLinks'
 import { getOrgLogoMediaDirectory } from '@services/media/media'
+import { clearFailedOrgLogo, hasFailedOrgLogo, rememberFailedOrgLogo } from '@services/media/orgLogoFallback'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { SearchBar } from '@components/Objects/Search/SearchBar'
@@ -123,8 +124,8 @@ export const OrgMenu = (props: any) => {
   }, [pathname]);
 
   useEffect(() => {
-    setLogoLoadFailed(false)
-  }, [org?.org_uuid, org?.logo_image])
+    setLogoLoadFailed(hasFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date))
+  }, [org?.org_uuid, org?.logo_image, org?.update_date])
 
   function toggleMenu() {
     setIsMenuOpen(!isMenuOpen)
@@ -158,7 +159,11 @@ export const OrgMenu = (props: any) => {
                       alt="Learnhouse"
                       style={{ width: 'auto', height: '100%' }}
                       className="rounded-md"
-                      onError={() => setLogoLoadFailed(true)}
+                      onLoad={() => clearFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)}
+                      onError={() => {
+                        rememberFailedOrgLogo(org?.org_uuid, org?.logo_image, org?.update_date)
+                        setLogoLoadFailed(true)
+                      }}
                     />
                   ) : (
                     <LearnHouseLogo logoFilter={colors.logoFilter} />

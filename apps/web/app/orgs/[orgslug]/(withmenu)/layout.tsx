@@ -15,7 +15,7 @@ import { usePathname } from 'next/navigation'
 import { isOSSMode } from '@services/config/config'
 import { usePlan } from '@components/Hooks/usePlan'
 import { getGoogleFontUrl, DEFAULT_FONT } from '@/lib/fonts'
-import { getOrgFaviconMediaDirectory, getOrgLogoMediaDirectory } from '@services/media/media'
+import { getOrgFaviconMediaDirectory } from '@services/media/media'
 
 // Helper to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
@@ -110,8 +110,8 @@ function LayoutContent({ children, orgslug }: { children: React.ReactNode; orgsl
       ? appendVersion(getOrgFaviconMediaDirectory(org.org_uuid, faviconImage), faviconImage)
       : '/iqex-favicon.png'
 
-    const appleTouchHref = org?.logo_image && org?.org_uuid
-      ? appendVersion(getOrgLogoMediaDirectory(org.org_uuid, org.logo_image), org.logo_image)
+    const appleTouchHref = faviconImage && org?.org_uuid
+      ? appendVersion(getOrgFaviconMediaDirectory(org.org_uuid, faviconImage), faviconImage)
       : '/iqex-logo.png'
 
     const upsertLink = (selectorRel: string, rel: string, href: string) => {
@@ -127,7 +127,7 @@ function LayoutContent({ children, orgslug }: { children: React.ReactNode; orgsl
     upsertLink('icon', 'icon', faviconHref)
     upsertLink('shortcut icon', 'shortcut icon', faviconHref)
     upsertLink('apple-touch-icon', 'apple-touch-icon', appleTouchHref)
-  }, [org?.org_uuid, org?.logo_image, faviconImage])
+  }, [org?.org_uuid, faviconImage])
 
   const pathParts = pathname?.split('/').filter(Boolean) || []
 

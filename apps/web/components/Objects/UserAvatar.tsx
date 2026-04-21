@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { getUriWithOrg } from '@services/config/config'
+import { getUriWithoutOrg, getUriWithOrg } from '@services/config/config'
 import { useParams } from 'next/navigation'
 import { getUserAvatarMediaDirectory } from '@services/media/media'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
@@ -27,6 +27,7 @@ function UserAvatar(props: UserAvatarProps) {
   const params = useParams() as any
   const [userData, setUserData] = useState<any>(null)
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false)
+  const emptyAvatarUrl = getUriWithoutOrg('/empty_avatar.png')
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -70,7 +71,9 @@ function UserAvatar(props: UserAvatarProps) {
     // If predefined avatar is specified
     if (props.predefined_avatar) {
       const avatarType = props.predefined_avatar === 'ai' ? 'ai_avatar.png' : 'empty_avatar.png'
-      return getUriWithOrg(params.orgslug, `/${avatarType}`)
+      return avatarType === 'empty_avatar.png'
+        ? emptyAvatarUrl
+        : getUriWithOrg(params.orgslug, `/${avatarType}`)
     }
 
     // If avatar_url prop is provided
@@ -102,7 +105,7 @@ function UserAvatar(props: UserAvatarProps) {
     // If a specific userId or username was requested but user has no avatar,
     // don't fall back to session avatar - use empty avatar instead
     if (props.userId || props.username) {
-      return getUriWithOrg(params.orgslug, '/empty_avatar.png')
+      return emptyAvatarUrl
     }
 
     // Only use session avatar when no specific user is requested
@@ -117,10 +120,10 @@ function UserAvatar(props: UserAvatarProps) {
     }
 
     // Fallback to empty avatar
-    return getUriWithOrg(params.orgslug, '/empty_avatar.png')
+    return emptyAvatarUrl
   }
 
-  const fallbackAvatarUrl = getUriWithOrg(params.orgslug, '/empty_avatar.png')
+  const fallbackAvatarUrl = emptyAvatarUrl
   const avatarUrl = avatarLoadFailed ? fallbackAvatarUrl : getAvatarUrl()
 
   useEffect(() => {
