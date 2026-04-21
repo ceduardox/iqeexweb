@@ -31,6 +31,23 @@ export async function createCollection(collection: any, access_token: any) {
   return res
 }
 
+export async function updateCollection(
+  collection_uuid: any,
+  collection: any,
+  access_token: any
+) {
+  const normalizedCollectionUuid = String(collection_uuid).startsWith('collection_')
+    ? String(collection_uuid)
+    : `collection_${collection_uuid}`
+
+  const result: any = await fetch(
+    `${getAPIUrl()}collections/${normalizedCollectionUuid}`,
+    RequestBodyWithAuthHeader('PUT', collection, null, access_token)
+  )
+  const res = await errorHandling(result)
+  return res
+}
+
 export async function getCollectionById(
   collection_uuid: any,
   access_token: string,

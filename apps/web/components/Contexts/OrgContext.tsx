@@ -17,6 +17,9 @@ export const OrgContext = createContext<OrgContextValue | null>(null)
 export function OrgProvider({ children, orgslug }: { children: React.ReactNode, orgslug: string }) {
   const session = useLHSession() as any
   const accessToken = session?.data?.tokens?.access_token
+  const isAuthenticated = session?.status === 'authenticated'
+  const isAuthSessionResolving = isAuthenticated && !accessToken
+  const shouldFetchUserOrgs = isAuthenticated && !!accessToken
 
   const { data: org, error: orgError } = useSWR(
     `${getAPIUrl()}orgs/slug/${orgslug}`,
@@ -28,7 +31,7 @@ export function OrgProvider({ children, orgslug }: { children: React.ReactNode, 
     }
   )
   const { data: orgs, error: orgsError } = useSWR(
-    `${getAPIUrl()}orgs/user/page/1/limit/10`,
+    shouldFetchUserOrgs ? `${getAPIUrl()}orgs/user/page/1/limit/10` : null,
     (url) => swrFetcher(url, accessToken),
     {
       revalidateOnFocus: true,
@@ -40,12 +43,14 @@ export function OrgProvider({ children, orgslug }: { children: React.ReactNode, 
   const isOrgActive = useMemo(() => (org?.config?.config?.active ?? org?.config?.config?.general?.enabled) !== false, [org])
   const isUserPartOfTheOrg = useMemo(() => {
     // If user is not authenticated, treat them as "part of org" for viewing purposes
-    if (session.status !== 'authenticated') return true
+    if (!isAuthenticated) return true
     return orgs?.some((userOrg: any) => userOrg.id === org?.id) ?? false
-  }, [orgs, org?.id, session.status])
+  }, [isAuthenticated, orgs, org?.id])
 
-  if (orgError || orgsError) return <ErrorUI message='An error occurred while fetching data' />
-  if (!org || !orgs || !session) return <div></div>
+  const isMembershipLoading = shouldFetchUserOrgs && !orgs && !orgsError
+
+  if (orgError || (shouldFetchUserOrgs && orgsError)) return <ErrorUI message='An error occurred while fetching data' />
+  if (!org || !session || isAuthSessionResolving || isMembershipLoading) return <div></div>
   if (!isOrgActive) return <ErrorUI message='This organization is no longer active' />
 
   const contextValue: OrgContextValue = {

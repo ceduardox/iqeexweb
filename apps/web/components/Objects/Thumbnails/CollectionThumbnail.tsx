@@ -6,7 +6,7 @@ import { getUriWithOrg } from '@services/config/config'
 import { deleteCollection } from '@services/courses/collections'
 import { getCourseThumbnailMediaDirectory } from '@services/media/media'
 import { revalidateTags } from '@services/utils/ts/requests'
-import { X, MoreVertical, Library, BookCopy, Trash2 } from 'lucide-react'
+import { MoreVertical, Library, BookCopy, Pencil, Trash2 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -18,7 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@components/ui/dropdown-menu"
-import { motion } from 'motion/react'
 
 type PropsType = {
   collection: any
@@ -141,6 +140,7 @@ const CollectionAdminEditsArea = (props: any) => {
   const { t } = useTranslation()
   const router = useRouter()
   const session = useLHSession() as any
+  const collectionId = removeCollectionPrefix(props.collection_uuid)
 
   const deleteCollectionUI = async () => {
     await deleteCollection(props.collection_uuid, session.data?.tokens?.access_token)
@@ -150,7 +150,7 @@ const CollectionAdminEditsArea = (props: any) => {
 
   return (
     <AuthenticatedClientElement
-      action="delete"
+      action="update"
       ressourceType="collections"
       orgId={props.org_id}
       checkMethod="roles"
@@ -164,19 +164,34 @@ const CollectionAdminEditsArea = (props: any) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
-        <ConfirmationModal
-          confirmationMessage={t('collections.delete_collection_confirm')}
-          confirmationButtonText={t('collections.delete_collection')}
-          dialogTitle={t('collections.delete_collection_title', { name: props.collection.name })}
-          dialogTrigger={
-                  <button className="w-full text-left flex items-center px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                    <Trash2 className="mr-2 h-4 w-4" /> {t('collections.delete_collection')}
-            </button>
-          }
-                functionToExecute={deleteCollectionUI}
-          status="warning"
-              />
+              <Link
+                href={getUriWithOrg(props.orgslug, `/collection/${collectionId}/edit`)}
+                className="w-full text-left flex items-center px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+              >
+                <Pencil className="mr-2 h-4 w-4" /> {t('collections.edit_collection_action')}
+              </Link>
             </DropdownMenuItem>
+            <AuthenticatedClientElement
+              action="delete"
+              ressourceType="collections"
+              orgId={props.org_id}
+              checkMethod="roles"
+            >
+              <DropdownMenuItem asChild>
+                <ConfirmationModal
+                  confirmationMessage={t('collections.delete_collection_confirm')}
+                  confirmationButtonText={t('collections.delete_collection')}
+                  dialogTitle={t('collections.delete_collection_title', { name: props.collection.name })}
+                  dialogTrigger={
+                    <button className="w-full text-left flex items-center px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                      <Trash2 className="mr-2 h-4 w-4" /> {t('collections.delete_collection')}
+                    </button>
+                  }
+                  functionToExecute={deleteCollectionUI}
+                  status="warning"
+                />
+              </DropdownMenuItem>
+            </AuthenticatedClientElement>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
