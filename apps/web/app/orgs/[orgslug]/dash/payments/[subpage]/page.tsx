@@ -12,12 +12,14 @@ import PaymentsConfigurationPage from '@components/Dashboard/Pages/Payments/Paym
 import PaymentsCustomersPage from '@components/Dashboard/Pages/Payments/PaymentsCustomersPage'
 import PaymentsOffersPage from '@components/Dashboard/Pages/Payments/PaymentsOffersPage'
 import PaymentsGroupsPage from '@components/Dashboard/Pages/Payments/PaymentsGroupsPage'
+import PaymentsManualAccessPage from '@components/Dashboard/Pages/Payments/PaymentsManualAccessPage'
 import PlanRestrictedFeature from '@components/Dashboard/Shared/PlanRestricted/PlanRestrictedFeature'
 import FeatureDisabledView from '@components/Dashboard/Shared/FeatureDisabled/FeatureDisabledView'
 import { PlanLevel } from '@services/plans/plans'
 import { BadgeDollarSign } from 'lucide-react'
 import { isOSSMode } from '@services/config/config'
 import { usePlan } from '@components/Hooks/usePlan'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
 
 export type PaymentsParams = {
   subpage: string
@@ -30,6 +32,10 @@ function PaymentsPage(props: { params: Promise<PaymentsParams> }) {
   const org = useOrg() as any
   const subpage = params.subpage || 'overview'
   const currentPlan = usePlan()
+  const { rights } = useAdminStatus()
+  const canManageManualAccess =
+    session?.data?.user?.is_superadmin === true ||
+    rights?.organizations?.action_update === true
 
   const getPageTitle = () => {
     switch (subpage) {
@@ -47,6 +53,11 @@ function PaymentsPage(props: { params: Promise<PaymentsParams> }) {
         return {
           h1: 'Payment Groups',
           h2: 'Bundle resources for subscriptions and multi-course offers'
+        }
+      case 'manual-access':
+        return {
+          h1: 'Manual Access',
+          h2: 'Assign or override paid access for learners'
         }
       case 'configuration':
         return {
@@ -150,6 +161,14 @@ function PaymentsPage(props: { params: Promise<PaymentsParams> }) {
             label="Payment Groups"
             isActive={subpage === 'groups'}
           />
+          {canManageManualAccess && (
+            <TabLink
+              href={getUriWithOrg(params.orgslug, '/dash/payments/manual-access')}
+              icon={<Users size={16} />}
+              label="Manual Access"
+              isActive={subpage === 'manual-access'}
+            />
+          )}
           <TabLink
             href={getUriWithOrg(params.orgslug, '/dash/payments/configuration')}
             icon={<Settings size={16} />}
@@ -169,6 +188,7 @@ function PaymentsPage(props: { params: Promise<PaymentsParams> }) {
         {subpage === 'configuration' && <PaymentsConfigurationPage />}
         {subpage === 'offers' && <PaymentsOffersPage />}
         {subpage === 'groups' && <PaymentsGroupsPage />}
+        {subpage === 'manual-access' && <PaymentsManualAccessPage />}
         {(subpage === 'overview' || subpage === 'customers') && <PaymentsCustomersPage />}
       </motion.div>
     </div>

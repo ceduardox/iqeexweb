@@ -1,10 +1,13 @@
 from typing import Literal, Union
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlmodel import Session, select
+from sqlmodel import SQLModel, Session, select
 from src.core.events.database import get_db_session
 from ee.db.payments.payments import PaymentsConfig, PaymentsConfigRead
-from src.db.users import PublicUser, APITokenUser
+from src.db.users import PublicUser, APITokenUser, User
+from src.db.organizations import Organization
+from src.db.user_organizations import UserOrganization
 from src.security.auth import get_current_user
+from src.services.orgs.orgs import rbac_check as org_rbac_check
 from ee.services.payments.payments_config import (
     init_payments_config,
     get_payments_config,
@@ -34,8 +37,12 @@ from ee.services.payments.payments_offers import (
     update_payments_offer,
 )
 from ee.services.payments.payments_enrollments import (
+    create_enrollment,
+    list_enrollments,
+    update_enrollment_status,
     get_user_enrollments,
 )
+from ee.db.payments.payments_enrollments import EnrollmentStatusEnum, PaymentsEnrollment
 from ee.services.payments.payments_groups import (
     create_payments_group,
     list_payments_groups,
@@ -58,6 +65,31 @@ router = APIRouter()
 # Separate router for webhook endpoints — these must NOT be behind the
 # require_plan dependency because Stripe calls them without any org_id.
 webhook_router = APIRouter()
+
+
+class AdminEnrollmentCreate(SQLModel):
+    offer_id: int
+    user_id: int
+    status: EnrollmentStatusEnum = EnrollmentStatusEnum.ACTIVE
+
+
+class AdminEnrollmentStatusUpdate(SQLModel):
+    status: EnrollmentStatusEnum
+
+
+async def require_org_admin_access(
+    request: Request,
+    org_id: int,
+    current_user: Union[PublicUser, APITokenUser],
+    db_session: Session,
+) -> Organization:
+    org = db_session.exec(select(Organization).where(Organization.id == org_id)).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    # Payments manual access must stay admin-only.
+    await org_rbac_check(request, org.org_uuid, current_user, "update", db_session)
+    return org
 
 # ---------------------------------------------------------------------------
 # Config
@@ -555,6 +587,137 @@ async def api_create_offer_checkout_session(
     return await create_offer_checkout_session(
         request, org_id, offer.id, redirect_uri, current_user, db_session
     )
+
+
+@router.get("/{org_id}/enrollments/admin")
+async def api_list_admin_enrollments(
+    request: Request,
+    org_id: int,
+    current_user: Union[PublicUser, APITokenUser] = Depends(get_current_user),
+    db_session: Session = Depends(get_db_session),
+):
+    await require_org_admin_access(request, org_id, current_user, db_session)
+
+    enrollments = await list_enrollments(request, org_id, current_user, db_session)
+    if not enrollments:
+        return []
+
+    offer_ids = list({enrollment.offer_id for enrollment in enrollments})
+    user_ids = list({enrollment.user_id for enrollment in enrollments})
+
+    from ee.db.payments.payments_offers import PaymentsOffer
+
+    offer_rows = db_session.exec(
+        select(PaymentsOffer).where(PaymentsOffer.id.in_(offer_ids))  # type: ignore
+    ).all()
+    user_rows = db_session.exec(
+        select(User).where(User.id.in_(user_ids))  # type: ignore
+    ).all()
+
+    offers_by_id = {offer.id: offer for offer in offer_rows}
+    users_by_id = {user.id: user for user in user_rows}
+
+    items = []
+    for enrollment in enrollments:
+        offer = offers_by_id.get(enrollment.offer_id)
+        user = users_by_id.get(enrollment.user_id)
+        provider_data = enrollment.provider_specific_data or {}
+
+        items.append(
+            {
+                "enrollment_id": enrollment.id,
+                "status": enrollment.status,
+                "creation_date": enrollment.creation_date,
+                "update_date": enrollment.update_date,
+                "source": provider_data.get("source", "checkout"),
+                "user": {
+                    "id": user.id if user else enrollment.user_id,
+                    "user_uuid": user.user_uuid if user else "",
+                    "username": user.username if user else "",
+                    "email": user.email if user else "",
+                    "first_name": user.first_name if user else "",
+                    "last_name": user.last_name if user else "",
+                    "avatar_image": user.avatar_image if user else "",
+                },
+                "offer": {
+                    "id": offer.id if offer else enrollment.offer_id,
+                    "offer_uuid": offer.offer_uuid if offer else "",
+                    "name": offer.name if offer else "",
+                    "offer_type": offer.offer_type if offer else "",
+                    "amount": offer.amount if offer else 0,
+                    "currency": offer.currency if offer else "USD",
+                },
+            }
+        )
+
+    return items
+
+
+@router.post("/{org_id}/enrollments/admin")
+async def api_create_admin_enrollment(
+    request: Request,
+    org_id: int,
+    payload: AdminEnrollmentCreate,
+    current_user: Union[PublicUser, APITokenUser] = Depends(get_current_user),
+    db_session: Session = Depends(get_db_session),
+):
+    await require_org_admin_access(request, org_id, current_user, db_session)
+
+    membership = db_session.exec(
+        select(UserOrganization).where(
+            UserOrganization.org_id == org_id,
+            UserOrganization.user_id == payload.user_id,
+        )
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=400, detail="User does not belong to this organization")
+
+    enrollment = await create_enrollment(
+        request=request,
+        org_id=org_id,
+        offer_id=payload.offer_id,
+        user_id=payload.user_id,
+        status=payload.status,
+        provider_data={
+            "source": "admin_manual",
+            "assigned_by_user_id": getattr(current_user, "id", None),
+        },
+        current_user=current_user,
+        db_session=db_session,
+    )
+
+    return {
+        "message": "Enrollment created successfully",
+        "enrollment_id": enrollment.id,
+        "status": enrollment.status,
+    }
+
+
+@router.put("/{org_id}/enrollments/admin/{enrollment_id}")
+async def api_update_admin_enrollment_status(
+    request: Request,
+    org_id: int,
+    enrollment_id: int,
+    payload: AdminEnrollmentStatusUpdate,
+    current_user: Union[PublicUser, APITokenUser] = Depends(get_current_user),
+    db_session: Session = Depends(get_db_session),
+):
+    await require_org_admin_access(request, org_id, current_user, db_session)
+
+    enrollment = await update_enrollment_status(
+        request=request,
+        org_id=org_id,
+        enrollment_id=enrollment_id,
+        status=payload.status,
+        current_user=current_user,
+        db_session=db_session,
+    )
+
+    return {
+        "message": "Enrollment updated successfully",
+        "enrollment_id": enrollment.id,
+        "status": enrollment.status,
+    }
 
 
 @router.get("/{org_id}/enrollments/mine")

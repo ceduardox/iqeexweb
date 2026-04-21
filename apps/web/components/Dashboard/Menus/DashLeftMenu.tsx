@@ -185,6 +185,7 @@ function DashLeftMenu() {
   const showBoards = isEnabled('boards')
   const showPlaygrounds = isEnabled('playgrounds')
   const showPayments = isEnabled('payments')
+  const showCollections = isEnabled('collections')
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -312,6 +313,15 @@ function DashLeftMenu() {
                 )}
               </button>
             </HoverMenu>
+
+            {showCollections && (
+              <MenuLink
+                href={getUriWithOrg(org.slug, '/collections')}
+                icon={<Package size={20} weight="fill" />}
+                label={t('collections.collections')}
+                isCollapsed={isCollapsed}
+              />
+            )}
 
             {/* Assignments with hover menu */}
             <HoverMenu
@@ -604,7 +614,7 @@ function DashLeftMenu() {
             </HoverMenu>
 
             {/* Disabled features shown in an "Other" hover menu */}
-            {(!showCommunities || !showPodcasts || !showBoards || !showPlaygrounds || !showPayments) && (
+            {(!showCollections || !showCommunities || !showPodcasts || !showBoards || !showPlaygrounds || !showPayments) && (
               <HoverMenu
                 content={
                   <HoverMenuContent className="w-64">
@@ -620,6 +630,14 @@ function DashLeftMenu() {
                         <Link href="/dash/communities" className="flex items-center gap-2 px-3 py-2 text-sm text-white/30 hover:text-white/50 hover:bg-white/[0.05] cursor-pointer transition-colors">
                           <ChatsCircle size={16} weight="fill" />
                           <span>{t('communities.title')}</span>
+                        </Link>
+                      </HoverMenuItem>
+                    )}
+                    {!showCollections && (
+                      <HoverMenuItem asChild>
+                        <Link href={getUriWithOrg(org.slug, '/collections')} className="flex items-center gap-2 px-3 py-2 text-sm text-white/30 hover:text-white/50 hover:bg-white/[0.05] cursor-pointer transition-colors">
+                          <Package size={16} weight="fill" />
+                          <span>{t('collections.collections')}</span>
                         </Link>
                       </HoverMenuItem>
                     )}

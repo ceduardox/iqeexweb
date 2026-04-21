@@ -54,6 +54,46 @@ export async function getUserEnrollments(orgId: number, access_token: string) {
   return res;
 }
 
+export async function getAdminEnrollments(orgId: number, access_token: string) {
+  const result = await secureFetch(
+    `${getAPIUrl()}payments/${encodeURIComponent(String(orgId))}/enrollments/admin`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  );
+  const res = await errorHandling(result);
+  return res;
+}
+
+export async function createAdminEnrollment(
+  orgId: number,
+  data: {
+    offer_id: number
+    user_id: number
+    status: string
+  },
+  access_token: string
+) {
+  const result = await secureFetch(
+    `${getAPIUrl()}payments/${encodeURIComponent(String(orgId))}/enrollments/admin`,
+    RequestBodyWithAuthHeader('POST', data, null, access_token)
+  );
+  const res = await errorHandling(result);
+  return res;
+}
+
+export async function updateAdminEnrollmentStatus(
+  orgId: number,
+  enrollmentId: number,
+  status: string,
+  access_token: string
+) {
+  const result = await secureFetch(
+    `${getAPIUrl()}payments/${encodeURIComponent(String(orgId))}/enrollments/admin/${encodeURIComponent(String(enrollmentId))}`,
+    RequestBodyWithAuthHeader('PUT', { status }, null, access_token)
+  );
+  const res = await errorHandling(result);
+  return res;
+}
+
 export async function getStripeOverview(orgId: number, access_token: string) {
   const result = await secureFetch(
     `${getAPIUrl()}payments/${encodeURIComponent(String(orgId))}/stripe/overview`,

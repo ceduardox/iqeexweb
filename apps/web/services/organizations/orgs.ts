@@ -175,3 +175,29 @@ export async function joinOrg(
   const res = await getResponseMetadata(result)
   return res
 }
+
+export async function getOrganizationUsers(
+  org_id: number | string,
+  access_token: string,
+  options?: {
+    page?: number
+    limit?: number
+    search?: string
+  }
+) {
+  const params = new URLSearchParams({
+    page: String(options?.page ?? 1),
+    limit: String(options?.limit ?? 100),
+  })
+
+  if (options?.search) {
+    params.set('search', options.search)
+  }
+
+  const result = await fetch(
+    `${getAPIUrl()}orgs/${org_id}/users?${params.toString()}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
