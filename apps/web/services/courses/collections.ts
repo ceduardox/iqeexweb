@@ -36,8 +36,12 @@ export async function getCollectionById(
   access_token: string,
   next: any
 ) {
+  const normalizedCollectionUuid = String(collection_uuid).startsWith('collection_')
+    ? String(collection_uuid)
+    : `collection_${collection_uuid}`
+
   const result: any = await fetch(
-    `${getAPIUrl()}collections/collection_${collection_uuid}`,
+    `${getAPIUrl()}collections/${normalizedCollectionUuid}`,
     RequestBodyWithAuthHeader('GET', null, next, access_token)
   )
   const res = await errorHandling(result)
