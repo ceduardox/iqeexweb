@@ -161,31 +161,39 @@ async def get_live_session_launch(
     private_key = os.environ.get("LEARNHOUSE_JITSI_PRIVATE_KEY", "").strip()
 
     if app_id and kid and private_key:
-        domain = os.environ.get("LEARNHOUSE_JITSI_DOMAIN", "8x8.vc").strip() or "8x8.vc"
-        is_moderator = await _can_moderate(
-            request,
-            course.course_uuid,
-            current_user,
-            db_session,
-        )
-        full_room_name = f"{app_id}/{room_name}"
-        token = _build_jaas_jwt(
-            app_id=app_id,
-            kid=kid,
-            private_key=private_key,
-            display_name=display_name,
-            email=email,
-            is_moderator=is_moderator,
-        )
-        return LiveSessionLaunchResponse(
-            provider="jaas",
-            domain=domain,
-            script_url=f"https://{domain}/{app_id}/external_api.js",
-            room_name=full_room_name,
-            jwt=token,
-            display_name=display_name,
-            email=email,
-        )
+        try:
+            domain = (
+                os.environ.get("LEARNHOUSE_JITSI_DOMAIN", "8x8.vc").strip()
+                or "8x8.vc"
+            )
+            is_moderator = await _can_moderate(
+                request,
+                course.course_uuid,
+                current_user,
+                db_session,
+            )
+            full_room_name = f"{app_id}/{room_name}"
+            token = _build_jaas_jwt(
+                app_id=app_id,
+                kid=kid,
+                private_key=private_key,
+                display_name=display_name,
+                email=email,
+                is_moderator=is_moderator,
+            )
+            return LiveSessionLaunchResponse(
+                provider="jaas",
+                domain=domain,
+                script_url=f"https://{domain}/{app_id}/external_api.js",
+                room_name=full_room_name,
+                jwt=token,
+                display_name=display_name,
+                email=email,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to build Jitsi JaaS launch config. Falling back to public Jitsi."
+            )
 
     if app_id or kid or private_key:
         logger.warning(

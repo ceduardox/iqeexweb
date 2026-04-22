@@ -14,6 +14,9 @@ export function useContributorStatus(courseUuid: string) {
   const session = useLHSession() as any;
   const [contributorStatus, setContributorStatus] = useState<ContributorStatus>('NONE');
   const [isLoading, setIsLoading] = useState(true);
+  const normalizedCourseUuid = courseUuid.startsWith('course_')
+    ? courseUuid
+    : `course_${courseUuid}`
 
   const checkContributorStatus = useCallback(async () => {
     if (!session.data?.user) {
@@ -23,7 +26,7 @@ export function useContributorStatus(courseUuid: string) {
 
     try {
       const response = await getCourseContributors(
-        'course_' + courseUuid,
+        normalizedCourseUuid,
         session.data?.tokens?.access_token
       );
       
@@ -47,7 +50,7 @@ export function useContributorStatus(courseUuid: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [courseUuid, session.data?.tokens?.access_token, session.data?.user]);
+  }, [normalizedCourseUuid, session.data?.tokens?.access_token, session.data?.user]);
 
   useEffect(() => {
     if (session.data?.user) {
