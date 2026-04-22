@@ -2,6 +2,7 @@ import { getAPIUrl } from '@services/config/config'
 import {
   RequestBodyFormWithAuthHeader,
   RequestBodyWithAuthHeader,
+  errorHandling,
   getResponseMetadata,
 } from '@services/utils/ts/requests'
 
@@ -145,6 +146,28 @@ export async function getActivityWithAuthHeader(
     RequestBodyWithAuthHeader('GET', null, next, access_token || undefined)
   )
   const res = await result.json()
+  return res
+}
+
+export interface LiveSessionLaunchConfig {
+  provider: 'public' | 'jaas'
+  domain: string
+  script_url: string
+  room_name: string
+  jwt?: string | null
+  display_name?: string | null
+  email?: string | null
+}
+
+export async function getLiveSessionLaunchConfig(
+  activity_uuid: string,
+  access_token?: string
+): Promise<LiveSessionLaunchConfig> {
+  const result = await fetch(
+    `${getAPIUrl()}activities/${activity_uuid}/live-session/launch`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await errorHandling(result)
   return res
 }
 

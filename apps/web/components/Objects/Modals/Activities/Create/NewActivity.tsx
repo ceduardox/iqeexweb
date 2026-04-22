@@ -9,7 +9,9 @@ import VideoModal from './NewActivityModal/VideoActivityModal'
 import Image from 'next/image'
 import DocumentPdfModal from './NewActivityModal/DocumentActivityModal'
 import Assignment from './NewActivityModal/AssignmentActivityModal'
+import LiveSessionActivityModal from './NewActivityModal/LiveSessionActivityModal'
 import { useTranslation } from 'react-i18next'
+import { CalendarDays } from 'lucide-react'
 
 function NewActivityModal({
   closeModal,
@@ -25,7 +27,7 @@ function NewActivityModal({
   return (
     <>
       {selectedView === 'home' && (
-        <div className="grid grid-cols-4 gap-2 mt-2.5 w-full">
+        <div className="grid grid-cols-2 gap-2 mt-2.5 w-full md:grid-cols-5">
           <ActivityOption
             onClick={() => {
               setSelectedView('dynamic')
@@ -74,6 +76,20 @@ function NewActivityModal({
               {t('dashboard.courses.structure.activity.types.assignments')}
             </div>
           </ActivityOption>
+          <ActivityOption
+            onClick={() => {
+              setSelectedView('live-session')
+            }}
+          >
+            <div className="h-20 rounded-lg m-0.5 flex flex-col items-center justify-center text-center bg-white hover:cursor-pointer">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <CalendarDays size={28} />
+              </div>
+            </div>
+            <div className="flex text-sm h-5 font-medium text-gray-500 items-center justify-center text-center">
+              {t('activities.live_session', { defaultValue: 'Live Session' })}
+            </div>
+          </ActivityOption>
         </div>
       )}
 
@@ -110,6 +126,14 @@ function NewActivityModal({
           closeModal={closeModal}
         />)
       }
+
+      {selectedView === 'live-session' && (
+        <LiveSessionActivityModal
+          submitActivity={submitActivity}
+          chapterId={chapterId}
+          course={course}
+        />
+      )}
     </>
   )
 }

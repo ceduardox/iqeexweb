@@ -10,7 +10,7 @@ import GeneralWrapperStyled from '@components/Objects/StyledElements/Wrappers/Ge
 import {
   getCourseThumbnailMediaDirectory,
 } from '@services/media/media'
-import { ArrowRight, Backpack, Check, File, StickyNote, Video, Square, Image as ImageIcon, Layers, BookCopy } from 'lucide-react'
+import { ArrowRight, Backpack, CalendarDays, Check, File, StickyNote, Video, Square, Image as ImageIcon, Layers, BookCopy } from 'lucide-react'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { CourseProvider } from '@components/Contexts/CourseContext'
 import { useMediaQuery } from 'usehooks-ts'
@@ -156,6 +156,8 @@ const CourseClient = (props: any) => {
         return t('activities.page')
       case 'TYPE_ASSIGNMENT':
         return t('activities.assignment')
+      case 'TYPE_CUSTOM':
+        return t('activities.live_session', { defaultValue: 'Live Session' })
       default:
         return t('activities.learning_material')
     }
@@ -536,6 +538,9 @@ const CourseClient = (props: any) => {
                                       )}
                                       {activity.activity_type === 'TYPE_ASSIGNMENT' && (
                                         <Backpack size={10} />
+                                      )}
+                                      {activity.activity_type === 'TYPE_CUSTOM' && (
+                                        <CalendarDays size={10} />
                                       )}
                                       <span className="text-xs font-medium">{getActivityTypeLabel(activity.activity_type)}</span>
                                     </div>
