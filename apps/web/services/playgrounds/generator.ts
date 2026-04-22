@@ -5,6 +5,7 @@ interface PlaygroundContext {
   playground_description: string
   course_uuid?: string
   course_name?: string
+  language?: string
 }
 
 interface StreamChunk {
@@ -56,7 +57,8 @@ export async function iteratePlayground(
   onChunk: (chunk: string) => void,
   onComplete: (sessionUuid: string) => void,
   onError: (error: string) => void,
-  currentHtml?: string | null
+  currentHtml?: string | null,
+  language?: string
 ): Promise<void> {
   try {
     const response = await fetch(`${getAPIUrl()}playgrounds/generate/iterate`, {
@@ -70,6 +72,7 @@ export async function iteratePlayground(
         playground_uuid: playgroundUuid,
         message,
         current_html: currentHtml || undefined,
+        language,
       }),
     })
 

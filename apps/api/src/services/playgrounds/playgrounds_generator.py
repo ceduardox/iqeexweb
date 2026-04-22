@@ -22,6 +22,32 @@ SESSION_TTL = 2160000  # 25 days
 MAX_ITERATIONS = 10
 
 
+def normalize_language_code(language_code: Optional[str]) -> str:
+    if not language_code:
+        return "es"
+    return language_code.split("-")[0].lower()
+
+
+def get_language_name(language_code: Optional[str]) -> str:
+    normalized = normalize_language_code(language_code)
+    language_names = {
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "nl": "Dutch",
+        "ru": "Russian",
+        "zh": "Chinese",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "ar": "Arabic",
+        "hi": "Hindi",
+    }
+    return language_names.get(normalized, "Spanish")
+
+
 def get_redis_connection():
     redis_conn_string = LH_CONFIG.redis_config.redis_connection_string
     if redis_conn_string:
@@ -85,11 +111,19 @@ def build_playground_system_prompt(
     context: PlaygroundContext,
     course_context: Optional[str] = None,
 ) -> str:
+    language_name = get_language_name(context.language)
     base_prompt = f"""You are an expert interactive content creator for educational playgrounds.
 
 CONTEXT:
 - Playground: {context.playground_name}
-- Description: {context.playground_description}"""
+- Description: {context.playground_description}
+
+IMPORTANT LANGUAGE RULE:
+- Generate ALL learner-facing text, labels, instructions, buttons, hints, and feedback in {language_name}.
+- The user's selected language is {language_name}, so the entire interactive experience must be written in {language_name}.
+- Keep HTML, CSS, JavaScript syntax, library names, API names, and code identifiers unchanged.
+- Translate only learner-facing copy shown inside the experience.
+- If you receive existing HTML with learner-facing text in another language, translate that text to {language_name} while preserving the behavior and structure of the code."""
 
     if course_context and context.course_name:
         base_prompt += f"""
@@ -208,7 +242,7 @@ async def generate_playground_stream(
                 "role": "model",
                 "parts": [
                     {
-                        "text": "I understand. I'll create interactive, self-contained HTML content for educational playgrounds. I'll output only valid HTML code."
+                        "text": f"I understand. I'll create interactive, self-contained HTML content for educational playgrounds in {get_language_name(session.context.language)}. I'll keep code syntax and identifiers stable and output only valid HTML code."
                     }
                 ],
             }
@@ -227,6 +261,10 @@ CURRENT HTML CODE:
 
 USER REQUEST:
 {prompt}
+
+Keep ALL learner-facing text in {get_language_name(session.context.language)}.
+Do not translate HTML, CSS, JavaScript syntax, library names, API names, or code identifiers.
+If the current HTML contains learner-facing text in another language, translate it to {get_language_name(session.context.language)} while preserving the existing behavior.
 
 Please modify the HTML code above according to the user's request. Output ONLY the complete updated HTML code, starting with <!DOCTYPE html> and ending with </html>. Do not include any explanations."""
             contents.append({"role": "user", "parts": [{"text": iteration_prompt}]})
