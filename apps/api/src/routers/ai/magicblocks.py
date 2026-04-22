@@ -193,6 +193,9 @@ async def iterate_magicblock_session(
     # Get AI model
     ai_model = get_org_ai_model(org.id, db_session)
 
+    if message_request.language:
+        session.context.language = message_request.language
+
     # Use client-provided HTML or fall back to session's current_html
     html_to_iterate = message_request.current_html or session.current_html
 

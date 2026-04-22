@@ -25,6 +25,32 @@ SESSION_TTL = 2160000
 MAX_ITERATIONS = 6
 
 
+def normalize_language_code(language_code: Optional[str]) -> str:
+    if not language_code:
+        return "es"
+    return language_code.split("-")[0].lower()
+
+
+def get_language_name(language_code: Optional[str]) -> str:
+    normalized = normalize_language_code(language_code)
+    language_names = {
+        "en": "English",
+        "es": "Spanish",
+        "pt": "Portuguese",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "nl": "Dutch",
+        "ru": "Russian",
+        "zh": "Chinese",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "ar": "Arabic",
+        "hi": "Hindi",
+    }
+    return language_names.get(normalized, "Spanish")
+
+
 def get_redis_connection():
     """Get Redis connection if available"""
     redis_conn_string = LH_CONFIG.redis_config.redis_connection_string
@@ -97,6 +123,7 @@ def save_magicblock_session(session: MagicBlockSessionData) -> bool:
 
 def build_magicblock_system_prompt(context: MagicBlockContext) -> str:
     """Build the system prompt for MagicBlock generation"""
+    language_name = get_language_name(context.language)
     return f"""You are an expert interactive content creator for educational purposes. Your task is to generate self-contained HTML with embedded CSS and JavaScript that creates interactive learning experiences.
 
 CONTEXT:
@@ -104,6 +131,13 @@ CONTEXT:
 - Course Description: {context.course_description}
 - Current Lesson: {context.activity_name}
 - Lesson Content Summary: {context.activity_content_summary}
+
+IMPORTANT LANGUAGE RULE:
+- Generate ALL learner-facing text, labels, buttons, instructions, hints, and feedback in {language_name}.
+- The user's selected language is {language_name}, so the entire interactive element must be written in {language_name}.
+- Keep HTML, CSS, JavaScript syntax, library names, API names, and code identifiers unchanged.
+- Translate only learner-facing copy shown inside the experience.
+- If you receive existing HTML with learner-facing text in another language, translate that text to {language_name} while preserving the behavior and structure of the code.
 
 IMPORTANT - THIS IS NOT A PAGE:
 You are creating an INTERACTIVE ELEMENT that lives inside a content box, NOT a landing page or website.
@@ -219,7 +253,7 @@ async def generate_magicblock_stream(
         # Add system instruction
         system_prompt = build_magicblock_system_prompt(session.context)
         contents.append({"role": "user", "parts": [{"text": system_prompt}]})
-        contents.append({"role": "model", "parts": [{"text": "I understand. I'll create interactive HTML content for educational purposes. I'll output only valid HTML code that's self-contained and ready to render."}]})
+        contents.append({"role": "model", "parts": [{"text": f"I understand. I'll create interactive HTML content for educational purposes in {get_language_name(session.context.language)}. I'll output only valid HTML code that's self-contained and ready to render."}]})
 
         # Add message history
         for msg in session.message_history:
@@ -239,6 +273,10 @@ CURRENT HTML CODE:
 
 USER REQUEST:
 {prompt}
+
+Keep ALL learner-facing text in {get_language_name(session.context.language)}.
+Do not translate HTML, CSS, JavaScript syntax, library names, API names, or code identifiers.
+If the current HTML contains learner-facing text in another language, translate it to {get_language_name(session.context.language)} while preserving the existing behavior.
 
 Please modify the HTML code above according to the user's request. Output ONLY the complete updated HTML code, starting with <!DOCTYPE html> and ending with </html>. Do not include any explanations."""
             contents.append({"role": "user", "parts": [{"text": iteration_prompt}]})

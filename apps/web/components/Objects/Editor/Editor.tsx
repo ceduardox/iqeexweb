@@ -21,7 +21,7 @@ import ImageBlock from './Extensions/Image/ImageBlock'
 import Youtube from '@tiptap/extension-youtube'
 import VideoBlock from './Extensions/Video/VideoBlock'
 import AudioBlock from './Extensions/Audio/AudioBlock'
-import { Eye, Monitor, History, AlertTriangle, RefreshCw, GitMerge, Loader2 } from 'lucide-react'
+import { Eye, Monitor, History, AlertTriangle, RefreshCw, GitMerge, Loader2, BookOpen } from 'lucide-react'
 import MathEquationBlock from './Extensions/MathEquation/MathEquationBlock'
 import PDFBlock from './Extensions/PDF/PDFBlock'
 import QuizBlock from './Extensions/Quiz/QuizBlock'
@@ -365,10 +365,13 @@ function Editor(props: Editor) {
           <div className="activity-editor-top">
             <div className="activity-editor-doc-section">
               <div className="activity-editor-info-wrapper">
-                <Link href="/">
+                <Link href={getUriWithOrg(props.org?.slug, '/')}>
                   <EditorLearnHouseLogo />
                 </Link>
-                <Link target="_blank" href={`/course/${course_uuid}`}>
+                <Link
+                  target="_blank"
+                  href={getUriWithOrg(props.org?.slug, `/course/${course_uuid}`)}
+                >
                   <img
                     className="activity-editor-info-thumbnail"
                     src={`${props.course.thumbnail_image ? getCourseThumbnailMediaDirectory(
@@ -528,7 +531,10 @@ function Editor(props: Editor) {
                 <ToolTip content={t('editor.preview')}>
                   <Link
                     target="_blank"
-                    href={`/course/${course_uuid}/activity/${activity_uuid}`}
+                    href={getUriWithOrg(
+                      props.org?.slug,
+                      `/course/${course_uuid}/activity/${activity_uuid}`
+                    )}
                   >
                     <div className="flex bg-neutral-600 hover:bg-neutral-700 transition-all ease-linear h-9 px-3 py-2 font-black justify-center items-center text-sm shadow-sm text-neutral-100 rounded-lg hover:cursor-pointer">
                       <Eye className="mx-auto items-center" size={15} />
@@ -615,13 +621,7 @@ const EditorLearnHouseLogo = () => {
         animate={animation.animate}
         transition={animation.transition}
       >
-        <Image
-          src="/lrn.svg"
-          alt="LearnHouse"
-          width={14}
-          height={14}
-          className="invert"
-        />
+        <BookOpen size={14} className="text-white" />
       </motion.div>
     </div>
   )
