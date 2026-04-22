@@ -31,6 +31,7 @@ import Modal from '@components/Objects/StyledElements/Modal/Modal'
 import UnsplashImagePicker from '@components/Dashboard/Pages/Course/EditCourseGeneral/UnsplashImagePicker'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 
 type Tab = 'general' | 'access' | 'thumbnail'
 
@@ -49,12 +50,13 @@ export default function PlaygroundOptionsModal({
   orgslug,
   onUpdated,
 }: PlaygroundOptionsModalProps) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('general')
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general', label: 'General', icon: <TextT size={14} weight="bold" /> },
-    { id: 'access', label: 'Access', icon: <ShieldCheck size={14} weight="bold" /> },
-    { id: 'thumbnail', label: 'Thumbnail', icon: <Image size={14} weight="bold" /> },
+    { id: 'general', label: t('playgrounds_ui.general_tab'), icon: <TextT size={14} weight="bold" /> },
+    { id: 'access', label: t('playgrounds_ui.access_tab'), icon: <ShieldCheck size={14} weight="bold" /> },
+    { id: 'thumbnail', label: t('playgrounds_ui.thumbnail_tab'), icon: <Image size={14} weight="bold" /> },
   ]
 
   return (
@@ -68,9 +70,9 @@ export default function PlaygroundOptionsModal({
         <div className="flex h-full min-h-[680px]">
           {/* Sidebar */}
           <div className="w-44 flex-shrink-0 border-r border-gray-100 bg-gray-50/60 flex flex-col py-4 px-3 gap-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
-              Playground
-            </p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
+              {t('playgrounds_ui.playground_label')}
+              </p>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -118,6 +120,7 @@ function GeneralTab({
   playground: Playground
   onUpdated: (p: Playground) => void
 }) {
+  const { t } = useTranslation()
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
 
@@ -144,9 +147,9 @@ function GeneralTab({
         access_token
       )
       onUpdated(updated)
-      toast.success('Playground updated')
+      toast.success(t('playgrounds_ui.toast_updated'))
     } catch {
-      toast.error('Failed to save changes')
+      toast.error(t('playgrounds_ui.toast_save_failed'))
     } finally {
       setIsSaving(false)
     }
@@ -155,29 +158,29 @@ function GeneralTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-bold text-gray-900 mb-0.5">General settings</h2>
-        <p className="text-xs text-gray-400">Update the name and description of your playground.</p>
+        <h2 className="text-base font-bold text-gray-900 mb-0.5">{t('playgrounds_ui.general_settings')}</h2>
+        <p className="text-xs text-gray-400">{t('playgrounds_ui.general_description')}</p>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Name</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">{t('playgrounds_ui.name')}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-            placeholder="Playground name"
+            placeholder={t('playgrounds_ui.title_placeholder')}
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Description</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5">{t('playgrounds_ui.description')}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
-            placeholder="Describe what this playground does…"
+            placeholder={t('playgrounds_ui.description_placeholder')}
           />
         </div>
       </div>
@@ -190,7 +193,7 @@ function GeneralTab({
             className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-black nice-shadow transition-all disabled:opacity-50"
           >
             <FloppyDisk size={14} weight="bold" />
-            {isSaving ? 'Saving…' : 'Save changes'}
+            {isSaving ? t('playgrounds_ui.saving') : t('playgrounds_ui.save_changes')}
           </button>
         </div>
       )}
@@ -210,6 +213,7 @@ function AccessTab({
   orgId: number
   onUpdated: (p: Playground) => void
 }) {
+  const { t } = useTranslation()
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
 
@@ -236,10 +240,10 @@ function AccessTab({
         access_token
       )
       onUpdated(updated)
-      toast.success('Access updated')
+      toast.success(t('playgrounds_ui.toast_access_updated'))
     } catch {
       setAccessType(previous)
-      toast.error('Failed to update access')
+      toast.error(t('playgrounds_ui.toast_access_failed'))
     } finally {
       setIsSaving(false)
     }
@@ -249,10 +253,10 @@ function AccessTab({
   const removeUserGroup = async (usergroupUuid: string) => {
     try {
       await removeUserGroupFromPlayground(playground.playground_uuid, usergroupUuid, access_token)
-      toast.success('User group removed')
+      toast.success(t('playgrounds_ui.toast_group_removed'))
       if (ugKey) mutate(ugKey)
     } catch {
-      toast.error('Failed to remove user group')
+      toast.error(t('playgrounds_ui.toast_group_remove_failed'))
     }
   }
 
@@ -265,28 +269,28 @@ function AccessTab({
     {
       type: 'public',
       icon: <Globe size={22} weight="duotone" className="text-green-500" />,
-      label: 'Public',
-      description: 'Anyone on the internet can view this playground.',
+      label: t('playgrounds_ui.access_public'),
+      description: t('playgrounds_ui.public_description'),
     },
     {
       type: 'authenticated',
       icon: <Users size={22} weight="duotone" className="text-sky-500" />,
-      label: 'Members only',
-      description: 'Only signed-in members of your organization can view.',
+      label: t('playgrounds_ui.members_only'),
+      description: t('playgrounds_ui.members_only_description'),
     },
     {
       type: 'restricted',
       icon: <Lock size={22} weight="duotone" className="text-amber-500" />,
-      label: 'Restricted',
-      description: 'Only specific user groups you select can view.',
+      label: t('playgrounds_ui.access_restricted'),
+      description: t('playgrounds_ui.restricted_description'),
     },
   ]
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-bold text-gray-900 mb-0.5">Access control</h2>
-        <p className="text-xs text-gray-400">Choose who can view this playground.</p>
+        <h2 className="text-base font-bold text-gray-900 mb-0.5">{t('playgrounds_ui.access_control')}</h2>
+        <p className="text-xs text-gray-400">{t('playgrounds_ui.access_description')}</p>
       </div>
 
       {/* Access type cards */}
@@ -325,17 +329,17 @@ function AccessTab({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-800">User groups</p>
-              <p className="text-xs text-gray-400">Groups that can access this playground</p>
+              <p className="text-sm font-bold text-gray-800">{t('playgrounds_ui.user_groups')}</p>
+              <p className="text-xs text-gray-400">{t('playgrounds_ui.user_groups_description')}</p>
             </div>
             <Modal
               isDialogOpen={linkModalOpen}
               onOpenChange={setLinkModalOpen}
               minWidth="no-min"
               minHeight="no-min"
-              dialogTitle="Link user group"
-              dialogDescription="Select a user group to grant access to this playground."
-              dialogContent={
+                  dialogTitle={t('playgrounds_ui.link_user_group')}
+                  dialogDescription={t('playgrounds_ui.link_user_group_description')}
+                  dialogContent={
                 <LinkUserGroupForm
                   playgroundUuid={playground.playground_uuid}
                   orgId={orgId}
@@ -348,7 +352,7 @@ function AccessTab({
               dialogTrigger={
                 <button className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-neutral-800 hover:bg-neutral-900 text-white text-xs font-black nice-shadow transition-all">
                   <Plus size={12} weight="bold" />
-                  Add group
+                  {t('playgrounds_ui.add_group')}
                 </button>
               }
             />
@@ -358,20 +362,20 @@ function AccessTab({
             {!usergroups || usergroups.length === 0 ? (
               <div className="py-8 text-center">
                 <Lock size={20} className="text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-400">No user groups linked yet</p>
+                <p className="text-xs text-gray-400">{t('playgrounds_ui.no_user_groups_linked')}</p>
                 <Link
                   href={getUriWithOrg(orgslug, '/dash/users/settings/usergroups')}
                   target="_blank"
                   className="text-xs text-sky-600 hover:underline mt-1 inline-block"
                 >
-                  Manage user groups →
+                  {t('playgrounds_ui.manage_user_groups')}
                 </Link>
               </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">Group</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500">{t('playgrounds_ui.group')}</th>
                     <th className="px-4 py-2.5" />
                   </tr>
                 </thead>
@@ -385,7 +389,7 @@ function AccessTab({
                           className="flex items-center gap-1 ml-auto h-7 px-2.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all"
                         >
                           <X size={11} weight="bold" />
-                          Remove
+                          {t('playgrounds_ui.remove')}
                         </button>
                       </td>
                     </tr>
@@ -411,6 +415,7 @@ function ThumbnailTab({
   playground: Playground
   onUpdated: (p: Playground) => void
 }) {
+  const { t } = useTranslation()
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -440,9 +445,9 @@ function ThumbnailTab({
       const updated = await updatePlaygroundThumbnail(playground.playground_uuid, file, access_token)
       onUpdated(updated)
       setLocalPreview(null)
-      toast.success('Thumbnail updated')
+      toast.success(t('playgrounds_ui.toast_thumbnail_updated'))
     } catch {
-      toast.error('Failed to upload thumbnail')
+      toast.error(t('playgrounds_ui.toast_thumbnail_failed'))
     } finally {
       setIsUploading(false)
     }
@@ -452,12 +457,12 @@ function ThumbnailTab({
     const file = e.target.files?.[0]
     if (!file) return
     if (!VALID_IMAGE_MIME_TYPES.includes(file.type as any)) {
-      toast.error('Please upload a PNG or JPG image')
+      toast.error(t('playgrounds_ui.toast_invalid_image_type'))
       e.target.value = ''
       return
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast.error(`File too large (max 8MB)`)
+      toast.error(t('playgrounds_ui.toast_file_too_large'))
       e.target.value = ''
       return
     }
@@ -469,14 +474,14 @@ function ThumbnailTab({
     try {
       const url = new URL(imageUrl)
       if (!['https:', 'http:'].includes(url.protocol)) {
-        toast.error('Invalid image URL')
+        toast.error(t('playgrounds_ui.toast_invalid_image_url'))
         return
       }
       setIsUploading(true)
       const res = await fetch(imageUrl)
       const blob = await res.blob()
       if (!blob.type.startsWith('image/')) {
-        toast.error('URL did not return a valid image')
+        toast.error(t('playgrounds_ui.toast_invalid_image_response'))
         setIsUploading(false)
         return
       }
@@ -484,7 +489,7 @@ function ThumbnailTab({
       setLocalPreview(URL.createObjectURL(file))
       await doUpload(file)
     } catch {
-      toast.error('Failed to process Unsplash image')
+      toast.error(t('playgrounds_ui.toast_unsplash_failed'))
       setIsUploading(false)
     }
   }
@@ -492,8 +497,8 @@ function ThumbnailTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-bold text-gray-900 mb-0.5">Thumbnail</h2>
-        <p className="text-xs text-gray-400">Upload an image or pick one from Unsplash.</p>
+        <h2 className="text-base font-bold text-gray-900 mb-0.5">{t('playgrounds_ui.thumbnail_title')}</h2>
+        <p className="text-xs text-gray-400">{t('playgrounds_ui.thumbnail_description')}</p>
       </div>
 
       {/* Preview */}
@@ -501,13 +506,13 @@ function ThumbnailTab({
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
-            alt="Thumbnail preview"
+            alt={t('playgrounds_ui.thumbnail_preview')}
             className={`w-full h-full object-cover ${isUploading ? 'opacity-60' : ''}`}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-300">
             <Image size={36} weight="duotone" />
-            <span className="text-xs">No thumbnail</span>
+            <span className="text-xs">{t('playgrounds_ui.no_thumbnail')}</span>
           </div>
         )}
       </div>
@@ -524,7 +529,7 @@ function ThumbnailTab({
       {isUploading ? (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <CircleNotch size={14} weight="bold" className="animate-spin text-sky-500" />
-          Uploading…
+          {t('playgrounds_ui.uploading')}
         </div>
       ) : (
         <div className="flex gap-2">
@@ -533,7 +538,7 @@ function ThumbnailTab({
             className="flex items-center gap-1.5 h-9 px-4 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-all nice-shadow"
           >
             <UploadSimple size={14} weight="bold" />
-            Upload image
+            {t('playgrounds_ui.upload_image')}
           </button>
           <button
             onClick={() => setShowUnsplash(true)}
@@ -572,6 +577,7 @@ function LinkUserGroupForm({
   ugKey: string | null
   onDone: () => void
 }) {
+  const { t } = useTranslation()
   const { data: allGroups } = useSWR(
     `${getAPIUrl()}usergroups/org/${orgId}?org_id=${orgId}`,
     (url) => swrFetcher(url, accessToken)
@@ -588,28 +594,28 @@ function LinkUserGroupForm({
     try {
       // Correct endpoint: POST /playgrounds/{uuid}/usergroups/{ug_uuid}
       await addUserGroupToPlayground(playgroundUuid, selected, accessToken)
-      toast.success('User group linked')
+      toast.success(t('playgrounds_ui.toast_group_linked'))
       if (ugKey) mutate(ugKey)
       onDone()
     } catch {
-      toast.error('Failed to link user group')
+      toast.error(t('playgrounds_ui.toast_group_link_failed'))
     }
   }
 
   if (!allGroups) {
-    return <div className="py-4 text-center text-sm text-gray-400">Loading…</div>
+    return <div className="py-4 text-center text-sm text-gray-400">{t('playgrounds_ui.loading')}</div>
   }
 
   if (allGroups.length === 0) {
     return (
       <div className="py-6 text-center space-y-2">
-        <p className="text-sm text-gray-500">No user groups available.</p>
+        <p className="text-sm text-gray-500">{t('playgrounds_ui.no_user_groups_available')}</p>
         <Link
           href={getUriWithOrg(orgslug, '/dash/users/settings/usergroups')}
           target="_blank"
           className="text-sm text-sky-600 hover:underline"
         >
-          Create a user group →
+          {t('playgrounds_ui.create_user_group')}
         </Link>
       </div>
     )
@@ -633,7 +639,7 @@ function LinkUserGroupForm({
           className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-black nice-shadow transition-all disabled:opacity-50"
         >
           <Plus size={14} weight="bold" />
-          Link group
+          {t('playgrounds_ui.link_group')}
         </button>
       </div>
     </div>

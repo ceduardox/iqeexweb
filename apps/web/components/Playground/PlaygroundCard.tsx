@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { Globe, Lock, Users, Pencil } from 'lucide-react'
 import { Cube } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { Playground } from '@services/playgrounds/playgrounds'
 import { getPlaygroundThumbnailMediaDirectory } from '@services/media/media'
 
@@ -13,13 +14,13 @@ interface PlaygroundCardProps {
   canEdit?: boolean
 }
 
-const accessConfig = {
-  public: { icon: Globe, label: 'Public', className: 'bg-green-100 text-green-700' },
-  authenticated: { icon: Lock, label: 'Members', className: 'bg-blue-100 text-blue-700' },
-  restricted: { icon: Users, label: 'Restricted', className: 'bg-amber-100 text-amber-700' },
-}
-
 export default function PlaygroundCard({ playground, orgslug, canEdit }: PlaygroundCardProps) {
+  const { t } = useTranslation()
+  const accessConfig = {
+    public: { icon: Globe, label: t('playgrounds_ui.access_public'), className: 'bg-green-100 text-green-700' },
+    authenticated: { icon: Lock, label: t('playgrounds_ui.access_members'), className: 'bg-blue-100 text-blue-700' },
+    restricted: { icon: Users, label: t('playgrounds_ui.access_restricted'), className: 'bg-amber-100 text-amber-700' },
+  }
   const access = accessConfig[playground.access_type as keyof typeof accessConfig] || accessConfig.authenticated
   const AccessIcon = access.icon
 
@@ -37,7 +38,6 @@ export default function PlaygroundCard({ playground, orgslug, canEdit }: Playgro
 
   return (
     <div className="group relative flex flex-col bg-white rounded-xl nice-shadow overflow-hidden w-full transition-all duration-300 hover:scale-[1.01]">
-      {/* Edit button — top right, appears on hover */}
       {canEdit && (
         <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
           <Link
@@ -49,7 +49,6 @@ export default function PlaygroundCard({ playground, orgslug, canEdit }: Playgro
         </div>
       )}
 
-      {/* Thumbnail */}
       <Link href={playgroundLink} className="block relative aspect-video overflow-hidden bg-gray-50">
         {thumbnailUrl ? (
           <div
@@ -63,7 +62,6 @@ export default function PlaygroundCard({ playground, orgslug, canEdit }: Playgro
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
 
-        {/* Badges — bottom left */}
         <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
           <span className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full ${access.className}`}>
             <AccessIcon className="w-2.5 h-2.5" />
@@ -71,13 +69,12 @@ export default function PlaygroundCard({ playground, orgslug, canEdit }: Playgro
           </span>
           {!playground.published && (
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-yellow-100 text-yellow-700 rounded-full">
-              Draft
+              {t('playgrounds_ui.draft')}
             </span>
           )}
         </div>
       </Link>
 
-      {/* Content */}
       <div className="p-3 flex flex-col space-y-1.5">
         <Link
           href={playgroundLink}
@@ -97,7 +94,7 @@ export default function PlaygroundCard({ playground, orgslug, canEdit }: Playgro
             href={playgroundLink}
             className="text-[10px] font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-wider"
           >
-            Open Playground →
+            {t('playgrounds_ui.open_playground')}
           </Link>
         </div>
       </div>
