@@ -3,6 +3,7 @@ import { getAPIUrl } from '@services/config/config'
 interface BoardsPlaygroundContext {
   board_name: string
   board_description: string
+  locale?: string
 }
 
 interface StreamChunk {

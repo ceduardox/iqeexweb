@@ -83,12 +83,47 @@ def save_boards_playground_session(session: BoardsPlaygroundSessionData) -> bool
         return False
 
 
+def _get_output_language(context: BoardsPlaygroundContext) -> tuple[str, str]:
+    locale = (context.locale or "es").strip() or "es"
+    normalized = locale.lower()
+
+    language_map = (
+        ("es", "Spanish"),
+        ("en", "English"),
+        ("pt", "Portuguese"),
+        ("fr", "French"),
+        ("de", "German"),
+        ("it", "Italian"),
+        ("nl", "Dutch"),
+        ("pl", "Polish"),
+        ("ru", "Russian"),
+        ("tr", "Turkish"),
+        ("ar", "Arabic"),
+        ("hi", "Hindi"),
+        ("bn", "Bengali"),
+        ("id", "Indonesian"),
+        ("ja", "Japanese"),
+        ("ko", "Korean"),
+        ("th", "Thai"),
+        ("vi", "Vietnamese"),
+        ("zh", "Chinese"),
+    )
+
+    for prefix, language_name in language_map:
+        if normalized.startswith(prefix):
+            return language_name, locale
+
+    return "Spanish", locale
+
+
 def build_boards_playground_system_prompt(context: BoardsPlaygroundContext) -> str:
+    output_language, locale = _get_output_language(context)
     return f"""You are an expert interactive content creator for educational boards.
 
 CONTEXT:
 - Board: {context.board_name}
 - Description: {context.board_description}
+- Output language: {output_language} ({locale})
 
 You create standalone interactive HTML elements — widgets, visualizations, mini-apps, simulations, and educational tools that run entirely in the browser.
 
@@ -101,6 +136,12 @@ DESIGN RULES:
 6. Use clean, modern UI with proper spacing, rounded corners, shadows
 7. Make it interactive and engaging — buttons, inputs, animations, visual feedback
 8. Include clear instructions or labels so users know how to interact
+
+LANGUAGE RULES:
+1. All user-facing text must be written in {output_language}
+2. Translate visible copy only: headings, buttons, labels, placeholders, helper text, instructions, alerts, tooltips, chart labels, legends, and empty states
+3. Keep code and technical identifiers unchanged: HTML tags, CSS, JavaScript syntax, API names, library names, variable names, function names, class names, IDs, and data attributes must remain valid code
+4. If the user explicitly asks for a different display language, follow the user's request
 
 AVAILABLE LIBRARIES (use via CDN):
 - Tailwind CSS: <script src="https://cdn.tailwindcss.com"></script>
@@ -154,7 +195,7 @@ async def generate_boards_playground_stream(
                 "role": "model",
                 "parts": [
                     {
-                        "text": "I understand. I'll create interactive, self-contained HTML content for educational boards. I'll output only valid HTML code."
+                        "text": "I understand. I'll create interactive, self-contained HTML content for educational boards, keep all user-facing text in the requested language, and output only valid HTML code."
                     }
                 ],
             }

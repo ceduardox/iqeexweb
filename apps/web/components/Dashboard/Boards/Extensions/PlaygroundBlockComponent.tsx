@@ -106,7 +106,7 @@ export default function PlaygroundBlockComponent({
   editor,
   getPos,
 }: any) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { blockUuid, x, y, width, height, htmlContent, sessionUuid, iterationCount } = node.attrs
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -163,6 +163,7 @@ export default function PlaygroundBlockComponent({
     const context = {
       board_name: boardCtx?.boardName || 'Board',
       board_description: 'Interactive board for educational content',
+      locale: i18n.resolvedLanguage || i18n.language || 'es',
     }
 
     const onChunk = (chunk: string) => {

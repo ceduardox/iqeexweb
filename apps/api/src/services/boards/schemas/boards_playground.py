@@ -5,6 +5,7 @@ from typing import Optional, List
 class BoardsPlaygroundContext(BaseModel):
     board_name: str
     board_description: str
+    locale: Optional[str] = None
 
 
 class StartBoardsPlaygroundSession(BaseModel):
