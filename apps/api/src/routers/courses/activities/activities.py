@@ -18,6 +18,10 @@ from src.services.courses.activities.versioning import (
     get_activity_state,
     restore_activity_version,
 )
+from src.services.courses.activities.live_sessions import (
+    LiveSessionLaunchResponse,
+    get_live_session_launch,
+)
 from src.security.auth import get_current_user
 from src.services.courses.activities.pdf import create_documentpdf_activity
 from src.services.courses.activities.video import (
@@ -114,6 +118,24 @@ async def api_restore_activity_version(
 
 
 # Activity CRUD endpoints
+
+
+@router.get("/{activity_uuid}/live-session/launch")
+async def api_get_live_session_launch(
+    request: Request,
+    activity_uuid: str,
+    current_user: PublicUser = Depends(get_current_user),
+    db_session=Depends(get_db_session),
+) -> LiveSessionLaunchResponse:
+    """
+    Resolve the embeddable Jitsi launch configuration for a live session activity.
+    """
+    return await get_live_session_launch(
+        request,
+        activity_uuid,
+        current_user,
+        db_session,
+    )
 
 
 @router.get("/{activity_uuid}")

@@ -1,5 +1,5 @@
 'use client'
-import { BookOpenCheck, Check, FileText, Layers, Video, ChevronLeft, ChevronRight, ChevronDown, Trophy } from 'lucide-react'
+import { BookOpenCheck, CalendarDays, Check, FileText, Layers, Video, ChevronLeft, ChevronRight, ChevronDown, Trophy } from 'lucide-react'
 import React, { useMemo, memo, useState, useRef, useEffect, useCallback } from 'react'
 import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 import { getUriWithOrg } from '@services/config/config'
@@ -27,6 +27,8 @@ function getActivityTypeLabel(activityType: string, t: any): string {
       return t('activities.interactive')
     case 'TYPE_ASSIGNMENT':
       return t('activities.assignment')
+    case 'TYPE_CUSTOM':
+      return t('activities.live_session', { defaultValue: 'Live Session' })
     default:
       return t('common.unknown')
   }
@@ -42,6 +44,8 @@ function getActivityTypeBadgeColor(activityType: string): string {
       return 'bg-green-100 text-green-700'
     case 'TYPE_ASSIGNMENT':
       return 'bg-orange-100 text-orange-700'
+    case 'TYPE_CUSTOM':
+      return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }
@@ -58,6 +62,8 @@ const ActivityTypeIcon = memo(({ activityType }: { activityType: string }) => {
       return <Layers size={16} className="text-gray-400" />
     case 'TYPE_ASSIGNMENT':
       return <BookOpenCheck size={16} className="text-gray-400" />
+    case 'TYPE_CUSTOM':
+      return <CalendarDays size={16} className="text-gray-400" />
     default:
       return <FileText size={16} className="text-gray-400" />
   }

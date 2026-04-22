@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Check, Square, ArrowRight, Folder, FileText, Video, Layers, BookOpenCheck } from 'lucide-react'
+import { CalendarDays, Check, Square, ArrowRight, Folder, FileText, Video, Layers, BookOpenCheck } from 'lucide-react'
 import { getUriWithOrg } from '@services/config/config'
 import Link from 'next/link'
 import Modal from '@components/Objects/StyledElements/Modal/Modal'
@@ -57,6 +57,8 @@ const CourseProgress: React.FC<CourseProgressProps> = ({ course, orgslug, isOpen
         return <Layers size={16} className="text-gray-400" />
       case 'TYPE_ASSIGNMENT':
         return <BookOpenCheck size={16} className="text-gray-400" />
+      case 'TYPE_CUSTOM':
+        return <CalendarDays size={16} className="text-gray-400" />
       default:
         return <FileText size={16} className="text-gray-400" />
     }

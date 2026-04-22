@@ -47,6 +47,7 @@ const AISidePanelContentWrapper = lazy(() => import('@components/Objects/Activit
 const AISidePanelInline = lazy(() => import('@components/Objects/Activities/AI/AIActivityAsk').then(mod => ({ default: mod.AISidePanelInline })))
 const AIChatBotProvider = lazy(() => import('@components/Contexts/AI/AIChatBotContext'))
 const ScormActivity = lazy(() => import('../../../../../../../../ee/components/Activities/ScormActivity'))
+const LiveSessionActivity = lazy(() => import('@components/Objects/Activities/LiveSession/LiveSessionActivity'))
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -292,6 +293,12 @@ function ActivityClient(props: ActivityClientProps) {
             <ScormActivity course={course} activity={activity} />
           </Suspense>
         );
+      case 'TYPE_CUSTOM':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LiveSessionActivity course={course} activity={activity} />
+          </Suspense>
+        );
       default:
         return null;
     }
@@ -344,7 +351,7 @@ function ActivityClient(props: ActivityClientProps) {
   }
 
   useEffect(() => {
-    if (activity.activity_type == 'TYPE_DYNAMIC' || activity.activity_type == 'TYPE_SCORM') {
+    if (activity.activity_type == 'TYPE_DYNAMIC' || activity.activity_type == 'TYPE_SCORM' || activity.activity_type == 'TYPE_CUSTOM') {
       setBgColor(isFocusMode ? 'bg-white' : 'bg-white nice-shadow');
     }
     else if (activity.activity_type == 'TYPE_ASSIGNMENT') {

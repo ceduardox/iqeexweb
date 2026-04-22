@@ -4,6 +4,7 @@ import { deleteActivity, updateActivity } from '@services/courses/activities'
 import { revalidateTags } from '@services/utils/ts/requests'
 import {
   Backpack,
+  CalendarDays,
   Eye,
   File,
   FilePenLine,
@@ -31,6 +32,8 @@ import toast from 'react-hot-toast'
 import { useMediaQuery } from 'usehooks-ts'
 import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 import { useTranslation } from 'react-i18next'
+import Modal from '@components/Objects/StyledElements/Modal/Modal'
+import LiveSessionEditorForm from '@components/Objects/Activities/LiveSession/LiveSessionEditorForm'
 
 type ActivitiyElementProps = {
   orgslug: string
@@ -258,36 +261,48 @@ function ActivityElement(props: ActivitiyElementProps) {
 const ACTIVITIES = {
   'TYPE_VIDEO': {
     displayNameKey: 'video',
+    defaultLabel: 'Video',
     Icon: Video
   },
   'TYPE_DOCUMENT': {
     displayNameKey: 'document',
+    defaultLabel: 'Document',
     Icon: File
   },
   'TYPE_ASSIGNMENT': {
     displayNameKey: 'assignment',
+    defaultLabel: 'Assignment',
     Icon: Backpack
   },
   'TYPE_DYNAMIC': {
     displayNameKey: 'dynamic',
+    defaultLabel: 'Interactive',
     Icon: Sparkles
   },
   'TYPE_SCORM': {
     displayNameKey: 'scorm',
+    defaultLabel: 'SCORM',
     Icon: Package
+  },
+  'TYPE_CUSTOM': {
+    displayNameKey: 'live_session',
+    defaultLabel: 'Live Session',
+    Icon: CalendarDays
   }
 }
 
 const ActivityTypeIndicator = ({activityType, isMobile} : { activityType: keyof typeof ACTIVITIES, isMobile: boolean}) => {
   const { t } = useTranslation()
-  const {displayNameKey, Icon} = ACTIVITIES[activityType]
+  const {displayNameKey, defaultLabel, Icon} = ACTIVITIES[activityType]
 
   return (
     <div className="flex items-center gap-1.5 flex-shrink-0">
       <Icon className="size-4 text-gray-400" />
       {!isMobile && (
         <span className="text-xs text-gray-400 font-medium">
-          {t(`dashboard.courses.structure.activity.types.${displayNameKey}`)}
+          {t(`dashboard.courses.structure.activity.types.${displayNameKey}`, {
+            defaultValue: defaultLabel,
+          })}
         </span>
       )}
     </div>
@@ -297,10 +312,14 @@ const ActivityTypeIndicator = ({activityType, isMobile} : { activityType: keyof 
 const ActivityElementOptions = ({ activity, isMobile }: { activity: any; isMobile: boolean }) => {
   const { t } = useTranslation()
   const [assignmentUUID, setAssignmentUUID] = useState('');
+  const [liveSessionModalOpen, setLiveSessionModalOpen] = useState(false);
   const org = useOrg() as any;
   const course = useCourse() as any;
   const session = useLHSession() as any;
   const access_token = session?.data?.tokens?.access_token;
+  const router = useRouter();
+  const withUnpublishedActivities = course ? course.withUnpublishedActivities : false
+  const isLiveSession = activity.activity_type === 'TYPE_CUSTOM' && activity?.details?.type === 'live_session'
 
   async function getAssignmentUUIDFromActivityUUID(activityUUID: string):  Promise<string | undefined> {
     const activity = await getAssignmentFromActivityUUID(activityUUID, access_token);
@@ -320,6 +339,42 @@ const ActivityElementOptions = ({ activity, isMobile }: { activity: any; isMobil
   useEffect(() => {
     fetchAssignmentUUID();
   }, [activity, course]);
+
+  async function saveLiveSessionSettings(payload: { name: string; details: any }) {
+    const loadingToast = toast.loading(
+      t('activities.live_session_saving', { defaultValue: 'Saving live session...' })
+    )
+
+    try {
+      await updateActivity(
+        {
+          name: payload.name,
+          details: payload.details,
+        },
+        activity.activity_uuid,
+        access_token
+      )
+      mutate(`${getAPIUrl()}courses/${course.courseStructure.course_uuid}/meta?with_unpublished_activities=${withUnpublishedActivities}`)
+      mutate((key: string) => typeof key === 'string' && key.includes('/courses/org_slug/'))
+      await revalidateTags(['courses'], org.slug)
+      toast.success(
+        t('activities.live_session_saved', {
+          defaultValue: 'Live session updated',
+        }),
+        { id: loadingToast }
+      )
+      setLiveSessionModalOpen(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error updating live session:', error)
+      toast.error(
+        t('activities.live_session_save_error', {
+          defaultValue: 'Could not update the live session',
+        }),
+        { id: loadingToast }
+      )
+    }
+  }
 
   return (
     <>
@@ -349,6 +404,41 @@ const ActivityElementOptions = ({ activity, isMobile }: { activity: any; isMobil
           <FilePenLine size={12} />
           <span className="hidden sm:inline">{t('dashboard.courses.structure.actions.edit_assignment')}</span>
         </Link>
+      )}
+      {isLiveSession && (
+        <>
+          <Modal
+            isDialogOpen={liveSessionModalOpen}
+            onOpenChange={setLiveSessionModalOpen}
+            minWidth='md'
+            dialogTitle={t('activities.live_session_settings', {
+              defaultValue: 'Live session settings',
+            })}
+            dialogDescription={t('activities.live_session_settings_description', {
+              defaultValue: 'Adjust the schedule and details of this classroom.',
+            })}
+            dialogContent={
+              <LiveSessionEditorForm
+                initialName={activity.name}
+                initialDetails={activity.details}
+                submitLabel={t('common.save', { defaultValue: 'Save' })}
+                onSubmit={saveLiveSessionSettings}
+              />
+            }
+          />
+          <button
+            type="button"
+            onClick={() => setLiveSessionModalOpen(true)}
+            className="h-7 px-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md flex items-center gap-1 text-xs font-bold transition-colors border border-red-200 shadow-sm shadow-red-300/20"
+          >
+            <CalendarDays size={12} />
+            <span className="hidden sm:inline">
+              {t('activities.live_session_settings_short', {
+                defaultValue: 'Session',
+              })}
+            </span>
+          </button>
+        </>
       )}
     </>
   );
