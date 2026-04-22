@@ -201,6 +201,9 @@ async def iterate_playground_session(
 
     ai_model = get_org_ai_model(org.id, db_session)
 
+    if message_request.language:
+        session.context.language = message_request.language
+
     # Fetch RAG context if course linked
     course_context, _ = _get_course_context(
         session.context.course_uuid,

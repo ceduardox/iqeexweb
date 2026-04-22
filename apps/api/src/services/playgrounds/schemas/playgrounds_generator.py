@@ -7,6 +7,7 @@ class PlaygroundContext(BaseModel):
     playground_description: str
     course_uuid: Optional[str] = None
     course_name: Optional[str] = None
+    language: str = "es"
 
 
 class StartPlaygroundSession(BaseModel):
@@ -20,6 +21,7 @@ class SendPlaygroundMessage(BaseModel):
     playground_uuid: str
     message: str
     current_html: Optional[str] = None
+    language: Optional[str] = None
 
 
 class PlaygroundMessage(BaseModel):

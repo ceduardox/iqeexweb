@@ -23,6 +23,7 @@ import PlaygroundOptionsModal from './PlaygroundOptionsModal'
 import { startPlaygroundSession, iteratePlayground } from '@services/playgrounds/generator'
 import { updatePlayground, Playground } from '@services/playgrounds/playgrounds'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 
 interface Course {
   course_uuid: string
@@ -79,6 +80,7 @@ export default function PlaygroundEditor({
   accessToken,
   orgCourses = [],
 }: PlaygroundEditorProps) {
+  const { t, i18n } = useTranslation()
   const [playground, setPlayground] = useState(initialPlayground)
   const [title, setTitle] = useState(initialPlayground.name)
   const [html, setHtml] = useState<string>(initialPlayground.html_content || '')
@@ -98,6 +100,7 @@ export default function PlaygroundEditor({
   const titleInputRef = useRef<HTMLInputElement>(null)
   const toggleFullscreen = () => setIsFullscreen((f) => !f)
   const MAX_ITERATIONS = 10
+  const currentLanguage = (i18n.resolvedLanguage || i18n.language || 'es').split('-')[0]
 
   const titleDirty = title !== playground.name
 
@@ -160,7 +163,7 @@ export default function PlaygroundEditor({
 
       const onError = (error: string) => {
         console.error('Playground generation failed:', error)
-        toast.error(error || 'Failed to generate playground')
+        toast.error(error || t('playgrounds_ui.failed_generate'))
         setIsStreaming(false)
         setStreamingHtml('')
       }
@@ -174,6 +177,7 @@ export default function PlaygroundEditor({
             playground_description: playground.description || '',
             course_uuid: selectedCourseUuid || undefined,
             course_name: selectedCourse?.name || undefined,
+            language: currentLanguage,
           },
           accessToken,
           onChunk,
@@ -189,11 +193,12 @@ export default function PlaygroundEditor({
           onChunk,
           onComplete,
           onError,
-          html
+          html,
+          currentLanguage
         )
       }
     },
-    [isStreaming, sessionUuid, playground, title, html, accessToken, selectedCourseUuid, selectedCourse]
+    [isStreaming, sessionUuid, playground, title, html, accessToken, selectedCourseUuid, selectedCourse, currentLanguage, t]
   )
 
   const handleSave = async () => {
@@ -264,7 +269,7 @@ export default function PlaygroundEditor({
           className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-700 transition-colors flex-shrink-0 font-medium"
         >
           <ArrowLeft size={14} weight="bold" />
-          <span>Playgrounds</span>
+          <span>{t('playgrounds_ui.title')}</span>
         </Link>
 
         <SlashIcon style={{ color: '#d1d5db', flexShrink: 0 }} />
@@ -285,7 +290,7 @@ export default function PlaygroundEditor({
               onBlur={handleTitleBlur}
               onKeyDown={(e) => { if (e.key === 'Enter') titleInputRef.current?.blur() }}
               className="flex-1 text-sm font-semibold text-gray-800 bg-transparent border-0 outline-none focus:ring-0 min-w-0"
-              placeholder="Playground title"
+              placeholder={t('playgrounds_ui.title_placeholder')}
             />
             {!titleFocused && !isSavingTitle && (
               <PencilSimple
@@ -304,11 +309,11 @@ export default function PlaygroundEditor({
           {titleSaveStatus === 'saved' && !isSavingTitle && (
             <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-500 flex-shrink-0">
               <Check size={10} weight="bold" />
-              Saved
+              {t('playgrounds_ui.saved')}
             </span>
           )}
           {titleDirty && !titleFocused && !isSavingTitle && titleSaveStatus === 'idle' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Unsaved name change" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title={t('playgrounds_ui.save_changes')} />
           )}
         </div>
 
@@ -321,7 +326,7 @@ export default function PlaygroundEditor({
             className="flex items-center gap-1.5 h-9 px-3 py-2 font-black text-sm nice-shadow rounded-lg transition-all ease-linear hover:cursor-pointer bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
           >
             <SlidersHorizontal size={14} weight="bold" />
-            Options
+            {t('playgrounds_ui.options')}
           </button>
 
           <DividerVerticalIcon style={{ marginTop: 'auto', marginBottom: 'auto', color: 'grey', opacity: 0.5 }} />
@@ -337,9 +342,9 @@ export default function PlaygroundEditor({
             }`}
           >
             {saveStatus === 'saved' ? (
-              <><Check size={14} weight="bold" />Saved</>
+              <><Check size={14} weight="bold" />{t('playgrounds_ui.saved')}</>
             ) : (
-              <><FloppyDisk size={14} weight="bold" />Save</>
+              <><FloppyDisk size={14} weight="bold" />{t('playgrounds_ui.save')}</>
             )}
           </button>
 
@@ -353,9 +358,9 @@ export default function PlaygroundEditor({
             }`}
           >
             {playground.published ? (
-              <><Eye size={14} weight="bold" />Published</>
+              <><Eye size={14} weight="bold" />{t('playgrounds_ui.published')}</>
             ) : (
-              <><EyeSlash size={14} weight="bold" />Publish</>
+              <><EyeSlash size={14} weight="bold" />{t('playgrounds_ui.publish')}</>
             )}
           </button>
 
@@ -367,7 +372,7 @@ export default function PlaygroundEditor({
             className="flex items-center gap-1.5 h-9 px-3 py-2 font-black text-sm nice-shadow rounded-lg transition-all ease-linear bg-neutral-100 hover:bg-neutral-200 text-neutral-600"
           >
             <ArrowSquareOut size={14} weight="bold" />
-            Preview
+            {t('playgrounds_ui.preview')}
           </Link>
         </div>
       </div>

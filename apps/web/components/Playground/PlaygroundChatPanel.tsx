@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { PaperPlaneTilt, Sparkle, CircleNotch, BookOpen, Brain } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 
 interface Message {
   role: 'user' | 'model'
@@ -26,17 +27,6 @@ interface PlaygroundChatPanelProps {
   sessionStarted?: boolean
 }
 
-const SUGGESTION_CHIPS = [
-  'Interactive quiz with 5 questions',
-  'Animated bar chart',
-  'Physics simulation',
-  'Flashcard deck',
-  'Math explorer',
-  'Mini memory game',
-  'Timeline visualization',
-  'Drag and drop sorting',
-]
-
 export default function PlaygroundChatPanel({
   messages,
   isGenerating,
@@ -49,10 +39,22 @@ export default function PlaygroundChatPanel({
   onCourseChange,
   sessionStarted = false,
 }: PlaygroundChatPanelProps) {
+  const { t } = useTranslation()
   const [input, setInput] = React.useState('')
   const [sourceMode, setSourceMode] = React.useState<'ai' | 'course'>('ai')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const suggestionChips = [
+    t('playgrounds_ui.suggestion_quiz'),
+    t('playgrounds_ui.suggestion_bar_chart'),
+    t('playgrounds_ui.suggestion_physics'),
+    t('playgrounds_ui.suggestion_flashcards'),
+    t('playgrounds_ui.suggestion_math'),
+    t('playgrounds_ui.suggestion_memory'),
+    t('playgrounds_ui.suggestion_timeline'),
+    t('playgrounds_ui.suggestion_sorting'),
+  ]
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -99,22 +101,20 @@ export default function PlaygroundChatPanel({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkle size={15} weight="fill" className="text-neutral-400" />
-            <span className="text-sm font-bold text-neutral-700">AI Generator</span>
+            <span className="text-sm font-bold text-neutral-700">{t('playgrounds_ui.ai_generator')}</span>
           </div>
           <span className="text-[11px] font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full">
             {remaining}/{maxIterations}
           </span>
         </div>
 
-        {/* Source toggle — only shown before session starts and when courses exist */}
         {orgCourses.length > 0 && !sessionStarted && (
           <div className="mt-3 space-y-2">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Source</p>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{t('playgrounds_ui.source')}</p>
             <div className="flex gap-1.5">
               <button
                 onClick={() => handleSourceMode('ai')}
@@ -125,7 +125,7 @@ export default function PlaygroundChatPanel({
                 }`}
               >
                 <Brain size={12} weight="bold" />
-                AI Knowledge
+                {t('playgrounds_ui.ai_knowledge')}
               </button>
               <button
                 onClick={() => handleSourceMode('course')}
@@ -136,11 +136,10 @@ export default function PlaygroundChatPanel({
                 }`}
               >
                 <BookOpen size={12} weight="bold" />
-                Course
+                {t('playgrounds_ui.course_source')}
               </button>
             </div>
 
-            {/* Course dropdown — only when Course mode is active */}
             {sourceMode === 'course' && (
               <select
                 value={selectedCourseUuid}
@@ -171,22 +170,21 @@ export default function PlaygroundChatPanel({
         )}
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4 gap-2">
             <div className="w-10 h-10 rounded-xl bg-neutral-100 nice-shadow flex items-center justify-center">
-              {sourceMode === 'course'
-                ? <BookOpen size={20} weight="fill" className="text-sky-500" />
-                : <Sparkle size={20} weight="fill" className="text-neutral-400" />
-              }
+              {sourceMode === 'course' ? (
+                <BookOpen size={20} weight="fill" className="text-sky-500" />
+              ) : (
+                <Sparkle size={20} weight="fill" className="text-neutral-400" />
+              )}
             </div>
-            <p className="text-sm font-semibold text-neutral-600">Describe what to create</p>
+            <p className="text-sm font-semibold text-neutral-600">{t('playgrounds_ui.describe_title')}</p>
             <p className="text-xs text-neutral-400">
               {sourceMode === 'course'
-                ? 'Content will be grounded in your course material'
-                : 'Type a prompt or pick a suggestion below'
-              }
+                ? t('playgrounds_ui.describe_course_help')
+                : t('playgrounds_ui.describe_ai_help')}
             </p>
           </div>
         ) : (
@@ -202,7 +200,7 @@ export default function PlaygroundChatPanel({
                 {msg.role === 'model' ? (
                   <span className="text-xs italic flex items-center gap-1.5">
                     <Sparkle size={11} weight="fill" />
-                    Generated ({msg.content.length.toLocaleString()} chars)
+                    {t('playgrounds_ui.generated_chars', { count: msg.content.length })}
                   </span>
                 ) : (
                   msg.content
@@ -216,17 +214,16 @@ export default function PlaygroundChatPanel({
           <div className="flex justify-start">
             <div className="bg-neutral-100 nice-shadow px-3 py-2 rounded-xl flex items-center gap-2">
               <CircleNotch size={13} weight="bold" className="animate-spin text-sky-500" />
-              <span className="text-xs text-neutral-500 font-medium">Generating…</span>
+              <span className="text-xs text-neutral-500 font-medium">{t('playgrounds_ui.generating')}</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestion chips — only in AI mode */}
       {messages.length === 0 && sourceMode === 'ai' && (
         <div className="px-4 pb-3 flex flex-wrap gap-1.5 flex-shrink-0">
-          {SUGGESTION_CHIPS.map((chip) => (
+          {suggestionChips.map((chip) => (
             <button
               key={chip}
               onClick={() => handleChipClick(chip)}
@@ -238,7 +235,6 @@ export default function PlaygroundChatPanel({
         </div>
       )}
 
-      {/* Input */}
       <div className="p-3 border-t border-gray-100 flex-shrink-0">
         <div
           className="nice-shadow rounded-xl bg-neutral-50 overflow-hidden flex flex-col"
@@ -251,10 +247,10 @@ export default function PlaygroundChatPanel({
             onKeyDown={handleKeyDown}
             placeholder={
               remaining === 0
-                ? 'Max iterations reached'
+                ? t('playgrounds_ui.max_iterations_reached')
                 : iterationCount === 0
-                ? 'Describe your interactive experience…'
-                : 'Request a change…'
+                  ? t('playgrounds_ui.describe_placeholder')
+                  : t('playgrounds_ui.request_change_placeholder')
             }
             disabled={isGenerating || disabled || remaining === 0}
             rows={2}
@@ -264,9 +260,9 @@ export default function PlaygroundChatPanel({
           <div className="flex items-center justify-between px-3 pb-2">
             <span className="text-[10px] text-neutral-400 font-medium">
               {remaining === 0 ? (
-                <span className="text-red-400">No generations left</span>
+                <span className="text-red-400">{t('playgrounds_ui.no_generations_left')}</span>
               ) : (
-                'Enter to send · Shift+Enter for newline'
+                t('playgrounds_ui.enter_to_send')
               )}
             </span>
             <button
@@ -283,7 +279,7 @@ export default function PlaygroundChatPanel({
               ) : (
                 <PaperPlaneTilt size={12} weight="bold" />
               )}
-              {isGenerating ? 'Generating' : 'Send'}
+              {isGenerating ? t('playgrounds_ui.generating') : t('playgrounds_ui.send')}
             </button>
           </div>
         </div>
