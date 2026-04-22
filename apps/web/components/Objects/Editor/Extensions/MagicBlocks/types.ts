@@ -3,6 +3,7 @@ export interface MagicBlockContext {
   course_description: string
   activity_name: string
   activity_content_summary: string
+  language?: string
 }
 
 export interface MagicBlockMessage {

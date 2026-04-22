@@ -58,7 +58,8 @@ export async function iterateMagicBlock(
   onChunk: (chunk: string) => void,
   onComplete: (sessionUuid: string) => void,
   onError: (error: string) => void,
-  currentHtml?: string | null
+  currentHtml?: string | null,
+  language?: string
 ): Promise<void> {
   const data = {
     session_uuid: sessionUuid,
@@ -66,6 +67,7 @@ export async function iterateMagicBlock(
     block_uuid: blockUuid,
     message,
     current_html: currentHtml || undefined,
+    language,
   }
 
   try {

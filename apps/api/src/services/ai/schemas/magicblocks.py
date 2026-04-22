@@ -7,6 +7,7 @@ class MagicBlockContext(BaseModel):
     course_description: str
     activity_name: str
     activity_content_summary: str
+    language: str = "es"
 
 
 class StartMagicBlockSession(BaseModel):
@@ -22,6 +23,7 @@ class SendMagicBlockMessage(BaseModel):
     block_uuid: str
     message: str
     current_html: Optional[str] = None  # The current HTML content to iterate on
+    language: Optional[str] = None
 
 
 class MagicBlockMessage(BaseModel):

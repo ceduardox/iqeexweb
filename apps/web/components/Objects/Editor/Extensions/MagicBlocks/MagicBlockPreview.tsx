@@ -1,5 +1,6 @@
 import React from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface MagicBlockPreviewProps {
   htmlContent: string | null
@@ -16,6 +17,7 @@ function MagicBlockPreview({
   isLoading = false,
   streamingContent = '',
 }: MagicBlockPreviewProps) {
+  const { t } = useTranslation()
   const iframeRef = React.useRef<HTMLIFrameElement>(null)
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null)
 
@@ -82,26 +84,26 @@ ${html}
     }
   }, [contentToRender])
 
-  // Show loading state
   if (isLoading && !streamingContent) {
     return (
       <div className="flex items-center justify-center w-full h-full bg-black/30" style={{ minHeight: '100%' }}>
         <div className="text-center space-y-3">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-400" />
-          <p className="text-sm text-white/50">Generating interactive content...</p>
+          <p className="text-sm text-white/50">
+            {t('editor.blocks.magic_block_content.creating_magic')}
+          </p>
         </div>
       </div>
     )
   }
 
-  // Show empty state
   if (!blobUrl && !isLoading) {
     return (
       <div className="flex items-center justify-center w-full h-full bg-black/30 border-2 border-dashed border-white/10" style={{ minHeight: '100%' }}>
         <div className="text-center space-y-2 px-4">
-          <div className="text-4xl">✨</div>
+          <Sparkles className="w-8 h-8 mx-auto text-white/60" />
           <p className="text-sm text-white/50">
-            Describe what you want to create and watch the magic happen!
+            {t('editor.blocks.magic_block_content.describe_prompt')}
           </p>
         </div>
       </div>
@@ -113,7 +115,9 @@ ${html}
       {isLoading && streamingContent && (
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm ring-1 ring-inset ring-white/10">
           <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
-          <span className="text-xs text-white/70">Generating...</span>
+          <span className="text-xs text-white/70">
+            {t('editor.blocks.magic_block_content.creating_magic')}
+          </span>
         </div>
       )}
       <iframe
@@ -122,7 +126,7 @@ ${html}
         className="w-full h-full bg-white block"
         style={{ border: 'none', minHeight: '100%' }}
         sandbox="allow-scripts allow-same-origin"
-        title="MagicBlock Preview"
+        title={t('editor.blocks.magic_block_content.interactive_element')}
       />
     </div>
   )

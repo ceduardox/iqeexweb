@@ -43,7 +43,7 @@ function MagicBlockModal({
   initialIterationCount = 0,
   initialMessages = [],
 }: MagicBlockModalProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [sessionUuid, setSessionUuid] = React.useState<string | null>(initialSessionUuid)
   const [messages, setMessages] = React.useState<MagicBlockMessage[]>(initialMessages)
   const [iterationCount, setIterationCount] = React.useState(initialIterationCount)
@@ -51,6 +51,7 @@ function MagicBlockModal({
   const [streamingContent, setStreamingContent] = React.useState('')
   const [htmlContent, setHtmlContent] = React.useState<string | null>(initialHtmlContent)
   const [error, setError] = React.useState<string | null>(null)
+  const currentLanguage = (i18n.resolvedLanguage || i18n.language || 'es').split('-')[0]
 
   // Reset state when modal opens with new props
   React.useEffect(() => {
@@ -117,7 +118,7 @@ function MagicBlockModal({
           activityUuid,
           blockUuid,
           message,
-          context,
+          { ...context, language: currentLanguage },
           accessToken,
           onChunk,
           onComplete,
@@ -135,7 +136,8 @@ function MagicBlockModal({
           onChunk,
           onComplete,
           onError,
-          currentHtmlForIteration
+          currentHtmlForIteration,
+          currentLanguage
         )
       }
     } catch (err) {
