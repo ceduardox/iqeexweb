@@ -581,6 +581,13 @@ function DashLeftMenu() {
               </button>
             </HoverMenu>
 
+            <MenuLink
+              href="/dash/org/settings/branding"
+              icon={<Palette size={20} weight="fill" />}
+              label={t('dashboard.organization.settings.tabs.branding')}
+              isCollapsed={isCollapsed}
+            />
+
             {/* Analytics with hover menu */}
             <HoverMenu
               content={
