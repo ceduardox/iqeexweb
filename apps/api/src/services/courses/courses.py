@@ -339,12 +339,11 @@ async def get_courses_orgslug(
         else:
             # For regular users, show:
             # 1. Published AND public courses
-            # 2. Published courses not in any UserGroup
-            # 3. Courses (including unpublished) in UserGroups where the user is a member
-            # 4. Courses (including unpublished) where the user is a resource author
+            # 2. Courses (including unpublished) in UserGroups where the user is a member
+            # 3. Courses (including unpublished) where the user is a resource author
             #
             # This allows UserGroup members and course authors to see unpublished courses
-            # they have access to, while other users only see published courses.
+            # they have access to, while other users only see published public courses.
             query = (
                 query
                 .outerjoin(UserGroupResource, UserGroupResource.resource_uuid == Course.course_uuid)  # type: ignore
@@ -359,7 +358,6 @@ async def get_courses_orgslug(
                 ))  # type: ignore
                 .where(or_(
                     and_(Course.published == True, Course.public == True),  # Published public courses
-                    and_(Course.published == True, UserGroupResource.resource_uuid.is_(None)),  # Published courses not in any UserGroup
                     UserGroupUser.user_id == current_user.id,  # Courses in UserGroups where user is a member (including unpublished)
                     ResourceAuthor.user_id.isnot(None)  # Courses where user is an ACTIVE resource author
                 ))
@@ -453,9 +451,8 @@ async def get_courses_count_orgslug(
     else:
         # For authenticated users, count:
         # 1. Published AND public courses
-        # 2. Published courses not in any UserGroup
-        # 3. Courses (including unpublished) in UserGroups where the user is a member
-        # 4. Courses (including unpublished) where the user is a resource author
+        # 2. Courses (including unpublished) in UserGroups where the user is a member
+        # 3. Courses (including unpublished) where the user is a resource author
         query = (
             query
             .outerjoin(UserGroupResource, UserGroupResource.resource_uuid == Course.course_uuid)  # type: ignore
@@ -470,7 +467,6 @@ async def get_courses_count_orgslug(
             ))  # type: ignore
             .where(or_(
                 and_(Course.published == True, Course.public == True),  # Published public courses
-                and_(Course.published == True, UserGroupResource.resource_uuid.is_(None)),  # Published courses not in any UserGroup
                 UserGroupUser.user_id == current_user.id,  # Courses in UserGroups where user is a member (including unpublished)
                 ResourceAuthor.user_id.isnot(None)  # Courses where user is an ACTIVE resource author
             ))
@@ -529,9 +525,8 @@ async def search_courses(
     else:
         # For authenticated users, show:
         # 1. Published AND public courses
-        # 2. Published courses not in any UserGroup
-        # 3. Courses (including unpublished) in UserGroups where the user is a member
-        # 4. Courses (including unpublished) where the user is a resource author
+        # 2. Courses (including unpublished) in UserGroups where the user is a member
+        # 3. Courses (including unpublished) where the user is a resource author
         query = (
             query
             .outerjoin(UserGroupResource, UserGroupResource.resource_uuid == Course.course_uuid)  # type: ignore
@@ -546,7 +541,6 @@ async def search_courses(
             ))  # type: ignore
             .where(or_(
                 and_(Course.published == True, Course.public == True),  # Published public courses
-                and_(Course.published == True, UserGroupResource.resource_uuid.is_(None)),  # Published courses not in any UserGroup
                 UserGroupUser.user_id == current_user.id,  # Courses in UserGroups where user is a member (including unpublished)
                 ResourceAuthor.user_id.isnot(None)  # Courses where user is an ACTIVE resource author
             ))

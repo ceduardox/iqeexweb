@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 from uuid import uuid4
-from sqlmodel import Session, select
+from sqlmodel import Session, select, and_, or_
 from src.db.users import AnonymousUser, PublicUser
 from src.db.collections import (
     Collection,
@@ -11,8 +11,49 @@ from src.db.collections import (
 )
 from src.db.collections_courses import CollectionCourse
 from src.db.courses.courses import Course
+from src.db.usergroup_resources import UserGroupResource
+from src.db.usergroup_user import UserGroupUser
+from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipStatusEnum
 from fastapi import HTTPException, status, Request
 from src.security.rbac import check_resource_access, AccessAction
+from src.security.org_auth import is_org_admin
+
+
+def _user_can_manage_all_org_collections(
+    current_user: PublicUser | AnonymousUser,
+    org_id: int,
+    db_session: Session,
+) -> bool:
+    if isinstance(current_user, AnonymousUser):
+        return False
+    return is_org_admin(current_user.id, org_id, db_session)
+
+
+def _apply_visible_collection_course_scope(
+    statement,
+    current_user: PublicUser | AnonymousUser,
+):
+    if isinstance(current_user, AnonymousUser):
+        return statement.where(Course.public == True, Course.published == True)
+
+    return (
+        statement
+        .outerjoin(UserGroupResource, UserGroupResource.resource_uuid == Course.course_uuid)  # type: ignore
+        .outerjoin(UserGroupUser, and_(
+            UserGroupUser.usergroup_id == UserGroupResource.usergroup_id,
+            UserGroupUser.user_id == current_user.id
+        ))
+        .outerjoin(ResourceAuthor, and_(
+            ResourceAuthor.resource_uuid == Course.course_uuid,
+            ResourceAuthor.user_id == current_user.id,
+            ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE
+        ))  # type: ignore
+        .where(or_(
+            and_(Course.published == True, Course.public == True),
+            UserGroupUser.user_id == current_user.id,
+            ResourceAuthor.user_id.isnot(None)
+        ))
+    )
 
 
 ####################################################
@@ -50,21 +91,10 @@ async def get_collection(
         .distinct()
     )
 
-    statement_public = (
-        select(Course)
-        .join(CollectionCourse)
-        .where(
-            CollectionCourse.collection_id == collection.id,
-            CollectionCourse.org_id == collection.org_id,
-            Course.public == True
-        )
-        .distinct()
-    )
-
-    if current_user.user_uuid == "user_anonymous":
-        statement = statement_public
-    else:
+    if _user_can_manage_all_org_collections(current_user, int(collection.org_id), db_session):
         statement = statement_all
+    else:
+        statement = _apply_visible_collection_course_scope(statement_all, current_user)
 
     courses = list(db_session.exec(statement).all())
 
@@ -262,10 +292,10 @@ async def get_collections(
         select(Collection).where(Collection.org_id == org_id).distinct(Collection.id) # type: ignore
     )
 
-    if current_user.id == 0:
-        statement = statement_public
-    else:
+    if _user_can_manage_all_org_collections(current_user, int(org_id), db_session):
         statement = statement_all
+    else:
+        statement = statement_public
 
     collections = db_session.exec(statement).all()
 
@@ -283,8 +313,8 @@ async def get_collections(
             CollectionCourse.org_id == org_id
         )
     )
-    if current_user.id == 0:
-        batch_statement = batch_statement.where(Course.public == True)
+    if not _user_can_manage_all_org_collections(current_user, int(org_id), db_session):
+        batch_statement = _apply_visible_collection_course_scope(batch_statement, current_user)
 
     batch_results = db_session.exec(batch_statement).all()
 

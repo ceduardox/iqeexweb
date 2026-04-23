@@ -10,7 +10,7 @@ from src.db.collections_courses import CollectionCourse
 from src.db.organizations import Organization
 from src.db.user_organizations import UserOrganization
 from src.services.courses.courses import search_courses
-from src.security.org_auth import is_org_member
+from src.security.org_auth import is_org_member, is_org_admin
 
 T = TypeVar('T')
 
@@ -125,16 +125,12 @@ async def search_across_org(
         # This prevents user directory scraping attacks
         users = []
     else:
-        # For authenticated users, show public collections and those in their org
-        collections_query = (
-            collections_query
-            .where(
-                or_(
-                    Collection.public == sa_true(),
-                    Collection.org_id == org.id
-                )
-            )
-        )
+        # For authenticated users, only org admins/maintainers can search private collections.
+        # Regular members should only see public collections in search results.
+        if is_org_admin(current_user.id, org.id, db_session):
+            collections_query = collections_query.where(Collection.org_id == org.id)
+        else:
+            collections_query = collections_query.where(Collection.public == sa_true())
 
         # SECURITY: Only allow user search if the authenticated user is a member of this org
         # (superadmins bypass this check)
