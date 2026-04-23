@@ -19,9 +19,16 @@ interface LandingClassicProps {
   collections: any[]
   orgslug: string
   org_id: string | number
+  org_uuid?: string
 }
 
-function LandingClassic({ courses, collections, orgslug, org_id }: LandingClassicProps) {
+function LandingClassic({
+  courses,
+  collections,
+  orgslug,
+  org_id,
+  org_uuid,
+}: LandingClassicProps) {
   const { t } = useTranslation()
 
   // Limit to 12 courses (4x3 grid) for the home page
@@ -53,6 +60,7 @@ function LandingClassic({ courses, collections, orgslug, org_id }: LandingClassi
                   collection={collection}
                   orgslug={orgslug}
                   org_id={org_id}
+                  org_uuid={org_uuid}
                 />
               </div>
             ))}

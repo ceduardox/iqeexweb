@@ -17,9 +17,15 @@ interface CollectionsClientProps {
   collections: any[]
   orgslug: string
   org_id: number
+  org_uuid?: string
 }
 
-const CollectionsClient = ({ collections, orgslug, org_id }: CollectionsClientProps) => {
+const CollectionsClient = ({
+  collections,
+  orgslug,
+  org_id,
+  org_uuid,
+}: CollectionsClientProps) => {
   const { t } = useTranslation()
 
   return (
@@ -51,6 +57,7 @@ const CollectionsClient = ({ collections, orgslug, org_id }: CollectionsClientPr
                 collection={collection}
                 orgslug={orgslug}
                 org_id={org_id}
+                org_uuid={org_uuid}
               />
             </div>
           ))}

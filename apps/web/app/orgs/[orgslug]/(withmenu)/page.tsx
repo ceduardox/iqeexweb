@@ -127,6 +127,7 @@ const OrgHomePage = async (params: any) => {
           collections={collections}
           orgslug={orgslug}
           org_id={org_id}
+          org_uuid={org.org_uuid}
         />
       )}
     </div>

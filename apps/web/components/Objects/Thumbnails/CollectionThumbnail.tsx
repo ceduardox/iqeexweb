@@ -23,6 +23,7 @@ type PropsType = {
   collection: any
   orgslug: string
   org_id: string | number
+  org_uuid?: string
 }
 
 const removeCollectionPrefix = (collectionid: string) => {
@@ -34,6 +35,7 @@ function CollectionThumbnail(props: PropsType) {
   const org = useOrg() as any
   const collectionId = removeCollectionPrefix(props.collection.collection_uuid)
   const courses = props.collection.courses || []
+  const orgUUID = props.org_uuid || org?.org_uuid
 
   return (
     <div 
@@ -57,7 +59,7 @@ function CollectionThumbnail(props: PropsType) {
                 <CollectionCoursePreview
                   key={course.course_uuid}
                   course={course}
-                  orgUUID={org?.org_uuid}
+                  orgUUID={orgUUID}
                   zIndex={3 - index}
                 />
               ))}
@@ -111,15 +113,25 @@ const CollectionCoursePreview = ({
   zIndex,
 }: {
   course: any
-  orgUUID: string
+  orgUUID?: string
   zIndex: number
 }) => {
   const [thumbnailLoadFailed, setThumbnailLoadFailed] = React.useState(false)
+  const thumbnailSrc = React.useMemo(() => {
+    if (!orgUUID || thumbnailLoadFailed || !course.thumbnail_image) {
+      return '/empty_thumbnail.png'
+    }
 
-  const thumbnailSrc =
-    !thumbnailLoadFailed && course.thumbnail_image
-      ? getCourseThumbnailMediaDirectory(orgUUID, course.course_uuid, course.thumbnail_image)
-      : '/empty_thumbnail.png'
+    return getCourseThumbnailMediaDirectory(
+      orgUUID,
+      course.course_uuid,
+      course.thumbnail_image
+    )
+  }, [course.course_uuid, course.thumbnail_image, orgUUID, thumbnailLoadFailed])
+
+  React.useEffect(() => {
+    setThumbnailLoadFailed(false)
+  }, [course.course_uuid, course.thumbnail_image, orgUUID])
 
   return (
     <div
