@@ -2,7 +2,6 @@ import { getOrganizationContextInfo } from '@services/organizations/orgs'
 import { Metadata } from 'next'
 import { getServerSession } from '@/lib/auth/server'
 import { getOrgCollections } from '@services/courses/collections'
-import { getOrgThumbnailMediaDirectory } from '@services/media/media'
 import CollectionsClient from './CollectionsClient'
 
 type MetadataProps = {
@@ -34,14 +33,6 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
       title: `Programas - ${org.name}`,
       description: `Programas de cursos de ${org.name}`,
       type: 'website',
-      images: [
-        {
-          url: getOrgThumbnailMediaDirectory(org?.org_uuid, org?.thumbnail_image),
-          width: 800,
-          height: 600,
-          alt: org.name,
-        },
-      ],
     },
   }
 }
