@@ -122,44 +122,24 @@ const CollectionCoursePreview = ({
   orgUUID?: string
   zIndex: number
 }) => {
-  const [thumbnailAttempt, setThumbnailAttempt] = React.useState<'primary' | 'normalized' | 'fallback'>('primary')
+  const [thumbnailLoadFailed, setThumbnailLoadFailed] = React.useState(false)
   const thumbnailSrc = React.useMemo(() => {
-    if (!orgUUID || !course.thumbnail_image || thumbnailAttempt === 'fallback') {
+    if (!orgUUID || !course.thumbnail_image || thumbnailLoadFailed) {
       return '/empty_thumbnail.png'
     }
 
-    const fileId =
-      thumbnailAttempt === 'normalized'
-        ? getThumbnailFilename(String(course.thumbnail_image))
-        : course.thumbnail_image
+    const fileId = getThumbnailFilename(String(course.thumbnail_image))
 
     return getCourseThumbnailMediaDirectory(
       orgUUID,
       course.course_uuid,
       fileId
     )
-  }, [course.course_uuid, course.thumbnail_image, orgUUID, thumbnailAttempt])
+  }, [course.course_uuid, course.thumbnail_image, orgUUID, thumbnailLoadFailed])
 
   React.useEffect(() => {
-    setThumbnailAttempt('primary')
+    setThumbnailLoadFailed(false)
   }, [course.course_uuid, course.thumbnail_image, orgUUID])
-
-  const handleThumbnailError = React.useCallback(() => {
-    const originalFileId = String(course.thumbnail_image || '')
-    const normalizedFileId = getThumbnailFilename(originalFileId)
-
-    if (
-      thumbnailAttempt === 'primary' &&
-      originalFileId &&
-      normalizedFileId &&
-      normalizedFileId !== originalFileId
-    ) {
-      setThumbnailAttempt('normalized')
-      return
-    }
-
-    setThumbnailAttempt('fallback')
-  }, [course.thumbnail_image, thumbnailAttempt])
 
   return (
     <div
@@ -170,7 +150,7 @@ const CollectionCoursePreview = ({
         src={thumbnailSrc}
         alt={course.name}
         className="h-full w-full object-cover"
-        onError={handleThumbnailError}
+        onError={() => setThumbnailLoadFailed(true)}
       />
     </div>
   )
