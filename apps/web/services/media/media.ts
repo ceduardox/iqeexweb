@@ -50,6 +50,47 @@ function getStoredMediaUrl(fileId: string) {
   return null
 }
 
+function normalizeCourseThumbnailFileId(fileId: string) {
+  if (!fileId) {
+    return fileId
+  }
+
+  const normalizedFileId = fileId.split('?')[0].split('#')[0]
+
+  let contentPath = ''
+  if (normalizedFileId.startsWith('/content/')) {
+    contentPath = normalizedFileId.replace(/^\/+/, '')
+  } else if (normalizedFileId.startsWith('content/')) {
+    contentPath = normalizedFileId
+  } else if (
+    normalizedFileId.startsWith('http://') ||
+    normalizedFileId.startsWith('https://')
+  ) {
+    try {
+      contentPath = new URL(normalizedFileId).pathname.replace(/^\/+/, '')
+    } catch {
+      return fileId
+    }
+  }
+
+  if (!contentPath) {
+    return fileId
+  }
+
+  const isOrgThumbnailPath = /^content\/orgs\/[^/]+\/thumbnails\/[^/]+$/i.test(
+    contentPath
+  )
+  const isCourseThumbnailPath =
+    /^content\/orgs\/[^/]+\/courses\/[^/]+\/thumbnails\/[^/]+$/i.test(contentPath)
+
+  if (isOrgThumbnailPath && !isCourseThumbnailPath) {
+    const segments = contentPath.split('/').filter(Boolean)
+    return segments[segments.length - 1] || fileId
+  }
+
+  return fileId
+}
+
 function getApiUrl() {
   return getBackendUrl();
 }
@@ -100,9 +141,12 @@ export function getCourseThumbnailMediaDirectory(
   courseUUID: string,
   fileId: string
 ) {
-  const storedMediaUrl = getStoredMediaUrl(fileId)
+  const normalizedFileId = normalizeCourseThumbnailFileId(fileId)
+  const storedMediaUrl = getStoredMediaUrl(normalizedFileId)
   if (storedMediaUrl) return storedMediaUrl
-  return buildContentUrl(`content/orgs/${orgUUID}/courses/${courseUUID}/thumbnails/${fileId}`)
+  return buildContentUrl(
+    `content/orgs/${orgUUID}/courses/${courseUUID}/thumbnails/${normalizedFileId}`
+  )
 }
 
 export function getBoardThumbnailMediaDirectory(
