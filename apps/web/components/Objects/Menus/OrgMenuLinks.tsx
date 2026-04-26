@@ -3,11 +3,18 @@ import { getUriWithOrg } from '@services/config/config'
 import { Books, SquaresFour, ChatsCircle, Headphones, Cube, ShoppingBag } from '@phosphor-icons/react'
 import Link from 'next/link'
 import React from 'react'
+import useSWR from 'swr'
 import { useTranslation } from 'react-i18next'
 import { getMenuColorClasses } from '@services/utils/ts/colorUtils'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
+import { getOrgPlaygrounds } from '@services/playgrounds/playgrounds'
 
 function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const org = useOrg() as any
+  const session = useLHSession() as any
+  const accessToken = session?.data?.tokens?.access_token
+  const { isAdmin } = useAdminStatus()
 
   // Feature visibility: resolved_features from API is the source of truth
   const rf = org?.config?.config?.resolved_features
@@ -19,6 +26,15 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const showPodcasts = isEnabled('podcasts')
   const showPlaygrounds = isEnabled('playgrounds')
   const showStore = isEnabled('payments')
+  const { data: accessiblePlaygrounds } = useSWR(
+    showPlaygrounds && org?.id && isAdmin !== true
+      ? ['org-menu-playgrounds', org.id, accessToken || 'anonymous']
+      : null,
+    () => getOrgPlaygrounds(org.id, accessToken ?? undefined),
+    { revalidateOnFocus: false }
+  )
+  const showPlaygroundsLink =
+    showPlaygrounds && (isAdmin === true || (accessiblePlaygrounds?.length || 0) > 0)
 
   return (
     <div className='pl-1'>
@@ -55,7 +71,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             primaryColor={props.primaryColor}
           ></LinkItem>
         )}
-        {showPlaygrounds && (
+        {showPlaygroundsLink && (
           <LinkItem
             link="/playgrounds"
             type="playgrounds"

@@ -107,14 +107,11 @@ def _check_read_access(
     if isinstance(current_user, AnonymousUser):
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    if playground.access_type == PlaygroundAccessType.AUTHENTICATED:
-        return
-
-    # RESTRICTED
     if _is_org_admin(current_user.id, playground.org_id, db_session):
         return
     if playground.created_by == current_user.id:
         return
+
     if _user_in_playground_usergroup(current_user.id, playground.playground_uuid, db_session):
         return
 
