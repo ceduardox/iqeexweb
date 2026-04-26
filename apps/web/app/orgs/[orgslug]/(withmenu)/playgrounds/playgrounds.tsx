@@ -37,7 +37,11 @@ export default function PlaygroundsClient({
   const router = useRouter()
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
-  const isUserAdmin = useAdminStatus() as any
+  const { isAdmin, rights } = useAdminStatus() as any
+  const canCreatePlaygrounds = isAdmin === true || rights?.playgrounds?.action_create === true
+  const canUpdatePlaygrounds = isAdmin === true || rights?.playgrounds?.action_update === true
+  const canUpdateOwnPlaygrounds = rights?.playgrounds?.action_update_own === true
+  const currentUserId = Number(session?.data?.user?.id || 0)
 
   const [playgrounds, setPlaygrounds] = useState<Playground[]>(initialPlaygrounds)
   const [searchQuery, setSearchQuery] = useState('')
@@ -97,14 +101,14 @@ export default function PlaygroundsClient({
   }
 
   const handleCreate = async () => {
-    if (!access_token || isCreating) return
+    if (!access_token || !canCreatePlaygrounds || isCreating) return
     const name = newName.trim() || t('playgrounds_ui.untitled')
     setIsCreating(true)
     setShowNameModal(false)
     try {
       const newPlayground = await createPlayground(
         org_id,
-        { name, access_type: 'authenticated' },
+        { name, access_type: 'restricted' },
         access_token
       )
       setPlaygrounds((prev) => [newPlayground, ...prev])
@@ -130,7 +134,7 @@ export default function PlaygroundsClient({
             <div className="flex flex-col space-y-2 mb-2">
               <div className="flex items-center justify-between">
                 <TypeOfContentTitle title={t('common.playgrounds')} type="pg" />
-                {isUserAdmin && (
+                {canCreatePlaygrounds && (
                   <button
                     onClick={openCreateModal}
                     disabled={isCreating}
@@ -180,7 +184,12 @@ export default function PlaygroundsClient({
                     key={pg.playground_uuid}
                     playground={pg}
                     orgslug={orgslug}
-                    canEdit={true}
+                    canEdit={
+                      canUpdatePlaygrounds ||
+                      (canUpdateOwnPlaygrounds &&
+                        currentUserId > 0 &&
+                        Number(pg.created_by) === currentUserId)
+                    }
                   />
                 ))}
 
@@ -201,9 +210,11 @@ export default function PlaygroundsClient({
                     </div>
                     <h1 className="text-xl font-bold text-gray-600 mb-2">{t('playgrounds_ui.empty_title')}</h1>
                     <p className="text-md text-gray-400 mb-6 max-w-xs text-center">
-                      {t('playgrounds_ui.empty_description')}
+                      {canCreatePlaygrounds
+                        ? t('playgrounds_ui.empty_description')
+                        : t('playgrounds_ui.empty_assigned_description')}
                     </p>
-                    {isUserAdmin && (
+                    {canCreatePlaygrounds && (
                       <button
                         onClick={openCreateModal}
                         disabled={isCreating}

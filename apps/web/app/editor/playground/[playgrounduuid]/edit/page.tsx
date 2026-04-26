@@ -7,6 +7,23 @@ import PlaygroundEditor from '@components/Playground/PlaygroundEditor'
 
 type PageParams = Promise<{ playgrounduuid: string }>
 
+function canEditPlayground(session: any, playground: any): boolean {
+  if (session?.user?.is_superadmin === true) return true
+
+  const currentUserId = Number(session?.user?.id || 0)
+  const isOwner = currentUserId > 0 && Number(playground?.created_by) === currentUserId
+  const orgId = Number(playground?.org_id || 0)
+  const roles = Array.isArray(session?.roles) ? session.roles : []
+  return roles.some((role: any) => {
+    if (Number(role?.org?.id) !== orgId) return false
+    const playgroundRights = role?.role?.rights?.playgrounds
+    return (
+      playgroundRights?.action_update === true ||
+      (isOwner && playgroundRights?.action_update_own === true)
+    )
+  })
+}
+
 export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
   const { playgrounduuid } = await params
   try {
@@ -30,6 +47,10 @@ export default async function EditPlaygroundPage({ params }: { params: PageParam
   try {
     playground = await getPlayground(playgrounduuid, access_token)
   } catch {
+    notFound()
+  }
+
+  if (!canEditPlayground(session, playground)) {
     notFound()
   }
 

@@ -22,6 +22,8 @@ import UserAvatar from '@components/Objects/UserAvatar'
 import { Playground } from '@services/playgrounds/playgrounds'
 import { getPlaygroundThumbnailMediaDirectory, getUserAvatarMediaDirectory } from '@services/media/media'
 import { useTranslation } from 'react-i18next'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
 
 dayjs.extend(relativeTime)
 
@@ -36,6 +38,8 @@ export default function PlaygroundViewClient({
   canEdit,
 }: PlaygroundViewClientProps) {
   const { t, i18n } = useTranslation()
+  const session = useLHSession() as any
+  const { isAdmin, rights } = useAdminStatus() as any
   const [isFullscreen, setIsFullscreen] = useState(false)
   const iframeContainerRef = useRef<HTMLDivElement>(null)
   const currentLanguage = i18n.resolvedLanguage || i18n.language || 'en'
@@ -95,6 +99,14 @@ export default function PlaygroundViewClient({
     playground.author_user_uuid && playground.author_avatar_image
       ? getUserAvatarMediaDirectory(playground.author_user_uuid, playground.author_avatar_image)
       : null
+
+  const currentUserId = Number(session?.data?.user?.id || 0)
+  const isOwner = currentUserId > 0 && Number(playground.created_by) === currentUserId
+  const canEditPlayground =
+    canEdit &&
+    (isAdmin === true ||
+      rights?.playgrounds?.action_update === true ||
+      (rights?.playgrounds?.action_update_own === true && isOwner))
 
   return (
     <GeneralWrapperStyled>
@@ -179,8 +191,8 @@ export default function PlaygroundViewClient({
                 </div>
               </div>
 
-              <div className={`px-3 pb-3 ${canEdit ? 'space-y-2' : ''}`}>
-                {canEdit && (
+              <div className={`px-3 pb-3 ${canEditPlayground ? 'space-y-2' : ''}`}>
+                {canEditPlayground && (
                   <Link
                     href={`/editor/playground/${playground.playground_uuid}/edit`}
                     className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
@@ -251,9 +263,9 @@ export default function PlaygroundViewClient({
                 </div>
                 <p className="text-base font-semibold text-gray-500">{t('playgrounds_ui.no_content_title')}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {canEdit ? t('playgrounds_ui.no_content_editable') : t('playgrounds_ui.no_content_readonly')}
+                  {canEditPlayground ? t('playgrounds_ui.no_content_editable') : t('playgrounds_ui.no_content_readonly')}
                 </p>
-                {canEdit && (
+                {canEditPlayground && (
                   <Link
                     href={`/editor/playground/${playground.playground_uuid}/edit`}
                     className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"

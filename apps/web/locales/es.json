@@ -4007,6 +4007,7 @@
     "no_results_description": "Prueba con otro t\u00e9rmino de b\u00fasqueda",
     "empty_title": "Todav\u00eda no hay entornos interactivos",
     "empty_description": "Crea experiencias interactivas generadas por IA para tus alumnos.",
+    "empty_assigned_description": "No tienes entornos interactivos asignados todav\u00eda.",
     "create_modal_title": "Nuevo entorno interactivo",
     "create_modal_description": "Ponle un nombre a tu entorno interactivo para empezar.",
     "create_modal_placeholder": "ej. Quiz de fotos\u00edntesis",

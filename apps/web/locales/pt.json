@@ -3380,6 +3380,7 @@
     "no_results_description": "Tente outro termo de busca",
     "empty_title": "Ainda n\u00e3o h\u00e1 playgrounds",
     "empty_description": "Crie experi\u00eancias interativas geradas por IA para seus alunos.",
+    "empty_assigned_description": "Voc\u00ea ainda n\u00e3o tem playgrounds atribu\u00eddos.",
     "create_modal_title": "Novo playground",
     "create_modal_description": "D\u00ea um nome ao seu playground para come\u00e7ar.",
     "create_modal_placeholder": "ex. Quiz de fotoss\u00edntese",

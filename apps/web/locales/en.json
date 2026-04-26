@@ -4062,6 +4062,7 @@
     "no_results_description": "Try a different search term",
     "empty_title": "No playgrounds yet",
     "empty_description": "Create interactive AI-generated experiences for your learners.",
+    "empty_assigned_description": "You do not have any assigned playgrounds yet.",
     "create_modal_title": "New Playground",
     "create_modal_description": "Give your playground a name to get started.",
     "create_modal_placeholder": "e.g. Photosynthesis Quiz",
