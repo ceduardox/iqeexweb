@@ -6,7 +6,7 @@ from sqlmodel import Field, SQLModel
 
 class PlaygroundAccessType(str, Enum):
     PUBLIC = "public"               # Anonymous users can view
-    AUTHENTICATED = "authenticated"  # Must be logged in
+    AUTHENTICATED = "authenticated"  # Assigned users, author, or org admins can view
     RESTRICTED = "restricted"        # User groups only
 
 
@@ -14,7 +14,7 @@ class PlaygroundBase(SQLModel):
     name: str
     description: Optional[str] = None
     thumbnail_image: Optional[str] = None
-    access_type: PlaygroundAccessType = PlaygroundAccessType.AUTHENTICATED
+    access_type: PlaygroundAccessType = PlaygroundAccessType.RESTRICTED
     published: bool = False
     course_uuid: Optional[str] = None  # Optional course link (for RAG)
     html_content: Optional[str] = Field(
@@ -61,7 +61,7 @@ class PlaygroundCreate(SQLModel):
     name: str
     description: Optional[str] = None
     thumbnail_image: Optional[str] = None
-    access_type: PlaygroundAccessType = PlaygroundAccessType.AUTHENTICATED
+    access_type: PlaygroundAccessType = PlaygroundAccessType.RESTRICTED
     course_uuid: Optional[str] = None
     html_content: Optional[str] = None
 
