@@ -8,6 +8,7 @@ import {
   ChatsCircle,
   ChalkboardSimple,
   Cube,
+  CalendarBlank,
 } from '@phosphor-icons/react'
 
 export interface DashboardMenuItem {
@@ -39,6 +40,12 @@ export const DASHBOARD_MENU_ITEMS: DashboardMenuItem[] = [
     href: '/dash/assignments',
     icon: Files,
     labelKey: 'common.assignments',
+  },
+  {
+    id: 'schedule',
+    href: '/dash/schedule',
+    icon: CalendarBlank,
+    labelKey: 'common.schedule',
   },
   {
     id: 'communities',

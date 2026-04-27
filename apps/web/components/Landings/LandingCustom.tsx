@@ -8,6 +8,8 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import CourseThumbnailLanding from '@components/Objects/Thumbnails/CourseThumbnailLanding'
 import UserAvatar from '@components/Objects/UserAvatar'
 import { useTranslation } from 'react-i18next'
+import ScheduleHomeCard from '@components/Schedule/ScheduleHomeCard'
+import { useOrg } from '@components/Contexts/OrgContext'
 
 interface LandingCustomProps {
   landing: {
@@ -20,6 +22,7 @@ interface LandingCustomProps {
 function LandingCustom({ landing, orgslug }: LandingCustomProps) {
   const { t } = useTranslation()
   const session = useLHSession() as any
+  const org = useOrg() as any
   const access_token = session?.data?.tokens?.access_token
 
   // Fetch all courses for the organization
@@ -255,6 +258,11 @@ function LandingCustom({ landing, orgslug }: LandingCustomProps) {
 
   return (
     <div className="flex flex-col items-center justify-between w-full max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-16 h-full">
+      {org?.id && (
+        <div className="w-full pt-6">
+          <ScheduleHomeCard orgId={Number(org.id)} orgslug={orgslug} />
+        </div>
+      )}
       {landing.sections.map((section) => renderSection(section))}
     </div>
   )

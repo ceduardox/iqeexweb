@@ -6,7 +6,7 @@ from src.routers import health
 from src.routers import instance
 from src.routers import plans
 from src.routers import usergroups
-from src.routers import dev, trail, users, auth, orgs, roles, search
+from src.routers import dev, trail, users, auth, orgs, roles, search, schedule
 from src.routers import stream
 from src.routers import api_tokens
 from src.routers.ai import ai, magicblocks, courseplanning, rag
@@ -75,6 +75,12 @@ v1_router.include_router(
     prefix="/orgs",
     tags=["api-tokens"],
     dependencies=[Depends(get_non_api_token_user), Depends(require_plan("pro", "API Access"))]
+)
+v1_router.include_router(
+    schedule.router,
+    prefix="/schedule",
+    tags=["schedule"],
+    dependencies=[Depends(get_non_api_token_user)]
 )
 v1_router.include_router(
     custom_domains.router,

@@ -1,6 +1,6 @@
 import { useOrg } from '@components/Contexts/OrgContext'
 import { getUriWithOrg } from '@services/config/config'
-import { Books, SquaresFour, ChatsCircle, Headphones, Cube, ShoppingBag } from '@phosphor-icons/react'
+import { Books, SquaresFour, ChatsCircle, Headphones, Cube, ShoppingBag, CalendarBlank } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
@@ -96,6 +96,14 @@ function MenuLinks(props: {
             onNavigate={props.onNavigate}
           ></LinkItem>
         )}
+        <LinkItem
+          link="/schedule"
+          type="schedule"
+          orgslug={props.orgslug}
+          primaryColor={props.primaryColor}
+          variant={props.variant}
+          onNavigate={props.onNavigate}
+        ></LinkItem>
         {showStore && (
           <LinkItem
             link="/store"
@@ -188,6 +196,13 @@ const LinkItem = (props: any) => {
           <>
             <ShoppingBag size={20} weight="fill" />{' '}
             <span>Store</span>
+          </>
+        )}
+
+        {props.type == 'schedule' && (
+          <>
+            <CalendarBlank size={20} weight="fill" />{' '}
+            <span>{t('common.schedule')}</span>
           </>
         )}
 

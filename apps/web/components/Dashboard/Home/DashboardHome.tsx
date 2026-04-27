@@ -20,6 +20,7 @@ import RecentCourses from './RecentCourses'
 import RecentMembers from './RecentMembers'
 import ContentOverview from './ContentOverview'
 import UsageOverview from './UsageOverview'
+import ScheduleHomeCard from '@components/Schedule/ScheduleHomeCard'
 
 const PLAN_COLORS: Record<string, { bg: string; text: string }> = {
   free: { bg: 'bg-gray-100', text: 'text-gray-600' },
@@ -102,6 +103,10 @@ export default function DashboardHome() {
 
           <AdminAuthorization authorizationMode="component">
             <div className="space-y-6">
+              {org?.id && org?.slug && (
+                <ScheduleHomeCard orgId={Number(org.id)} orgslug={org.slug} compact />
+              )}
+
               {/* Content counts row */}
               <ContentOverview />
 

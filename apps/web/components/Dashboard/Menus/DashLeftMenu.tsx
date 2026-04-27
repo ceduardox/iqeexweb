@@ -40,6 +40,7 @@ import {
   ChalkboardSimple,
   Cube,
   ShoppingBag,
+  CalendarBlank,
 } from '@phosphor-icons/react'
 import { DiscordIcon } from '@components/Objects/Icons/DiscordIcon'
 import Link from 'next/link'
@@ -390,6 +391,12 @@ function DashLeftMenu() {
                 )}
               </button>
             </HoverMenu>
+            <MenuLink
+              href="/dash/schedule"
+              icon={<CalendarBlank size={20} weight="fill" />}
+              label={t('common.schedule')}
+              isCollapsed={isCollapsed}
+            />
             {showCommunities && (
               <MenuLink
                 href="/dash/communities"
