@@ -113,16 +113,24 @@ function shouldBypassAccessLock(pathname: string, fullhost: string | null, insta
   const hostbare = stripPort(fullhost || '')
   const isAdminSubdomain = hostbare?.startsWith('admin.') ||
     (fullhost ? extractSubdomain(fullhost, instanceInfo.frontend_domain) === 'admin' : false)
+  const appPathname = pathname === '/lms' ? '/login' : pathname.replace(/^\/lms(?=\/)/, '')
 
   return (
     isAdminSubdomain ||
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/auth') ||
-    pathname.startsWith('/auth') ||
-    pathname === '/login' ||
-    pathname === '/forgot' ||
-    pathname === '/reset' ||
-    pathname === '/verify-email'
+    appPathname.startsWith('/admin') ||
+    appPathname.startsWith('/_next') ||
+    appPathname.startsWith('/api/auth') ||
+    appPathname.startsWith('/api/v1/instance') ||
+    appPathname.startsWith('/api/v1/orgs/slug/') ||
+    appPathname.startsWith('/api/v1/ee/superadmin') ||
+    appPathname.startsWith('/api/v1/users/session') ||
+    appPathname.startsWith('/auth') ||
+    appPathname === '/runtime-config.js' ||
+    /^[\w-]+\.\w+$/.test(appPathname.split('/').pop() || '') ||
+    appPathname === '/login' ||
+    appPathname === '/forgot' ||
+    appPathname === '/reset' ||
+    appPathname === '/verify-email'
   )
 }
 

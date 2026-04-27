@@ -14,6 +14,7 @@ from sqlmodel import Session
 EXEMPT_PATHS = {
     "/",
     "/api/v1/health",
+    "/api/v1/instance/info",
     "/api/v1/instance/access-lock",
     "/api/v1/ee/superadmin/status",
     "/api/v1/ee/superadmin/access-lock",
@@ -27,6 +28,7 @@ class AccessLockMiddleware(BaseHTTPMiddleware):
         if (
             path in EXEMPT_PATHS
             or path.startswith("/api/v1/auth")
+            or path.startswith("/api/v1/orgs/slug/")
             or path.startswith("/docs")
             or path.startswith("/openapi")
         ):
