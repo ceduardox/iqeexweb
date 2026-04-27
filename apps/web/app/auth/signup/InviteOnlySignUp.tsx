@@ -138,7 +138,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
   };
 
   return (
-    <div className="m-auto w-full max-w-sm px-6 py-8 sm:py-0">
+    <div className="m-auto w-full max-w-sm px-6 py-10 sm:py-8">
       {/* Header */}
       <div className="mb-5">
         <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-200">
