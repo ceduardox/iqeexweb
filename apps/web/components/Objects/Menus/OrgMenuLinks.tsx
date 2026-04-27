@@ -10,8 +10,9 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import { getOrgPlaygrounds } from '@services/playgrounds/playgrounds'
 
-function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
+function MenuLinks(props: { orgslug: string; primaryColor?: string; variant?: 'desktop' | 'mobile' }) {
   const org = useOrg() as any
+  const isMobile = props.variant === 'mobile'
   const session = useLHSession() as any
   const accessToken = session?.data?.tokens?.access_token
   const { isAdmin } = useAdminStatus()
@@ -37,14 +38,15 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
     showPlaygrounds && (isAdmin === true || (accessiblePlaygrounds?.length || 0) > 0)
 
   return (
-    <div className='pl-1'>
-      <ul className="flex space-x-5">
+    <div className={isMobile ? 'w-full' : 'pl-1'}>
+      <ul className={isMobile ? 'flex w-full flex-col gap-1' : 'flex space-x-5'}>
         {isCoursesEnabled && (
           <LinkItem
             link="/courses"
             type="courses"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
         {isCollectionsEnabled && (
@@ -53,6 +55,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             type="collections"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
         {showPodcasts && (
@@ -61,6 +64,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             type="podcasts"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
         {showCommunities && (
@@ -69,6 +73,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             type="communities"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
         {showPlaygroundsLink && (
@@ -77,6 +82,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             type="playgrounds"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
         {showStore && (
@@ -85,6 +91,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
             type="store"
             orgslug={props.orgslug}
             primaryColor={props.primaryColor}
+            variant={props.variant}
           ></LinkItem>
         )}
       </ul>
@@ -97,9 +104,10 @@ const LinkItem = (props: any) => {
   const orgslug = props.orgslug
   const colors = getMenuColorClasses(props.primaryColor || '')
   const textColorClass = colors.text
+  const isMobile = props.variant === 'mobile'
   return (
     <Link href={getUriWithOrg(orgslug, link)}>
-      <li className={`flex space-x-2 items-center ${textColorClass} font-semibold`}>
+      <li className={`flex items-center gap-3 ${textColorClass} font-semibold ${isMobile ? 'w-full rounded-lg px-3 py-2 text-sm hover:bg-gray-100' : ''}`}>
         {props.type == 'courses' && (
           <>
             <Books size={20} weight="fill" />{' '}
