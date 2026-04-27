@@ -109,23 +109,6 @@ function shouldPassThroughAfterAccessLock(pathname: string): boolean {
   return /^[\w-]+\.\w+$/.test(lastSegment)
 }
 
-function shouldBypassAccessLock(pathname: string, fullhost: string | null, instanceInfo: InstanceInfo): boolean {
-  const hostbare = stripPort(fullhost || '')
-  const isAdminSubdomain = hostbare?.startsWith('admin.') ||
-    (fullhost ? extractSubdomain(fullhost, instanceInfo.frontend_domain) === 'admin' : false)
-
-  return (
-    isAdminSubdomain ||
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/auth') ||
-    pathname.startsWith('/auth') ||
-    pathname === '/login' ||
-    pathname === '/forgot' ||
-    pathname === '/reset' ||
-    pathname === '/verify-email'
-  )
-}
-
 // Set instance info cookies on a response so client-side can read them synchronously
 function setInstanceCookies(response: NextResponse, info: InstanceInfo) {
   response.cookies.set({ name: 'learnhouse_multi_org', value: String(info.multi_org_enabled), path: '/' })
@@ -178,22 +161,20 @@ export const config = {
 export default async function proxy(req: NextRequest) {
   // Fetch instance config from backend (cached 10 min)
   const instanceInfo = await getInstanceInfo()
+  const accessLock = await getAccessLockInfo(req)
   const hosting_mode = instanceInfo.multi_org_enabled ? 'multi' : 'single'
   const default_org = instanceInfo.default_org_slug
   const { pathname, search } = req.nextUrl
   const fullhost = req.headers ? req.headers.get('host') : ''
 
-  if (!shouldBypassAccessLock(pathname, fullhost, instanceInfo)) {
-    const accessLock = await getAccessLockInfo(req)
-    if (accessLock.enabled && !accessLock.allowed) {
-      return new NextResponse('', {
-        status: 403,
-        headers: {
-          'content-type': 'text/html; charset=utf-8',
-          'x-robots-tag': 'noindex, nofollow',
-        },
-      })
-    }
+  if (accessLock.enabled && !accessLock.allowed) {
+    return new NextResponse('', {
+      status: 403,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'x-robots-tag': 'noindex, nofollow',
+      },
+    })
   }
 
   if (shouldPassThroughAfterAccessLock(pathname)) {
