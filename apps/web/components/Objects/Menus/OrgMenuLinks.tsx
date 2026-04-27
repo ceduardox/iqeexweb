@@ -2,6 +2,7 @@ import { useOrg } from '@components/Contexts/OrgContext'
 import { getUriWithOrg } from '@services/config/config'
 import { Books, SquaresFour, ChatsCircle, Headphones, Cube, ShoppingBag } from '@phosphor-icons/react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React from 'react'
 import useSWR from 'swr'
 import { useTranslation } from 'react-i18next'
@@ -111,21 +112,40 @@ function MenuLinks(props: {
 }
 const LinkItem = (props: any) => {
   const { t } = useTranslation()
+  const router = useRouter()
+  const [isPressed, setIsPressed] = React.useState(false)
   const link = props.link
   const orgslug = props.orgslug
   const colors = getMenuColorClasses(props.primaryColor || '')
   const textColorClass = colors.text
   const isMobile = props.variant === 'mobile'
+  const href = getUriWithOrg(orgslug, link)
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isMobile) {
+      props.onNavigate?.()
+      return
+    }
+
+    event.preventDefault()
+    if (isPressed) return
+
+    setIsPressed(true)
+    window.setTimeout(() => {
+      props.onNavigate?.()
+      router.push(href)
+    }, 220)
+  }
+
   return (
     <Link
-      href={getUriWithOrg(orgslug, link)}
-      onClick={props.onNavigate}
+      href={href}
+      onClick={handleClick}
       className={isMobile ? 'block w-full' : 'block'}
     >
       <li
         className={`flex items-center gap-3 ${textColorClass} font-semibold transition-all duration-150 ease-out active:scale-[0.98] ${
           isMobile
-            ? 'w-full rounded-lg px-3 py-2 text-sm hover:bg-gray-100 active:bg-gray-200'
+            ? `w-full rounded-lg px-3 py-2 text-sm hover:bg-gray-100 active:bg-gray-200 ${isPressed ? 'scale-[0.98] bg-gray-200 shadow-inner' : ''}`
             : 'rounded-md px-1 py-1 hover:bg-black/5'
         }`}
       >
