@@ -11,6 +11,7 @@ import {
   Check,
   X,
   Plus,
+  Sparkles,
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
@@ -54,6 +55,14 @@ function formatDate(value: string) {
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10)
+}
+
+function SectionIcon({ tone, children }: { tone: string; children: React.ReactNode }) {
+  return (
+    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+      {children}
+    </span>
+  )
 }
 
 export default function ScheduleModule({ orgId, dashboard = false }: ScheduleModuleProps) {
@@ -195,274 +204,315 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
   if (!token) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center nice-shadow">
-          <CalendarDays className="mx-auto mb-3 text-gray-400" size={36} />
+        <div className="rounded-lg border border-indigo-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+            <CalendarDays size={30} />
+          </div>
           <h1 className="text-xl font-semibold text-gray-900">Agenda</h1>
-          <p className="mt-2 text-sm text-gray-500">Inicia sesión para ver tus tutorías.</p>
+          <p className="mt-2 text-sm text-gray-500">Inicia sesion para ver tus tutorias.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={dashboard ? 'h-full w-full bg-[#f8f8f8] px-6 py-8' : 'mx-auto w-full max-w-7xl px-4 py-8'}>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-            <CalendarDays size={18} />
-            Agenda
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">
-            {summary?.is_tutor || summary?.is_admin ? 'Calendario de tutorías' : 'Agendar tutoría'}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {summary?.is_tutor || summary?.is_admin
-              ? 'Gestiona reservas, alumnos y disponibilidad desde un solo lugar.'
-              : 'Selecciona un tutor asignado y reserva una hora disponible.'}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <UserRound size={17} />
-              {summary?.is_tutor || summary?.is_admin ? 'Mi rol' : 'Mis tutores'}
-            </h2>
-            {tutors.length > 0 ? (
-              <div className="space-y-2">
-                {tutors.map((tutor) => (
-                  <button
-                    key={tutor.id}
-                    onClick={() => setSelectedTutorId(tutor.id)}
-                    className={`w-full rounded-lg border px-3 py-3 text-left transition-all ${
-                      selectedTutor?.id === tutor.id
-                        ? 'border-gray-900 bg-gray-900 text-white'
-                        : 'border-gray-100 bg-gray-50 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium">{nameOf(tutor)}</div>
-                    <div className={selectedTutor?.id === tutor.id ? 'text-xs text-white/70' : 'text-xs text-gray-500'}>
-                      {tutor.email}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">
-                {summary?.is_tutor || summary?.is_admin
-                  ? 'Puedes revisar reservas y configurar disponibilidad.'
-                  : 'Aún no tienes tutor asignado. El recurso está visible, pero un administrador debe asignarte un tutor para reservar.'}
-              </div>
-            )}
-          </section>
-
-          {(summary?.is_tutor || summary?.is_admin) && (
-            <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <Clock size={17} />
-                Disponibilidad
-              </h2>
-              <form onSubmit={handleAvailabilitySubmit} className="space-y-3">
-                <select
-                  value={availability.weekday}
-                  onChange={(event) => setAvailability({ ...availability, weekday: Number(event.target.value) })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                >
-                  {dayLabels.map((label, index) => (
-                    <option key={label} value={index}>{label}</option>
-                  ))}
-                </select>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="time"
-                    value={availability.start_time}
-                    onChange={(event) => setAvailability({ ...availability, start_time: event.target.value })}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="time"
-                    value={availability.end_time}
-                    onChange={(event) => setAvailability({ ...availability, end_time: event.target.value })}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                  />
+    <div className={dashboard ? 'h-full w-full bg-slate-50 px-4 py-6 sm:px-6 sm:py-8' : 'w-full bg-slate-50'}>
+      <div className={dashboard ? 'mx-auto w-full max-w-7xl' : 'mx-auto w-full max-w-7xl px-4 py-6 sm:py-8'}>
+        <div className="mb-6 overflow-hidden rounded-lg border border-indigo-100 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-indigo-700 via-violet-600 to-cyan-600 px-5 py-6 text-white sm:px-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-white/80">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+                    <CalendarDays size={18} />
+                  </span>
+                  Agenda
                 </div>
-                <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                  <Plus size={16} />
-                  Agregar horario
-                </button>
-              </form>
-            </section>
-          )}
-
-          {summary?.is_admin && (
-            <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
-                <UserRound size={17} />
-                Asignar tutor
-              </h2>
-              <form onSubmit={handleAssignmentSubmit} className="space-y-3">
-                <select
-                  value={assignment.tutor_user_id}
-                  onChange={(event) => setAssignment({ ...assignment, tutor_user_id: event.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                >
-                  <option value="">Tutor o profesor</option>
-                  {(orgUsers?.items || []).map((item: any) => (
-                    <option key={`tutor-${item.user.id}`} value={item.user.id}>
-                      {nameOf(item.user)} · {item.role?.name}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={assignment.student_user_id}
-                  onChange={(event) => setAssignment({ ...assignment, student_user_id: event.target.value })}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                >
-                  <option value="">Alumno</option>
-                  {(orgUsers?.items || []).map((item: any) => (
-                    <option key={`student-${item.user.id}`} value={item.user.id}>
-                      {nameOf(item.user)} · {item.user.email}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  disabled={!assignment.tutor_user_id || !assignment.student_user_id}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                >
-                  <Plus size={16} />
-                  Asignar
-                </button>
-              </form>
-            </section>
-          )}
-
-          <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <Bell size={17} />
-              Notificaciones
-            </h2>
-            {summary?.notifications?.length ? (
-              <div className="space-y-2">
-                {summary.notifications.slice(0, 4).map((item) => (
-                  <div key={item.id} className="rounded-lg bg-gray-50 p-3">
-                    <div className="text-sm font-medium text-gray-800">{item.title}</div>
-                    <div className="mt-1 text-xs text-gray-500">{item.body}</div>
-                  </div>
-                ))}
+                <h1 className="mt-3 text-2xl font-bold tracking-normal text-white sm:text-3xl">
+                  {summary?.is_tutor || summary?.is_admin ? 'Calendario de tutorias' : 'Agendar tutoria'}
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/80">
+                  {summary?.is_tutor || summary?.is_admin
+                    ? 'Gestiona reservas, alumnos y disponibilidad desde un solo lugar.'
+                    : 'Selecciona un tutor asignado y reserva una hora disponible.'}
+                </p>
               </div>
-            ) : (
-              <p className="text-sm text-gray-500">Sin notificaciones nuevas.</p>
-            )}
-          </section>
-        </aside>
+              <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
+                <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
+                  <div className="text-[11px] font-semibold uppercase text-white/65">Reservas</div>
+                  <div className="mt-1 text-xl font-bold">{visibleSessions.length}</div>
+                </div>
+                <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
+                  <div className="text-[11px] font-semibold uppercase text-white/65">Tutores</div>
+                  <div className="mt-1 text-xl font-bold">{tutors.length}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <main className="space-y-5">
-          {!summary?.is_tutor && !summary?.is_admin && (
-            <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-              <h2 className="mb-4 text-sm font-semibold text-gray-900">Calendario disponible</h2>
-              {selectedTutor ? (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {Object.entries(groupedSlots).map(([date, daySlots]) => (
-                    <div key={date} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                      <div className="mb-3 text-sm font-semibold text-gray-800">
-                        {new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(date))}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {daySlots.map((slot) => (
-                          <button
-                            key={slot.starts_at}
-                            disabled={!slot.available}
-                            onClick={() => setSelectedSlot(slot)}
-                            className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                              selectedSlot?.starts_at === slot.starts_at
-                                ? 'bg-gray-900 text-white'
-                                : slot.available
-                                  ? 'bg-white text-gray-700 hover:bg-gray-900 hover:text-white'
-                                  : 'bg-gray-100 text-gray-300'
-                            }`}
-                          >
-                            {new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(slot.starts_at))}
-                          </button>
-                        ))}
-                      </div>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+          <aside className="space-y-5">
+            <section className="overflow-hidden rounded-lg border border-indigo-100 bg-white shadow-sm">
+              <div className="h-1 bg-gradient-to-r from-indigo-500 to-cyan-500" />
+              <div className="p-4">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <SectionIcon tone="bg-indigo-50 text-indigo-700">
+                    <UserRound size={17} />
+                  </SectionIcon>
+                  {summary?.is_tutor || summary?.is_admin ? 'Mi rol' : 'Mis tutores'}
+                </h2>
+                {tutors.length > 0 ? (
+                  <div className="space-y-2">
+                    {tutors.map((tutor) => (
+                      <button
+                        key={tutor.id}
+                        onClick={() => setSelectedTutorId(tutor.id)}
+                        className={`w-full rounded-lg border px-3 py-3 text-left transition-all ${
+                          selectedTutor?.id === tutor.id
+                            ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
+                            : 'border-indigo-100 bg-indigo-50/40 text-gray-700 hover:border-indigo-300 hover:bg-white'
+                        }`}
+                      >
+                        <div className="font-medium">{nameOf(tutor)}</div>
+                        <div className={selectedTutor?.id === tutor.id ? 'text-xs text-white/70' : 'text-xs text-gray-500'}>
+                          {tutor.email}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                    {summary?.is_tutor || summary?.is_admin
+                      ? 'Puedes revisar reservas y configurar disponibilidad.'
+                      : 'Aun no tienes tutor asignado. El recurso esta visible, pero un administrador debe asignarte un tutor para reservar.'}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {(summary?.is_tutor || summary?.is_admin) && (
+              <section className="rounded-lg border border-emerald-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <SectionIcon tone="bg-emerald-50 text-emerald-700">
+                    <Clock size={17} />
+                  </SectionIcon>
+                  Disponibilidad
+                </h2>
+                <form onSubmit={handleAvailabilitySubmit} className="space-y-3">
+                  <select
+                    value={availability.weekday}
+                    onChange={(event) => setAvailability({ ...availability, weekday: Number(event.target.value) })}
+                    className="w-full rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:bg-white"
+                  >
+                    {dayLabels.map((label, index) => (
+                      <option key={label} value={index}>{label}</option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="time"
+                      value={availability.start_time}
+                      onChange={(event) => setAvailability({ ...availability, start_time: event.target.value })}
+                      className="rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:bg-white"
+                    />
+                    <input
+                      type="time"
+                      value={availability.end_time}
+                      onChange={(event) => setAvailability({ ...availability, end_time: event.target.value })}
+                      className="rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:bg-white"
+                    />
+                  </div>
+                  <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700">
+                    <Plus size={16} />
+                    Agregar horario
+                  </button>
+                </form>
+              </section>
+            )}
+
+            {summary?.is_admin && (
+              <section className="rounded-lg border border-violet-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <SectionIcon tone="bg-violet-50 text-violet-700">
+                    <UserRound size={17} />
+                  </SectionIcon>
+                  Asignar tutor
+                </h2>
+                <form onSubmit={handleAssignmentSubmit} className="space-y-3">
+                  <select
+                    value={assignment.tutor_user_id}
+                    onChange={(event) => setAssignment({ ...assignment, tutor_user_id: event.target.value })}
+                    className="w-full rounded-lg border border-violet-100 bg-violet-50/40 px-3 py-2 text-sm outline-none focus:border-violet-400 focus:bg-white"
+                  >
+                    <option value="">Tutor o profesor</option>
+                    {(orgUsers?.items || []).map((item: any) => (
+                      <option key={`tutor-${item.user.id}`} value={item.user.id}>
+                        {nameOf(item.user)} - {item.role?.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={assignment.student_user_id}
+                    onChange={(event) => setAssignment({ ...assignment, student_user_id: event.target.value })}
+                    className="w-full rounded-lg border border-violet-100 bg-violet-50/40 px-3 py-2 text-sm outline-none focus:border-violet-400 focus:bg-white"
+                  >
+                    <option value="">Alumno</option>
+                    {(orgUsers?.items || []).map((item: any) => (
+                      <option key={`student-${item.user.id}`} value={item.user.id}>
+                        {nameOf(item.user)} - {item.user.email}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    disabled={!assignment.tutor_user_id || !assignment.student_user_id}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    <Plus size={16} />
+                    Asignar
+                  </button>
+                </form>
+              </section>
+            )}
+
+            <section className="rounded-lg border border-cyan-100 bg-white p-4 shadow-sm">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <SectionIcon tone="bg-cyan-50 text-cyan-700">
+                  <Bell size={17} />
+                </SectionIcon>
+                Notificaciones
+              </h2>
+              {summary?.notifications?.length ? (
+                <div className="space-y-2">
+                  {summary.notifications.slice(0, 4).map((item) => (
+                    <div key={item.id} className="rounded-lg border border-cyan-100 bg-cyan-50 p-3">
+                      <div className="text-sm font-medium text-gray-800">{item.title}</div>
+                      <div className="mt-1 text-xs text-cyan-800/70">{item.body}</div>
                     </div>
                   ))}
-                  {!slots?.length && (
-                    <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">
-                      No hay horarios disponibles para este tutor.
-                    </div>
-                  )}
                 </div>
               ) : (
-                <div className="rounded-lg bg-gray-50 p-6 text-sm text-gray-500">
-                  Cuando tengas tutor asignado aparecerá aquí el calendario para reservar.
-                </div>
-              )}
-              {selectedSlot && selectedTutor && (
-                <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
-                  <div className="text-sm font-semibold text-gray-900">Confirmar reserva</div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {nameOf(selectedTutor)} · {formatDate(selectedSlot.starts_at)}
-                  </p>
-                  <textarea
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    rows={3}
-                    placeholder="Nota opcional para el tutor"
-                    className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                  />
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button onClick={() => setSelectedSlot(null)} className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">
-                      Cancelar
-                    </button>
-                    <button onClick={handleBook} className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                      <Check size={16} />
-                      Reservar
-                    </button>
-                  </div>
-                </div>
+                <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Sin notificaciones nuevas.</p>
               )}
             </section>
-          )}
+          </aside>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-4 nice-shadow">
-            <h2 className="mb-4 text-sm font-semibold text-gray-900">Próximas reservas</h2>
-            <div className="space-y-3">
-              {visibleSessions.map((item) => {
-                const counterpart = currentUserId === item.tutor_user_id ? item.student : item.tutor
-                return (
-                  <div key={item.session_uuid} className="flex flex-col gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">{formatDate(item.starts_at)}</div>
-                      <div className="mt-1 text-sm text-gray-500">
-                        {currentUserId === item.tutor_user_id ? 'Alumno' : 'Tutor'}: {nameOf(counterpart)}
+          <main className="space-y-5">
+            {!summary?.is_tutor && !summary?.is_admin && (
+              <section className="rounded-lg border border-indigo-100 bg-white p-4 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <SectionIcon tone="bg-indigo-50 text-indigo-700">
+                    <CalendarDays size={17} />
+                  </SectionIcon>
+                  Calendario disponible
+                </h2>
+                {selectedTutor ? (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {Object.entries(groupedSlots).map(([date, daySlots]) => (
+                      <div key={date} className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+                        <div className="mb-3 text-sm font-semibold capitalize text-indigo-950">
+                          {new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(date))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {daySlots.map((slot) => (
+                            <button
+                              key={slot.starts_at}
+                              disabled={!slot.available}
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                                selectedSlot?.starts_at === slot.starts_at
+                                  ? 'bg-indigo-600 text-white shadow-sm'
+                                  : slot.available
+                                    ? 'bg-white text-indigo-800 ring-1 ring-indigo-100 hover:bg-indigo-600 hover:text-white'
+                                    : 'bg-gray-100 text-gray-300'
+                              }`}
+                            >
+                              {new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(slot.starts_at))}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      {item.student_notes && (
-                        <div className="mt-1 text-xs text-gray-500">Nota: {item.student_notes}</div>
-                      )}
-                    </div>
-                    {item.status === 'scheduled' && (
-                      <button
-                        onClick={() => handleCancel(item)}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:border-red-200 hover:text-red-600"
-                      >
-                        <X size={15} />
-                        Cancelar
-                      </button>
+                    ))}
+                    {!slots?.length && (
+                      <div className="rounded-lg border border-amber-100 bg-amber-50 p-6 text-sm leading-6 text-amber-800">
+                        No hay horarios disponibles para este tutor.
+                      </div>
                     )}
                   </div>
-                )
-              })}
-              {!visibleSessions.length && (
-                <div className="rounded-lg bg-gray-50 p-6 text-center text-sm text-gray-500">
-                  Todavía no hay reservas.
-                </div>
-              )}
-            </div>
-          </section>
-        </main>
+                ) : (
+                  <div className="rounded-lg border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-6 text-sm leading-6 text-amber-800">
+                    Cuando tengas tutor asignado aparecera aqui el calendario para reservar.
+                  </div>
+                )}
+                {selectedSlot && selectedTutor && (
+                  <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
+                    <div className="text-sm font-semibold text-gray-900">Confirmar reserva</div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {nameOf(selectedTutor)} - {formatDate(selectedSlot.starts_at)}
+                    </p>
+                    <textarea
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      rows={3}
+                      placeholder="Nota opcional para el tutor"
+                      className="mt-3 w-full rounded-lg border border-indigo-100 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button onClick={() => setSelectedSlot(null)} className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white">
+                        Cancelar
+                      </button>
+                      <button onClick={handleBook} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                        <Check size={16} />
+                        Reservar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <SectionIcon tone="bg-slate-100 text-slate-700">
+                  <Clock size={17} />
+                </SectionIcon>
+                Proximas reservas
+              </h2>
+              <div className="space-y-3">
+                {visibleSessions.map((item) => {
+                  const counterpart = currentUserId === item.tutor_user_id ? item.student : item.tutor
+                  return (
+                    <div key={item.session_uuid} className="flex flex-col gap-3 rounded-lg border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">{formatDate(item.starts_at)}</div>
+                        <div className="mt-1 text-sm text-gray-500">
+                          {currentUserId === item.tutor_user_id ? 'Alumno' : 'Tutor'}: {nameOf(counterpart)}
+                        </div>
+                        {item.student_notes && (
+                          <div className="mt-1 text-xs text-gray-500">Nota: {item.student_notes}</div>
+                        )}
+                      </div>
+                      {item.status === 'scheduled' && (
+                        <button
+                          onClick={() => handleCancel(item)}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-100 bg-white px-3 py-2 text-sm text-red-600 hover:border-red-200 hover:bg-red-50"
+                        >
+                          <X size={15} />
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+                {!visibleSessions.length && (
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    Todavia no hay reservas.
+                  </div>
+                )}
+              </div>
+            </section>
+          </main>
+        </div>
       </div>
     </div>
   )
