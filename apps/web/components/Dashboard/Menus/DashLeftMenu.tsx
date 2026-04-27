@@ -193,6 +193,7 @@ function DashLeftMenu() {
   const showPlaygrounds = isEnabled('playgrounds')
   const showPayments = isEnabled('payments')
   const showCollections = isEnabled('collections')
+  const isSuperadmin = session?.data?.user?.is_superadmin === true
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -637,6 +638,15 @@ function DashLeftMenu() {
                 )}
               </button>
             </HoverMenu>
+
+            {isSuperadmin && (
+              <MenuLink
+                href="/admin/security"
+                icon={<Lock size={20} weight="fill" />}
+                label="Bloqueo IP"
+                isCollapsed={isCollapsed}
+              />
+            )}
 
             {/* Disabled features shown in an "Other" hover menu */}
             {(!showCollections || !showCommunities || !showPodcasts || !showBoards || !showPlaygrounds || !showPayments) && (
