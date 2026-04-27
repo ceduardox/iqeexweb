@@ -15,13 +15,21 @@ EXEMPT_PATHS = {
     "/",
     "/api/v1/health",
     "/api/v1/instance/access-lock",
+    "/api/v1/ee/superadmin/status",
+    "/api/v1/ee/superadmin/access-lock",
+    "/api/v1/users/session",
 }
 
 
 class AccessLockMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if path in EXEMPT_PATHS or path.startswith("/docs") or path.startswith("/openapi"):
+        if (
+            path in EXEMPT_PATHS
+            or path.startswith("/api/v1/auth")
+            or path.startswith("/docs")
+            or path.startswith("/openapi")
+        ):
             return await call_next(request)
 
         try:
