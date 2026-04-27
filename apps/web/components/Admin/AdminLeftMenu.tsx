@@ -1,6 +1,7 @@
 'use client'
 import {
   Buildings,
+  CalendarBlank,
   ChartBar,
   SignOut,
   User,
@@ -52,6 +53,11 @@ function AdminTopMenu() {
             href="/admin/organizations"
             icon={<Buildings size={16} weight="fill" />}
             label="Organizations"
+          />
+          <NavLink
+            href="/admin/organizations"
+            icon={<CalendarBlank size={16} weight="fill" />}
+            label="Agendas"
           />
           <NavLink
             href="/admin/users"

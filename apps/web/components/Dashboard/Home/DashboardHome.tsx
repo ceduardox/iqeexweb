@@ -7,6 +7,7 @@ import {
   GearSix,
   Users,
   BookOpen,
+  CalendarBlank,
 } from '@phosphor-icons/react'
 import useSWR from 'swr'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
@@ -70,6 +71,13 @@ export default function DashboardHome() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link
+                href="/dash/schedule"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <CalendarBlank size={14} weight="bold" />
+                Agenda
+              </Link>
               <Link
                 href="/dash/courses?new=true"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"

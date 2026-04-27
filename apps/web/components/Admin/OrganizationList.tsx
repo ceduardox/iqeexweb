@@ -7,7 +7,7 @@ import { swrFetcher } from '@services/utils/ts/requests'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { Buildings, Globe, User, CaretLeft, CaretRight, BookOpen, MagnifyingGlass, ArrowSquareOut } from '@phosphor-icons/react'
+import { Buildings, Globe, User, CaretLeft, CaretRight, BookOpen, MagnifyingGlass, ArrowSquareOut, CalendarBlank } from '@phosphor-icons/react'
 
 /** Ensure a URL only uses http/https — returns '#' for anything else. */
 function safeHref(url: string): string {
@@ -494,15 +494,26 @@ export default function OrganizationList() {
                   <span className="text-sm text-white/40">{new Date(org.update_date).toLocaleDateString()}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <a
-                    href={safeHref(getUriWithOrg(org.slug, '/dash'))}
-                    rel="noopener"
-                    className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors"
-                    title="Open org dashboard"
-                  >
-                    <ArrowSquareOut size={14} weight="bold" />
-                    Dashboard
-                  </a>
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={safeHref(getUriWithOrg(org.slug, '/dash/schedule'))}
+                      rel="noopener"
+                      className="inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-white hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-colors"
+                      title="Open org agenda"
+                    >
+                      <CalendarBlank size={14} weight="bold" />
+                      Agenda
+                    </a>
+                    <a
+                      href={safeHref(getUriWithOrg(org.slug, '/dash'))}
+                      rel="noopener"
+                      className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors"
+                      title="Open org dashboard"
+                    >
+                      <ArrowSquareOut size={14} weight="bold" />
+                      Dashboard
+                    </a>
+                  </div>
                 </td>
               </tr>
             )
