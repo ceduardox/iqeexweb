@@ -19,14 +19,17 @@ def normalize_access_lock(value: dict[str, Any] | None) -> dict[str, Any]:
     allowed_ips = data.get("allowed_ips") or []
     if isinstance(allowed_ips, str):
         allowed_ips = [line.strip() for line in allowed_ips.replace(",", "\n").splitlines()]
+    normalized_allowed_ips = [
+        ip.strip()
+        for ip in allowed_ips
+        if isinstance(ip, str) and ip.strip()
+    ]
 
     return {
-        "enabled": bool(data.get("enabled", False)),
-        "allowed_ips": [
-            ip.strip()
-            for ip in allowed_ips
-            if isinstance(ip, str) and ip.strip()
-        ],
+        # Safety: never consider the site private with an empty allowlist.
+        # This prevents accidental lockout if the toggle is enabled before an IP is saved.
+        "enabled": bool(data.get("enabled", False)) and len(normalized_allowed_ips) > 0,
+        "allowed_ips": normalized_allowed_ips,
     }
 
 
