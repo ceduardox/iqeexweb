@@ -43,8 +43,8 @@ export default function AccessLockSettings() {
   const allowedIps = useMemo(() => parseIpList(ipText), [ipText])
   const canSave = !saving && !!accessToken && (!enabled || allowedIps.length > 0)
 
-  async function saveSettings() {
-    if (!canSave) return
+  async function saveSettings(nextEnabled = enabled, nextIps = allowedIps, successMessage = 'Configuracion guardada.') {
+    if (saving || !accessToken) return
     setSaving(true)
     setMessage('')
     try {
@@ -55,8 +55,8 @@ export default function AccessLockSettings() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          enabled,
-          allowed_ips: allowedIps,
+          enabled: nextEnabled,
+          allowed_ips: nextIps,
         }),
       })
 
@@ -65,8 +65,11 @@ export default function AccessLockSettings() {
         throw new Error(body?.detail || 'Could not save access lock settings')
       }
 
-      await mutate()
-      setMessage('Configuracion guardada. El proxy puede tardar hasta 15 segundos en aplicar el cambio.')
+      const saved = await response.json()
+      setEnabled(Boolean(saved.enabled))
+      setIpText((saved.allowed_ips || []).join('\n'))
+      await mutate(saved, { revalidate: false })
+      setMessage(`${successMessage} Puede tardar unos segundos en reflejarse.`)
     } catch (err: any) {
       setMessage(err?.message || 'No se pudo guardar la configuracion.')
     } finally {
@@ -79,6 +82,20 @@ export default function AccessLockSettings() {
     if (!currentIp) return
     const next = new Set([...allowedIps, currentIp])
     setIpText(Array.from(next).join('\n'))
+  }
+
+  async function makePublic() {
+    await saveSettings(false, allowedIps, 'Sitio publico: el bloqueo esta desactivado.')
+  }
+
+  async function activateWithMyIp() {
+    const currentIp = data?.current_ip?.trim()
+    if (!currentIp) {
+      setMessage('No se pudo detectar tu IP actual. Recarga la pagina e intenta de nuevo.')
+      return
+    }
+    const nextIps = Array.from(new Set([currentIp, ...allowedIps]))
+    await saveSettings(true, nextIps, 'Sitio privado activado con tu IP permitida.')
   }
 
   return (
@@ -94,22 +111,16 @@ export default function AccessLockSettings() {
               <div>
                 <h2 className="text-lg font-semibold text-white">Bloqueo global por IP</h2>
                 <p className="mt-1 max-w-xl text-sm leading-6 text-white/45">
-                  Si esta activo, cualquier pagina web responde vacia para IPs no permitidas. Desactivalo para que todos puedan ver la plataforma.
+                  Controla la pagina publica. El admin queda disponible para cambiar o desactivar este bloqueo.
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setEnabled((value) => !value)}
-              className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5 ${
-                enabled
-                  ? 'bg-amber-500 text-black hover:bg-amber-400'
-                  : 'bg-white/10 text-white hover:bg-white/15'
-              }`}
-            >
-              {enabled ? 'Activo' : 'Desactivado'}
-            </button>
+            <div className={`inline-flex items-center rounded-lg px-3 py-2 text-sm font-semibold ${
+              enabled ? 'bg-amber-500/15 text-amber-200' : 'bg-emerald-500/15 text-emerald-200'
+            }`}>
+              {enabled ? 'Privado por IP' : 'Publico'}
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4">
@@ -130,6 +141,27 @@ export default function AccessLockSettings() {
                   Agregar mi IP
                 </button>
               </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={makePublic}
+                disabled={saving || !accessToken}
+                className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-left text-sm font-semibold text-emerald-100 transition-all hover:-translate-y-0.5 hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Hacer publico
+                <span className="mt-1 block text-xs font-normal text-emerald-100/60">Desactiva el bloqueo para todos.</span>
+              </button>
+              <button
+                type="button"
+                onClick={activateWithMyIp}
+                disabled={saving || !accessToken || !data?.current_ip}
+                className="rounded-lg border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-left text-sm font-semibold text-amber-100 transition-all hover:-translate-y-0.5 hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Permitir mi IP y activar privado
+                <span className="mt-1 block text-xs font-normal text-amber-100/60">Agrega tu IP detectada y bloquea la pagina publica.</span>
+              </button>
             </div>
 
             <label className="block">
@@ -166,7 +198,7 @@ export default function AccessLockSettings() {
             <div className="flex justify-end">
               <button
                 type="button"
-                onClick={saveSettings}
+                onClick={() => saveSettings()}
                 disabled={!canSave}
                 className="rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition-all hover:-translate-y-0.5 hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
               >

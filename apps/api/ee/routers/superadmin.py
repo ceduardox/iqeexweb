@@ -15,7 +15,12 @@ from src.db.roles import Role
 from src.db.custom_domains import CustomDomain
 from src.db.courses.courses import Course
 from src.security.superadmin import require_superadmin
-from src.services.platform.access_lock import get_access_lock, save_access_lock
+from src.services.platform.access_lock import (
+    get_access_lock,
+    get_request_ip_from_headers,
+    ip_matches_allowed_entry,
+    save_access_lock,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +185,13 @@ def _get_admin_users(db_session: Session, org_ids: list[int]) -> dict[int, list[
     return admins_by_org
 
 
+def _current_request_ip(request: Request) -> str:
+    return get_request_ip_from_headers(
+        request.headers,
+        request.client.host if request.client else None,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Status
 # ---------------------------------------------------------------------------
@@ -198,21 +210,26 @@ async def get_superadmin_access_lock(
     db_session: Session = Depends(get_db_session),
 ) -> dict:
     config = get_access_lock(db_session)
-    forwarded_for = request.headers.get("x-forwarded-for", "")
-    current_ip = forwarded_for.split(",")[0].strip() or request.headers.get("x-real-ip") or (request.client.host if request.client else "")
+    current_ip = _current_request_ip(request)
     return {**config, "current_ip": current_ip}
 
 
 @router.put("/access-lock")
 async def update_superadmin_access_lock(
     body: AccessLockUpdateRequest,
+    request: Request,
     current_user: PublicUser = Depends(require_superadmin),
     db_session: Session = Depends(get_db_session),
 ) -> dict:
+    allowed_ips = list(dict.fromkeys(ip.strip() for ip in body.allowed_ips if isinstance(ip, str) and ip.strip()))
+    current_ip = _current_request_ip(request)
+    if body.enabled and current_ip and not any(ip_matches_allowed_entry(current_ip, ip) for ip in allowed_ips):
+        allowed_ips.insert(0, current_ip)
+
     return save_access_lock(
         db_session,
         enabled=body.enabled,
-        allowed_ips=body.allowed_ips,
+        allowed_ips=allowed_ips,
     )
 
 
