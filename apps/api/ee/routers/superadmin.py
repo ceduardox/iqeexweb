@@ -1,7 +1,7 @@
 import copy
 import logging
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import Integer
@@ -15,6 +15,7 @@ from src.db.roles import Role
 from src.db.custom_domains import CustomDomain
 from src.db.courses.courses import Course
 from src.security.superadmin import require_superadmin
+from src.services.platform.access_lock import get_access_lock, save_access_lock
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,11 @@ class OrgConfigUpdateRequest(BaseModel):
     config: dict
 
 
+class AccessLockUpdateRequest(BaseModel):
+    enabled: bool = False
+    allowed_ips: list[str] = []
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -183,6 +189,31 @@ async def get_superadmin_status(
     current_user: PublicUser = Depends(require_superadmin),
 ) -> SuperadminStatusResponse:
     return SuperadminStatusResponse(is_superadmin=True)
+
+
+@router.get("/access-lock")
+async def get_superadmin_access_lock(
+    request: Request,
+    current_user: PublicUser = Depends(require_superadmin),
+    db_session: Session = Depends(get_db_session),
+) -> dict:
+    config = get_access_lock(db_session)
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    current_ip = forwarded_for.split(",")[0].strip() or request.headers.get("x-real-ip") or (request.client.host if request.client else "")
+    return {**config, "current_ip": current_ip}
+
+
+@router.put("/access-lock")
+async def update_superadmin_access_lock(
+    body: AccessLockUpdateRequest,
+    current_user: PublicUser = Depends(require_superadmin),
+    db_session: Session = Depends(get_db_session),
+) -> dict:
+    return save_access_lock(
+        db_session,
+        enabled=body.enabled,
+        allowed_ips=body.allowed_ips,
+    )
 
 
 # ---------------------------------------------------------------------------

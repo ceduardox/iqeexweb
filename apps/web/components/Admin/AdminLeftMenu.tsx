@@ -3,6 +3,7 @@ import {
   Buildings,
   CalendarBlank,
   ChartBar,
+  LockKey,
   SignOut,
   User,
   Users,
@@ -68,6 +69,11 @@ function AdminTopMenu() {
             href="/admin/analytics"
             icon={<ChartBar size={16} weight="fill" />}
             label="Analytics"
+          />
+          <NavLink
+            href="/admin/security"
+            icon={<LockKey size={16} weight="fill" />}
+            label="Access Lock"
           />
         </nav>
 
