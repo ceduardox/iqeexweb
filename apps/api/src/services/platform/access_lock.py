@@ -51,10 +51,9 @@ def normalize_ip(ip: str | None) -> str:
 
 def get_request_ip_from_headers(headers: Any, client_host: str | None = None) -> str:
     return normalize_ip(
-        headers.get("x-learnhouse-client-ip")
-        or headers.get("cf-connecting-ip")
-        or headers.get("x-forwarded-for")
+        headers.get("cf-connecting-ip")
         or headers.get("x-real-ip")
+        or headers.get("x-forwarded-for")
         or client_host
     )
 
