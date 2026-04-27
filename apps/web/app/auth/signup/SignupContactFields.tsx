@@ -102,27 +102,30 @@ export default function SignupContactFields({
           label="WhatsApp"
           message={touched.whatsapp_phone ? errors.whatsapp_phone : undefined}
         />
-        <div className="flex gap-2">
-          <select
-            name="whatsapp_country_code"
-            value={values.whatsapp_country_code}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="h-10 w-[132px] rounded-md border border-gray-200 bg-white px-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
-          >
-            {PHONE_COUNTRIES.map((country) => (
-              <option key={country.code} value={country.code}>
-                {country.name} {country.dialCode}
-              </option>
-            ))}
-          </select>
-          <div className="flex h-10 w-16 items-center justify-center gap-1 rounded-md border border-gray-200 bg-white text-sm font-medium text-gray-700">
-            <img
-              src={flagUrl(selectedPhoneCountry.code)}
-              alt={selectedPhoneCountry.name}
-              className="h-[18px] w-6 rounded-sm object-cover"
-            />
-            <span>{selectedPhoneCountry.dialCode}</span>
+        <div className="flex min-w-0 gap-2">
+          <div className="relative h-10 w-[94px] shrink-0">
+            <select
+              name="whatsapp_country_code"
+              value={values.whatsapp_country_code}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              aria-label="Codigo de pais para WhatsApp"
+              className="absolute inset-0 h-10 w-full cursor-pointer opacity-0"
+            >
+              {PHONE_COUNTRIES.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name} {country.dialCode}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none flex h-10 w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 text-sm font-medium text-gray-700">
+              <img
+                src={flagUrl(selectedPhoneCountry.code)}
+                alt={selectedPhoneCountry.name}
+                className="h-[18px] w-6 rounded-sm object-cover"
+              />
+              <span>{selectedPhoneCountry.dialCode}</span>
+            </div>
           </div>
           <Form.Control asChild>
             <Input
@@ -132,20 +135,21 @@ export default function SignupContactFields({
               value={values.whatsapp_phone}
               type="tel"
               inputMode="tel"
-              placeholder="Numero de WhatsApp"
+              placeholder="Numero"
+              className="min-w-0"
               required
             />
           </Form.Control>
         </div>
       </FormField>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <FormField name="country_code">
           <FormLabelAndMessage
             label="Pais"
             message={touched.country_code ? errors.country_code : undefined}
           />
-          <div className="flex gap-2">
+          <div className="flex min-w-0 gap-2">
             <div className="flex h-10 w-11 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white">
               <img
                 src={flagUrl(selectedCountry.code)}
