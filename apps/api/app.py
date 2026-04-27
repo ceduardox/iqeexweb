@@ -7,7 +7,6 @@ from src.router import v1_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from src.core.ee_hooks import register_ee_middlewares
-from src.security.access_lock import AccessLockMiddleware
 from src.routers.content_files import router as content_files_router
 from src.routers.local_content import router as local_content_router
 
@@ -52,10 +51,6 @@ app.add_middleware(
 
 # Gzip Middleware (will add brotli later)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-# Global private access lock. This must run at the API layer too, not only in
-# the Next.js proxy, so direct API/media requests are blocked while private.
-app.add_middleware(AccessLockMiddleware)
 
 # Register EE Middlewares if available
 register_ee_middlewares(app)

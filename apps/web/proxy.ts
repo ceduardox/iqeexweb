@@ -19,7 +19,7 @@ const INSTANCE_CACHE_TTL = 30 * 1000 // 30 seconds
 
 interface AccessLockInfo {
   enabled: boolean
-  allowed: boolean
+  allowed_ips: string[]
 }
 let _accessLockCache: { data: AccessLockInfo; ts: number } | null = null
 const ACCESS_LOCK_CACHE_TTL = 15 * 1000 // 15 seconds
@@ -44,33 +44,28 @@ async function getInstanceInfo(): Promise<InstanceInfo> {
   return { multi_org_enabled: false, default_org_slug: 'default', mode: 'oss' as const, frontend_domain: 'localhost:3000', top_domain: 'localhost' }
 }
 
-async function getAccessLockInfo(req: NextRequest): Promise<AccessLockInfo> {
+async function getAccessLockInfo(): Promise<AccessLockInfo> {
   if (_accessLockCache && Date.now() - _accessLockCache.ts < ACCESS_LOCK_CACHE_TTL) {
     return _accessLockCache.data
   }
 
   try {
     const apiUrl = getAPIUrl()
-    const requestIp = getRequestIp(req)
-    const res = await fetch(`${apiUrl}instance/access-lock`, {
-      headers: requestIp ? { 'x-learnhouse-client-ip': requestIp } : undefined,
-      signal: AbortSignal.timeout(2000),
-    })
+    const res = await fetch(`${apiUrl}instance/access-lock`, { signal: AbortSignal.timeout(2000) })
     if (res.ok) {
       const data = await res.json()
       const accessLock = {
         enabled: Boolean(data?.enabled),
-        allowed: data?.allowed !== false,
+        allowed_ips: Array.isArray(data?.allowed_ips) ? data.allowed_ips : [],
       }
       _accessLockCache = { data: accessLock, ts: Date.now() }
       return accessLock
     }
   } catch {
-    // If the last known state was private, keep blocking until the backend responds.
-    if (_accessLockCache?.data.enabled) return _accessLockCache.data
+    // Fail open if the backend is temporarily unavailable.
   }
 
-  return { enabled: false, allowed: true }
+  return { enabled: false, allowed_ips: [] }
 }
 
 function normalizeIp(ip: string | null | undefined): string {
@@ -92,21 +87,33 @@ function getRequestIp(req: NextRequest): string {
   )
 }
 
-function shouldPassThroughAfterAccessLock(pathname: string): boolean {
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/fonts') ||
-    pathname.startsWith('/umami') ||
-    pathname.startsWith('/examples') ||
-    pathname.startsWith('/embed') ||
-    pathname.startsWith('/monitoring')
-  ) {
-    return true
+function ipv4ToNumber(ip: string): number | null {
+  const parts = ip.split('.').map((part) => Number(part))
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return null
+  }
+  return (((parts[0] * 256 + parts[1]) * 256 + parts[2]) * 256 + parts[3]) >>> 0
+}
+
+function matchesAllowedIp(requestIp: string, allowedEntry: string): boolean {
+  const ip = normalizeIp(requestIp)
+  const entry = normalizeIp(allowedEntry)
+  if (!ip || !entry) return false
+  if (ip === entry) return true
+
+  if (entry.includes('/')) {
+    const [rangeIp, prefixText] = entry.split('/')
+    const prefix = Number(prefixText)
+    const rangeNumber = ipv4ToNumber(rangeIp)
+    const ipNumber = ipv4ToNumber(ip)
+    if (rangeNumber === null || ipNumber === null || !Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
+      return false
+    }
+    const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0
+    return (rangeNumber & mask) === (ipNumber & mask)
   }
 
-  const lastSegment = pathname.split('/').pop() || ''
-  return /^[\w-]+\.\w+$/.test(lastSegment)
+  return false
 }
 
 // Set instance info cookies on a response so client-side can read them synchronously
@@ -151,34 +158,44 @@ function isCustomDomain(fullhost: string | null, domain: string): boolean {
 export const config = {
   matcher: [
     /*
-     * Match everything except monitoring. The access lock must run before
-     * pages, Next assets, public files and frontend API routes.
+     * Match all paths except for:
+     * 1. /api routes
+     * 2. /_next (Next.js internals)
+     * 3. /fonts (inside /public)
+     * 4. Umami Analytics
+     * 4. /examples (inside /public)
+     * 5. all root files inside /public (e.g. /favicon.ico)
+     * 6. /embed (activity embeds)
      */
-    '/((?!monitoring).*)',
+    '/((?!api|_next|fonts|umami|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
+    '/sitemap.xml',
+    '/robots.txt',
+    '/payments/stripe/connect/oauth',
+    '/podcast/:path*/feed',
   ],
 }
 
 export default async function proxy(req: NextRequest) {
   // Fetch instance config from backend (cached 10 min)
   const instanceInfo = await getInstanceInfo()
-  const accessLock = await getAccessLockInfo(req)
+  const accessLock = await getAccessLockInfo()
   const hosting_mode = instanceInfo.multi_org_enabled ? 'multi' : 'single'
   const default_org = instanceInfo.default_org_slug
   const { pathname, search } = req.nextUrl
   const fullhost = req.headers ? req.headers.get('host') : ''
 
-  if (accessLock.enabled && !accessLock.allowed) {
-    return new NextResponse('', {
-      status: 403,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        'x-robots-tag': 'noindex, nofollow',
-      },
-    })
-  }
-
-  if (shouldPassThroughAfterAccessLock(pathname)) {
-    return NextResponse.next()
+  if (accessLock.enabled) {
+    const requestIp = getRequestIp(req)
+    const isAllowed = accessLock.allowed_ips.some((entry) => matchesAllowedIp(requestIp, entry))
+    if (!isAllowed) {
+      return new NextResponse('', {
+        status: 404,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'x-robots-tag': 'noindex, nofollow',
+        },
+      })
+    }
   }
 
   // Check both old and new cookie names for backward compatibility
