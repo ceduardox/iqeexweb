@@ -319,7 +319,11 @@ export const OrgMenu = (props: any) => {
             <SearchBar orgslug={orgslug} isMobile={true} />
           </div>
           <div className='w-full py-2'>
-            <MenuLinks orgslug={orgslug} variant="mobile" />
+            <MenuLinks
+              orgslug={orgslug}
+              variant="mobile"
+              onNavigate={() => setIsMenuOpen(false)}
+            />
           </div>
           <div className="border-t border-gray-200">
             <HeaderProfileBox />
