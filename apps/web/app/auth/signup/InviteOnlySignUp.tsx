@@ -87,7 +87,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
       whatsapp_country_code: 'BO',
       whatsapp_phone: '',
       country_code: 'BO',
-      region: 'La Paz',
+      region: '',
     },
     validate: (values) => validate(values, t),
     enableReinitialize: true,
@@ -187,6 +187,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
                 onBlur={formik.handleBlur}
                 value={formik.values.email}
                 type="email"
+                placeholder="tu@email.com"
                 required
               />
             </Form.Control>
@@ -204,6 +205,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
                   onBlur={formik.handleBlur}
                   value={formik.values.first_name}
                   type="text"
+                  placeholder="Nombre"
                 />
               </Form.Control>
             </FormField>
@@ -218,6 +220,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
                   onBlur={formik.handleBlur}
                   value={formik.values.last_name}
                   type="text"
+                  placeholder="Apellido"
                 />
               </Form.Control>
             </FormField>
@@ -235,6 +238,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
                 value={formik.values.password}
                 type="password"
                 autoComplete="new-password"
+                placeholder="Crea una contrasena segura"
                 required
               />
             </Form.Control>
@@ -252,6 +256,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
                 onBlur={formik.handleBlur}
                 value={formik.values.username}
                 type="text"
+                placeholder="usuario2026"
                 required
               />
             </Form.Control>

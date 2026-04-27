@@ -13,6 +13,7 @@ import {
   flagUrl,
   getCountry,
 } from '@/lib/latam-location'
+import { MapPin, Phone } from 'lucide-react'
 
 type SignupContactFieldsProps = {
   values: any
@@ -91,12 +92,21 @@ export default function SignupContactFields({
 
   useEffect(() => {
     if (!regions.includes(values.region)) {
-      setFieldValue('region', regions[0] || '', false)
+      setFieldValue('region', '', false)
     }
   }, [regions, setFieldValue, values.region])
 
   return (
-    <div className="space-y-4 rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+    <div className="overflow-hidden rounded-lg border border-indigo-100 bg-white shadow-sm">
+      <div className="h-1 bg-gradient-to-r from-indigo-600 via-violet-500 to-cyan-500" />
+      <div className="space-y-4 bg-gradient-to-br from-white to-indigo-50/35 p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+            <Phone size={16} />
+          </span>
+          Contacto y ubicacion
+        </div>
+
       <FormField name="whatsapp_phone">
         <FormLabelAndMessage
           label="WhatsApp"
@@ -179,21 +189,28 @@ export default function SignupContactFields({
             label="Provincia / departamento / estado"
             message={touched.region ? errors.region : undefined}
           />
-          <select
-            name="region"
-            value={values.region}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
-            required
-          >
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <select
+              name="region"
+              value={values.region}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className="h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+              required
+            >
+              <option value="" disabled>
+                Seleccionar
               </option>
-            ))}
-          </select>
+              {regions.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </div>
         </FormField>
+      </div>
       </div>
     </div>
   )
