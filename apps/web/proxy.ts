@@ -17,13 +17,6 @@ interface InstanceInfo {
 let _instanceCache: { data: InstanceInfo; ts: number } | null = null
 const INSTANCE_CACHE_TTL = 30 * 1000 // 30 seconds
 
-interface AccessLockInfo {
-  enabled: boolean
-  allowed_ips: string[]
-}
-let _accessLockCache: { data: AccessLockInfo; ts: number } | null = null
-const ACCESS_LOCK_CACHE_TTL = 15 * 1000 // 15 seconds
-
 async function getInstanceInfo(): Promise<InstanceInfo> {
   if (_instanceCache && Date.now() - _instanceCache.ts < INSTANCE_CACHE_TTL) {
     return _instanceCache.data
@@ -42,78 +35,6 @@ async function getInstanceInfo(): Promise<InstanceInfo> {
     // Backend unavailable — use defaults
   }
   return { multi_org_enabled: false, default_org_slug: 'default', mode: 'oss' as const, frontend_domain: 'localhost:3000', top_domain: 'localhost' }
-}
-
-async function getAccessLockInfo(): Promise<AccessLockInfo> {
-  if (_accessLockCache && Date.now() - _accessLockCache.ts < ACCESS_LOCK_CACHE_TTL) {
-    return _accessLockCache.data
-  }
-
-  try {
-    const apiUrl = getAPIUrl()
-    const res = await fetch(`${apiUrl}instance/access-lock`, { signal: AbortSignal.timeout(2000) })
-    if (res.ok) {
-      const data = await res.json()
-      const accessLock = {
-        enabled: Boolean(data?.enabled),
-        allowed_ips: Array.isArray(data?.allowed_ips) ? data.allowed_ips : [],
-      }
-      _accessLockCache = { data: accessLock, ts: Date.now() }
-      return accessLock
-    }
-  } catch {
-    // Fail open if the backend is temporarily unavailable.
-  }
-
-  return { enabled: false, allowed_ips: [] }
-}
-
-function normalizeIp(ip: string | null | undefined): string {
-  if (!ip) return ''
-  let value = ip.trim()
-  if (value.includes(',')) value = value.split(',')[0].trim()
-  if (value.startsWith('::ffff:')) value = value.slice(7)
-  if (value.startsWith('[') && value.includes(']')) value = value.slice(1, value.indexOf(']'))
-  if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(value)) value = value.split(':')[0]
-  return value
-}
-
-function getRequestIp(req: NextRequest): string {
-  return normalizeIp(
-    req.headers.get('cf-connecting-ip') ||
-      req.headers.get('x-real-ip') ||
-      req.headers.get('x-forwarded-for') ||
-      ''
-  )
-}
-
-function ipv4ToNumber(ip: string): number | null {
-  const parts = ip.split('.').map((part) => Number(part))
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
-    return null
-  }
-  return (((parts[0] * 256 + parts[1]) * 256 + parts[2]) * 256 + parts[3]) >>> 0
-}
-
-function matchesAllowedIp(requestIp: string, allowedEntry: string): boolean {
-  const ip = normalizeIp(requestIp)
-  const entry = normalizeIp(allowedEntry)
-  if (!ip || !entry) return false
-  if (ip === entry) return true
-
-  if (entry.includes('/')) {
-    const [rangeIp, prefixText] = entry.split('/')
-    const prefix = Number(prefixText)
-    const rangeNumber = ipv4ToNumber(rangeIp)
-    const ipNumber = ipv4ToNumber(ip)
-    if (rangeNumber === null || ipNumber === null || !Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
-      return false
-    }
-    const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0
-    return (rangeNumber & mask) === (ipNumber & mask)
-  }
-
-  return false
 }
 
 // Set instance info cookies on a response so client-side can read them synchronously
@@ -178,25 +99,10 @@ export const config = {
 export default async function proxy(req: NextRequest) {
   // Fetch instance config from backend (cached 10 min)
   const instanceInfo = await getInstanceInfo()
-  const accessLock = await getAccessLockInfo()
   const hosting_mode = instanceInfo.multi_org_enabled ? 'multi' : 'single'
   const default_org = instanceInfo.default_org_slug
   const { pathname, search } = req.nextUrl
   const fullhost = req.headers ? req.headers.get('host') : ''
-
-  if (accessLock.enabled) {
-    const requestIp = getRequestIp(req)
-    const isAllowed = accessLock.allowed_ips.some((entry) => matchesAllowedIp(requestIp, entry))
-    if (!isAllowed) {
-      return new NextResponse('', {
-        status: 404,
-        headers: {
-          'content-type': 'text/html; charset=utf-8',
-          'x-robots-tag': 'noindex, nofollow',
-        },
-      })
-    }
-  }
 
   // Check both old and new cookie names for backward compatibility
   const cookie_orgslug = req.cookies.get('learnhouse_orgslug')?.value || req.cookies.get('learnhouse_current_orgslug')?.value
