@@ -9,7 +9,7 @@ import FormLayout, {
   Textarea,
 } from '@components/Objects/StyledElements/Form/Form'
 import * as Form from '@radix-ui/react-form'
-import { AlertTriangle, Mail, User } from 'lucide-react'
+import { AlertTriangle, Mail, User, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { signup } from '@services/auth/auth'
 import { useOrg } from '@components/Contexts/OrgContext'
@@ -136,9 +136,12 @@ function OpenSignUpComponent() {
   return (
     <div className="m-auto w-full max-w-sm px-6 py-8 sm:py-0">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('auth.create_account')}</h1>
-        <p className="text-gray-500 mt-1">{t('auth.fill_in_details')}</p>
+      <div className="mb-5">
+        <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-200">
+          <UserPlus size={22} />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-950">{t('auth.create_account')}</h1>
+        <p className="mt-1 text-sm leading-6 text-gray-500">{t('auth.fill_in_details')}</p>
       </div>
 
       {/* Error/Success Messages */}
@@ -170,7 +173,9 @@ function OpenSignUpComponent() {
       )}
 
       {/* Signup Form Card */}
-      <div className="bg-white rounded-xl p-6 nice-shadow">
+      <div className="overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-sm">
+        <div className="h-1 bg-gradient-to-r from-indigo-600 via-violet-500 to-cyan-500" />
+        <div className="space-y-5 bg-gradient-to-br from-white via-white to-indigo-50/30 p-5">
         <FormLayout onSubmit={formik.handleSubmit}>
           <FormField name="email">
             <FormLabelAndMessage
@@ -284,7 +289,7 @@ function OpenSignUpComponent() {
 
           <div className="pt-2">
             <Form.Submit asChild>
-              <button className="w-full bg-black text-white font-semibold text-center py-2.5 rounded-lg hover:bg-gray-800 transition-colors">
+              <button className="w-full rounded-lg bg-indigo-600 py-2.5 text-center font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-md">
                 {isSubmitting ? t('common.loading') : t('auth.create_account')}
               </button>
             </Form.Submit>
@@ -294,21 +299,22 @@ function OpenSignUpComponent() {
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
+            <div className="w-full border-t border-indigo-100"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-3 bg-white text-gray-400">{t('common.or')}</span>
+            <span className="bg-white px-3 text-gray-400">{t('common.or')}</span>
           </div>
         </div>
 
         {/* Google Sign In */}
         <button
           onClick={handleGoogleSignIn}
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-100 bg-white py-2.5 font-medium text-gray-700 transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50/40"
         >
           <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="" className="w-4 h-4" />
           <span>{t('auth.sign_in_with_google')}</span>
         </button>
+        </div>
       </div>
 
       {/* Login Link */}
