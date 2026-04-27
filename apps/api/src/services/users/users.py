@@ -34,10 +34,45 @@ from src.db.users import (
     UserUpdatePassword,
 )
 from src.db.user_organizations import UserOrganization
+from src.security.rbac.constants import ADMIN_ROLE_ID
 from src.security.security import security_hash_password, security_verify_password
 from src.services.security.password_validation import validate_password_complexity
 from src.services.analytics.analytics import track
 from src.services.analytics import events as analytics_events
+
+
+def _can_admin_manage_user(
+    current_user: PublicUser | AnonymousUser,
+    target_user_id: int,
+    db_session: Session,
+) -> bool:
+    if isinstance(current_user, AnonymousUser) or current_user.id == 0:
+        return False
+
+    from src.security.superadmin import is_user_superadmin
+
+    if is_user_superadmin(current_user.id, db_session):
+        return True
+
+    admin_org_ids = set(
+        db_session.exec(
+            select(UserOrganization.org_id).where(
+                UserOrganization.user_id == current_user.id,
+                UserOrganization.role_id == ADMIN_ROLE_ID,
+            )
+        ).all()
+    )
+    if not admin_org_ids:
+        return False
+
+    target_org_ids = set(
+        db_session.exec(
+            select(UserOrganization.org_id).where(
+                UserOrganization.user_id == target_user_id,
+            )
+        ).all()
+    )
+    return bool(admin_org_ids.intersection(target_org_ids))
 
 
 async def create_user(
@@ -333,8 +368,13 @@ async def update_user(
             detail="User does not exist",
         )
 
-    # RBAC check
-    await rbac_check(request, current_user, "update", user.user_uuid, db_session)
+    if current_user.id != user.id and not _can_admin_manage_user(
+        current_user, user.id, db_session
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization admins can edit another user's profile",
+        )
 
     # Verifications
 
@@ -525,7 +565,11 @@ async def update_user_password_admin(
             detail="User does not exist",
         )
 
-    await rbac_check(request, current_user, "update", user.user_uuid, db_session)
+    if not _can_admin_manage_user(current_user, user.id, db_session):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only organization admins can reset another user's password",
+        )
 
     user.password = security_hash_password(new_password)
     user.update_date = str(datetime.now())

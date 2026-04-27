@@ -24,6 +24,8 @@ import {
 } from '@components/ui/select'
 
 const ITEMS_PER_PAGE = 10
+const ADMIN_ROLE_ID = 1
+const INSTRUCTOR_ROLE_ID = 3
 
 function formatShortDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
@@ -46,6 +48,19 @@ function OrgUsers() {
   const org = useOrg() as any
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token;
+  const currentOrgRole = useMemo(() => {
+    const roles = session?.data?.roles || []
+    return roles.find((role: any) => role?.org?.id === org?.id)?.role
+  }, [session?.data?.roles, org?.id])
+  const currentRoleName = (currentOrgRole?.name || '').toLowerCase()
+  const isSuperadmin = session?.data?.user?.is_superadmin === true
+  const isOrgAdmin = isSuperadmin || currentOrgRole?.id === ADMIN_ROLE_ID || currentOrgRole?.role_uuid === 'role_global_admin'
+  const isInstructorOnly = !isOrgAdmin && (
+    currentOrgRole?.id === INSTRUCTOR_ROLE_ID ||
+    currentOrgRole?.role_uuid === 'role_global_instructor' ||
+    currentRoleName.includes('instructor')
+  )
+  const canManageUsers = isOrgAdmin
 
   const [page, setPage] = useState(1)
   const [searchValue, setSearchValue] = useState('')
@@ -115,14 +130,14 @@ function OrgUsers() {
 
   // Fetch available roles
   const { data: roles } = useSWR(
-    org && access_token ? `${getAPIUrl()}roles/org/${org.id}` : null,
+    org && access_token && canManageUsers ? `${getAPIUrl()}roles/org/${org.id}` : null,
     (url) => swrFetcher(url, access_token),
     { revalidateOnFocus: false }
   )
 
   // Fetch available usergroups for filter dropdown
   const { data: usergroups } = useSWR(
-    org && access_token ? `${getAPIUrl()}usergroups/org/${org.id}?org_id=${org.id}` : null,
+    org && access_token && canManageUsers ? `${getAPIUrl()}usergroups/org/${org.id}?org_id=${org.id}` : null,
     (url) => swrFetcher(url, access_token),
     { revalidateOnFocus: false }
   )
@@ -138,6 +153,7 @@ function OrgUsers() {
   const hasActiveFilters = filterRole || filterStatus || filterGroupId
 
   const toggleSelectAll = useCallback(() => {
+    if (!canManageUsers) return
     setSelectedUserIds((prev) => {
       const next = new Set(prev)
       if (allVisibleSelected) {
@@ -147,9 +163,10 @@ function OrgUsers() {
       }
       return next
     })
-  }, [allVisibleSelected, visibleUserIds])
+  }, [allVisibleSelected, visibleUserIds, canManageUsers])
 
   const toggleSelectUser = useCallback((userId: number) => {
+    if (!canManageUsers) return
     setSelectedUserIds((prev) => {
       const next = new Set(prev)
       if (next.has(userId)) {
@@ -159,7 +176,7 @@ function OrgUsers() {
       }
       return next
     })
-  }, [])
+  }, [canManageUsers])
 
   const toggleSortOrder = () => {
     setSortOrder((prev) => prev === 'desc' ? 'asc' : 'desc')
@@ -176,6 +193,7 @@ function OrgUsers() {
   }
 
   const handleRoleChange = async (user_id: any, newRoleUuid: string) => {
+    if (!canManageUsers) return
     const toastId = toast.loading(t('dashboard.users.active_users.actions.updating_role') || 'Updating role...');
     const res = await updateUserRole(org.id, user_id, newRoleUuid, access_token)
     if (res.status === 200) {
@@ -187,6 +205,7 @@ function OrgUsers() {
   }
 
   const handleRemoveUser = async (user_id: any) => {
+    if (!canManageUsers) return
     const toastId = toast.loading(t('dashboard.users.active_users.actions.removing'));
     const res = await removeUserFromOrg(org.id, user_id, access_token)
     if (res.status === 200) {
@@ -198,6 +217,7 @@ function OrgUsers() {
   }
 
   const handleBatchRemove = async () => {
+    if (!canManageUsers) return
     const ids = Array.from(selectedUserIds)
     const toastId = toast.loading(`Removing ${ids.length} user(s)...`);
     const res = await removeUsersFromOrg(org.id, ids, access_token)
@@ -228,6 +248,7 @@ function OrgUsers() {
   }
 
   const openEditModal = (userRow: any) => {
+    if (!canManageUsers) return
     setEditingUser(userRow)
     setEditForm({
       username: userRow?.user?.username || '',
@@ -243,6 +264,7 @@ function OrgUsers() {
   }
 
   const handleSaveProfile = async () => {
+    if (!canManageUsers) return
     if (!editingUser?.user?.id) return
     if (!editForm.username.trim() || !editForm.email.trim()) {
       toast.error('Username y correo son obligatorios')
@@ -277,6 +299,7 @@ function OrgUsers() {
   }
 
   const handleResetPassword = async () => {
+    if (!canManageUsers) return
     if (!editingUser?.user?.id) return
     if (!passwordForm.new_password.trim()) {
       toast.error('Ingresa una nueva contrasena')
@@ -315,9 +338,13 @@ function OrgUsers() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <div className="flex-1">
-                <h1 className="font-bold text-xl text-gray-800">{t('dashboard.users.active_users.title')}</h1>
+                <h1 className="font-bold text-xl text-gray-800">
+                  {isInstructorOnly ? 'Mis alumnos' : t('dashboard.users.active_users.title')}
+                </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {t('dashboard.users.active_users.subtitle')}
+                  {isInstructorOnly
+                    ? 'Alumnos asignados a tus cursos. Esta vista es solo lectura.'
+                    : t('dashboard.users.active_users.subtitle')}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -343,20 +370,21 @@ function OrgUsers() {
               <Filter className="w-4 h-4 text-gray-400" />
               <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Filters</span>
 
-              {/* Role filter */}
-              <Select value={filterRole || 'all'} onValueChange={handleFilterChange(setFilterRole)}>
-                <SelectTrigger className="h-8 w-[140px] text-xs border-gray-200 bg-white">
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All roles</SelectItem>
-                  {roles?.map((role: any) => (
-                    <SelectItem key={role.id} value={role.id.toString()}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {canManageUsers && (
+                <Select value={filterRole || 'all'} onValueChange={handleFilterChange(setFilterRole)}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs border-gray-200 bg-white">
+                    <SelectValue placeholder="All roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All roles</SelectItem>
+                    {roles?.map((role: any) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Status filter */}
               <Select value={filterStatus || 'all'} onValueChange={handleFilterChange(setFilterStatus)}>
@@ -370,20 +398,21 @@ function OrgUsers() {
                 </SelectContent>
               </Select>
 
-              {/* Group filter */}
-              <Select value={filterGroupId || 'all'} onValueChange={handleFilterChange(setFilterGroupId)}>
-                <SelectTrigger className="h-8 w-[160px] text-xs border-gray-200 bg-white">
-                  <SelectValue placeholder="All groups" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All groups</SelectItem>
-                  {usergroups?.map((group: any) => (
-                    <SelectItem key={group.id} value={group.id.toString()}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {canManageUsers && (
+                <Select value={filterGroupId || 'all'} onValueChange={handleFilterChange(setFilterGroupId)}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs border-gray-200 bg-white">
+                    <SelectValue placeholder="All groups" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All groups</SelectItem>
+                    {usergroups?.map((group: any) => (
+                      <SelectItem key={group.id} value={group.id.toString()}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {hasActiveFilters && (
                 <button
@@ -397,7 +426,7 @@ function OrgUsers() {
             </div>
 
             {/* Selection Action Bar */}
-            {selectedUserIds.size > 0 && (
+            {canManageUsers && selectedUserIds.size > 0 && (
               <div className="flex items-center justify-between px-6 py-3 bg-indigo-50 border-b border-indigo-100">
                 <span className="text-sm font-medium text-indigo-700">
                   {selectedUserIds.size} user{selectedUserIds.size !== 1 ? 's' : ''} selected
@@ -464,14 +493,16 @@ function OrgUsers() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
-                      <th className="text-left px-6 py-3 w-10">
-                        <input
-                          type="checkbox"
-                          checked={allVisibleSelected}
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        />
-                      </th>
+                      {canManageUsers && (
+                        <th className="text-left px-6 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allVisibleSelected}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                        </th>
+                      )}
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
                         {t('dashboard.users.active_users.table.user') || 'User'}
                       </th>
@@ -497,9 +528,11 @@ function OrgUsers() {
                       <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
                         {t('dashboard.users.active_users.table.role') || 'Role'}
                       </th>
-                      <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
-                        {t('dashboard.users.active_users.table.actions') || 'Actions'}
-                      </th>
+                      {canManageUsers && (
+                        <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3">
+                          {t('dashboard.users.active_users.table.actions') || 'Actions'}
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -509,14 +542,16 @@ function OrgUsers() {
                         className={`hover:bg-gray-50 transition-colors ${selectedUserIds.has(user.user.id) ? 'bg-indigo-50/40' : ''}`}
                       >
                         {/* Checkbox */}
-                        <td className="px-6 py-4 w-10">
-                          <input
-                            type="checkbox"
-                            checked={selectedUserIds.has(user.user.id)}
-                            onChange={() => toggleSelectUser(user.user.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                        </td>
+                        {canManageUsers && (
+                          <td className="px-6 py-4 w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedUserIds.has(user.user.id)}
+                              onChange={() => toggleSelectUser(user.user.id)}
+                              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
 
                         {/* User Info */}
                         <td className="px-6 py-4">
@@ -612,11 +647,12 @@ function OrgUsers() {
 
                         {/* Role */}
                         <td className="px-6 py-4">
-                          <Select
-                            value={user.role.role_uuid}
-                            onValueChange={(newRoleUuid) => handleRoleChange(user.user.id, newRoleUuid)}
-                            disabled={!roles}
-                          >
+                          {canManageUsers ? (
+                            <Select
+                              value={user.role.role_uuid}
+                              onValueChange={(newRoleUuid) => handleRoleChange(user.user.id, newRoleUuid)}
+                              disabled={!roles}
+                            >
                             <SelectTrigger className={`h-8 w-fit px-3 text-xs font-semibold rounded-md nice-shadow transition-all border-0 ${
                               user.role.name.toLowerCase().includes('admin')
                                 ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
@@ -653,10 +689,29 @@ function OrgUsers() {
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                            </Select>
+                          ) : (
+                            <span className={`inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-md ${
+                              user.role.name.toLowerCase().includes('admin')
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : user.role.name.toLowerCase().includes('teacher') || user.role.name.toLowerCase().includes('instructor')
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-gray-50 text-gray-700'
+                            }`}>
+                              {user.role.name.toLowerCase().includes('admin') ? (
+                                <Crown className="w-3.5 h-3.5" />
+                              ) : user.role.name.toLowerCase().includes('teacher') || user.role.name.toLowerCase().includes('instructor') ? (
+                                <Shield className="w-3.5 h-3.5" />
+                              ) : (
+                                <User className="w-3.5 h-3.5" />
+                              )}
+                              {user.role.name}
+                            </span>
+                          )}
                         </td>
 
                         {/* Actions */}
+                        {canManageUsers && (
                         <td className="px-6 py-4 text-right">
                           <div className="inline-flex items-center gap-2">
                             <button
@@ -687,6 +742,7 @@ function OrgUsers() {
                           />
                           </div>
                         </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

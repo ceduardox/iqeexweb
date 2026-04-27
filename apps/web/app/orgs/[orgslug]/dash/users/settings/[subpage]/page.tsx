@@ -34,11 +34,19 @@ function UsersSettingsPage(props: { params: Promise<SettingsParams> }) {
   const [H1Label, setH1Label] = React.useState('')
   const [H2Label, setH2Label] = React.useState('')
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const currentOrgRole = React.useMemo(() => {
+    const roles = session?.data?.roles || []
+    return roles.find((role: any) => role?.org?.id === org?.id)?.role
+  }, [session?.data?.roles, org?.id])
+  const isOrgAdmin = session?.data?.user?.is_superadmin === true ||
+    currentOrgRole?.id === 1 ||
+    currentOrgRole?.role_uuid === 'role_global_admin'
+  const canManageUsers = isOrgAdmin
 
   function handleLabels() {
     if (params.subpage == 'users') {
-      setH1Label(t('dashboard.users.settings.pages.users.title'))
-      setH2Label(t('dashboard.users.settings.pages.users.subtitle'))
+      setH1Label(canManageUsers ? t('dashboard.users.settings.pages.users.title') : 'Mis alumnos')
+      setH2Label(canManageUsers ? t('dashboard.users.settings.pages.users.subtitle') : 'Usuarios asignados a tus cursos')
     }
     if (params.subpage == 'signups') {
       setH1Label(t('dashboard.users.settings.pages.signups.title'))
@@ -64,7 +72,7 @@ function UsersSettingsPage(props: { params: Promise<SettingsParams> }) {
 
   useEffect(() => {
     handleLabels()
-  }, [session, org, params.subpage, params, t])
+  }, [session, org, params.subpage, params, t, canManageUsers])
 
   if (isMobile) {
     // TODO: Work on a better mobile experience
@@ -116,101 +124,104 @@ function UsersSettingsPage(props: { params: Promise<SettingsParams> }) {
               </div>
             </div>
           </Link>
-          <Link
-            href={
-              getUriWithOrg(params.orgslug, '') + `/dash/users/settings/usergroups`
-            }
-          >
-            <div
-              className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'usergroups'
-                  ? 'border-b-4'
-                  : 'opacity-50'
-                } cursor-pointer`}
-            >
-              <div className="flex items-center space-x-2.5 mx-2">
-                <SquareUserRound size={16} />
-                <div className="flex items-center">
-                  {t('dashboard.users.settings.tabs.usergroups')}
-                  <PlanBadge currentPlan={currentPlan} requiredPlan="standard" />
+          {canManageUsers && (
+            <>
+              <Link
+                href={
+                  getUriWithOrg(params.orgslug, '') + `/dash/users/settings/usergroups`
+                }
+              >
+                <div
+                  className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'usergroups'
+                      ? 'border-b-4'
+                      : 'opacity-50'
+                    } cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-2.5 mx-2">
+                    <SquareUserRound size={16} />
+                    <div className="flex items-center">
+                      {t('dashboard.users.settings.tabs.usergroups')}
+                      <PlanBadge currentPlan={currentPlan} requiredPlan="standard" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Link>
-          <Link
-            href={
-              getUriWithOrg(params.orgslug, '') + `/dash/users/settings/roles`
-            }
-          >
-            <div
-              className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'roles'
-                  ? 'border-b-4'
-                  : 'opacity-50'
-                } cursor-pointer`}
-            >
-              <div className="flex items-center space-x-2.5 mx-2">
-                <Shield size={16} />
-                <div className="flex items-center">
-                  {t('dashboard.users.settings.tabs.roles')}
-                  <PlanBadge currentPlan={currentPlan} requiredPlan="pro" />
+              </Link>
+              <Link
+                href={
+                  getUriWithOrg(params.orgslug, '') + `/dash/users/settings/roles`
+                }
+              >
+                <div
+                  className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'roles'
+                      ? 'border-b-4'
+                      : 'opacity-50'
+                    } cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-2.5 mx-2">
+                    <Shield size={16} />
+                    <div className="flex items-center">
+                      {t('dashboard.users.settings.tabs.roles')}
+                      <PlanBadge currentPlan={currentPlan} requiredPlan="pro" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Link>
-          <Link
-            href={
-              getUriWithOrg(params.orgslug, '') + `/dash/users/settings/signups`
-            }
-          >
-            <div
-              className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'signups'
-                  ? 'border-b-4'
-                  : 'opacity-50'
-                } cursor-pointer`}
-            >
-              <div className="flex items-center space-x-2.5 mx-2">
-                <ScanEye size={16} />
-                <div>{t('dashboard.users.settings.tabs.signups')}</div>
-              </div>
-            </div>
-          </Link>
-          <Link
-            href={
-              getUriWithOrg(params.orgslug, '') + `/dash/users/settings/add`
-            }
-          >
-            <div
-              className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'add'
-                  ? 'border-b-4'
-                  : 'opacity-50'
-                } cursor-pointer`}
-            >
-              <div className="flex items-center space-x-2.5 mx-2">
-                <UserPlus size={16} />
-                <div>{t('dashboard.users.settings.tabs.add')}</div>
-              </div>
-            </div>
-          </Link>
-          
-          <Link
-            href={
-              getUriWithOrg(params.orgslug, '') + `/dash/users/settings/audit-logs`
-            }
-          >
-            <div
-              className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'audit-logs'
-                  ? 'border-b-4'
-                  : 'opacity-50'
-                } cursor-pointer`}
-            >
-              <div className="flex items-center space-x-2.5 mx-2">
-                <ShieldAlert size={16} />
-                <div className="flex items-center">
-                  {t('dashboard.users.settings.tabs.audit_logs')}
-                  <PlanBadge currentPlan={currentPlan} requiredPlan="enterprise" />
+              </Link>
+              <Link
+                href={
+                  getUriWithOrg(params.orgslug, '') + `/dash/users/settings/signups`
+                }
+              >
+                <div
+                  className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'signups'
+                      ? 'border-b-4'
+                      : 'opacity-50'
+                    } cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-2.5 mx-2">
+                    <ScanEye size={16} />
+                    <div>{t('dashboard.users.settings.tabs.signups')}</div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Link>
+              </Link>
+              <Link
+                href={
+                  getUriWithOrg(params.orgslug, '') + `/dash/users/settings/add`
+                }
+              >
+                <div
+                  className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'add'
+                      ? 'border-b-4'
+                      : 'opacity-50'
+                    } cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-2.5 mx-2">
+                    <UserPlus size={16} />
+                    <div>{t('dashboard.users.settings.tabs.add')}</div>
+                  </div>
+                </div>
+              </Link>
+              <Link
+                href={
+                  getUriWithOrg(params.orgslug, '') + `/dash/users/settings/audit-logs`
+                }
+              >
+                <div
+                  className={`py-2 w-fit text-center border-black transition-all ease-linear ${params.subpage.toString() === 'audit-logs'
+                      ? 'border-b-4'
+                      : 'opacity-50'
+                    } cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-2.5 mx-2">
+                    <ShieldAlert size={16} />
+                    <div className="flex items-center">
+                      {t('dashboard.users.settings.tabs.audit_logs')}
+                      <PlanBadge currentPlan={currentPlan} requiredPlan="enterprise" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </>
+          )}
           
         </div>
       </div>
@@ -222,11 +233,16 @@ function UsersSettingsPage(props: { params: Promise<SettingsParams> }) {
         className="flex-1 overflow-y-auto"
       >
         {params.subpage == 'users' ? <OrgUsers /> : ''}
-        {params.subpage == 'signups' ? <OrgAccess /> : ''}
-        {params.subpage == 'add' ? <OrgUsersAdd /> : ''}
-        {params.subpage == 'usergroups' ? <><div className="h-6"></div><OrgUserGroups /></> : ''}
-        {params.subpage == 'roles' ? <><div className="h-6"></div><OrgRoles /></> : ''}
-        {params.subpage == 'audit-logs' ? <><div className="h-6"></div><OrgAuditLogs /></> : ''}
+        {canManageUsers && params.subpage == 'signups' ? <OrgAccess /> : ''}
+        {canManageUsers && params.subpage == 'add' ? <OrgUsersAdd /> : ''}
+        {canManageUsers && params.subpage == 'usergroups' ? <><div className="h-6"></div><OrgUserGroups /></> : ''}
+        {canManageUsers && params.subpage == 'roles' ? <><div className="h-6"></div><OrgRoles /></> : ''}
+        {canManageUsers && params.subpage == 'audit-logs' ? <><div className="h-6"></div><OrgAuditLogs /></> : ''}
+        {!canManageUsers && params.subpage != 'users' ? (
+          <div className="m-10 rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-600">
+            Esta seccion solo esta disponible para administradores.
+          </div>
+        ) : ''}
       </motion.div>
     </div>
   )

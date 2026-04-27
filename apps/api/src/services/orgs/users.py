@@ -11,11 +11,14 @@ from src.services.orgs.invites import send_invite_email
 from src.services.email.utils import get_base_url_from_request
 from config.config import get_learnhouse_config
 from src.services.orgs.orgs import rbac_check
-from src.security.rbac.constants import ADMIN_ROLE_ID
+from src.security.rbac.constants import ADMIN_ROLE_ID, MAINTAINER_ROLE_ID
 from src.security.org_auth import is_org_member
+from src.db.courses.courses import Course
+from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipStatusEnum
 from src.db.roles import Role, RoleRead
 from src.db.users import AnonymousUser, PublicUser, User, UserRead
 from src.db.user_organizations import UserOrganization
+from src.db.usergroup_resources import UserGroupResource
 from src.db.usergroup_user import UserGroupUser
 from src.db.usergroups import UserGroup, UserGroupRead
 from src.db.organizations import (
@@ -23,6 +26,96 @@ from src.db.organizations import (
     OrganizationRead,
     OrganizationUser,
 )
+
+INSTRUCTOR_ROLE_ID = 3
+
+
+def _is_superadmin(user_id: int, db_session: Session) -> bool:
+    from src.security.superadmin import is_user_superadmin
+
+    return is_user_superadmin(user_id, db_session)
+
+
+def _get_org_membership(
+    user_id: int,
+    org_id: int,
+    db_session: Session,
+) -> UserOrganization | None:
+    return db_session.exec(
+        select(UserOrganization).where(
+            UserOrganization.user_id == user_id,
+            UserOrganization.org_id == org_id,
+        )
+    ).first()
+
+
+def _is_instructor_membership(
+    membership: UserOrganization | None,
+    db_session: Session,
+) -> bool:
+    if not membership:
+        return False
+    if membership.role_id == INSTRUCTOR_ROLE_ID:
+        return True
+    role = db_session.get(Role, membership.role_id)
+    return bool(role and "instructor" in (role.name or "").lower())
+
+
+def _require_org_admin(
+    current_user: PublicUser | AnonymousUser,
+    org: Organization,
+    db_session: Session,
+):
+    if isinstance(current_user, AnonymousUser):
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    if _is_superadmin(current_user.id, db_session):
+        return
+
+    membership = _get_org_membership(current_user.id, org.id, db_session)
+    if not membership or membership.role_id != ADMIN_ROLE_ID:
+        raise HTTPException(
+            status_code=403,
+            detail="Only organization admins can manage users and roles",
+        )
+
+
+def _get_instructor_student_ids(
+    org_id: int,
+    instructor_id: int,
+    db_session: Session,
+) -> set[int]:
+    course_uuids = db_session.exec(
+        select(Course.course_uuid)
+        .join(ResourceAuthor, ResourceAuthor.resource_uuid == Course.course_uuid)
+        .where(
+            Course.org_id == org_id,
+            ResourceAuthor.user_id == instructor_id,
+            ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE,
+        )
+    ).all()
+
+    if not course_uuids:
+        return set()
+
+    usergroup_ids = db_session.exec(
+        select(UserGroupResource.usergroup_id).where(
+            UserGroupResource.org_id == org_id,
+            UserGroupResource.resource_uuid.in_(course_uuids),  # type: ignore
+        )
+    ).all()
+
+    if not usergroup_ids:
+        return set()
+
+    return set(
+        db_session.exec(
+            select(UserGroupUser.user_id).where(
+                UserGroupUser.org_id == org_id,
+                UserGroupUser.usergroup_id.in_(usergroup_ids),  # type: ignore
+            )
+        ).all()
+    )
 
 
 async def get_organization_users(
@@ -70,17 +163,31 @@ async def get_organization_users(
             detail="Authentication required",
         )
 
+    is_superadmin = _is_superadmin(current_user.id, db_session)
+
     # Membership check (superadmins bypass)
-    if not is_org_member(current_user.id, org.id, db_session):
+    if not is_superadmin and not is_org_member(current_user.id, org.id, db_session):
         raise HTTPException(
             status_code=403,
             detail="You must be a member of this organization to view its members",
         )
 
-    # RBAC check (for additional permission verification) — skip for superadmins
-    from src.security.superadmin import is_user_superadmin
-    if not is_user_superadmin(current_user.id, db_session):
-        await rbac_check(request, org.org_uuid, current_user, "read", db_session)
+    membership = _get_org_membership(current_user.id, org.id, db_session)
+    is_admin = bool(membership and membership.role_id == ADMIN_ROLE_ID)
+    is_maintainer = bool(membership and membership.role_id == MAINTAINER_ROLE_ID)
+    is_instructor = _is_instructor_membership(membership, db_session)
+
+    if not (is_superadmin or is_admin or is_maintainer or is_instructor):
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to view organization users",
+        )
+
+    instructor_student_ids: set[int] | None = None
+    if is_instructor and not (is_superadmin or is_admin or is_maintainer):
+        instructor_student_ids = _get_instructor_student_ids(
+            org.id, current_user.id, db_session
+        )
 
     # Base query for users in the organization
     base_statement = (
@@ -89,6 +196,16 @@ async def get_organization_users(
         .join(Organization)
         .where(Organization.id == org_id)
     )
+
+    if instructor_student_ids is not None:
+        if not instructor_student_ids:
+            return {
+                "items": [],
+                "total": 0,
+                "page": page,
+                "limit": limit,
+            }
+        base_statement = base_statement.where(User.id.in_(instructor_student_ids))  # type: ignore
 
     # Apply search filter if provided
     if search:
@@ -134,6 +251,8 @@ async def get_organization_users(
                 | (User.username.ilike(search_pattern))
                 | (User.email.ilike(search_pattern))
             )
+        if instructor_student_ids is not None:
+            in_group_count_stmt = in_group_count_stmt.where(User.id.in_(instructor_student_ids))  # type: ignore
         in_group_total = db_session.exec(in_group_count_stmt).one()
 
     # Apply usergroup membership filter
@@ -262,8 +381,7 @@ async def remove_user_from_org(
             detail="Organization not found",
         )
 
-    # RBAC check
-    await rbac_check(request, org.org_uuid, current_user, "delete", db_session)
+    _require_org_admin(current_user, org, db_session)
 
     statement = select(UserOrganization).where(
         UserOrganization.user_id == user_id, UserOrganization.org_id == org.id
@@ -320,8 +438,7 @@ async def remove_batch_users_from_org(
             detail="Organization not found",
         )
 
-    # RBAC check
-    await rbac_check(request, org.org_uuid, current_user, "delete", db_session)
+    _require_org_admin(current_user, org, db_session)
 
     # Get all admins for last-admin protection
     admin_statement = select(UserOrganization).where(
@@ -394,8 +511,7 @@ async def update_user_role(
             detail="Organization not found",
         )
 
-    # RBAC check
-    await rbac_check(request, org.org_uuid, current_user, "update", db_session)
+    _require_org_admin(current_user, org, db_session)
 
     # Check if user is the last admin and if the new role is not admin
     statement = select(UserOrganization).where(
