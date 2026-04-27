@@ -16,6 +16,7 @@ EXEMPT_PATHS = {
     "/api/v1/health",
     "/api/v1/instance/info",
     "/api/v1/instance/access-lock",
+    "/api/v1/instance/access-check",
     "/api/v1/ee/superadmin/status",
     "/api/v1/ee/superadmin/access-lock",
     "/api/v1/users/session",
