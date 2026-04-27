@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session, select
 from src.db.organizations import Organization
 from src.core.events.database import get_db_session
@@ -65,17 +65,3 @@ async def get_instance_access_lock(
         "enabled": access_lock["enabled"],
         "allowed": is_ip_allowed(access_lock, request_ip),
     }
-
-
-@router.get("/access-check")
-async def check_instance_access_lock(
-    request: Request,
-    db_session: Session = Depends(get_db_session),
-):
-    """Small endpoint for Nginx auth_request to protect the static website."""
-    access_lock = get_access_lock(db_session)
-    client_host = request.client.host if request.client else None
-    request_ip = get_request_ip_from_headers(request.headers, client_host)
-    if is_ip_allowed(access_lock, request_ip):
-        return Response(status_code=204)
-    return Response(status_code=403, content=b"")
