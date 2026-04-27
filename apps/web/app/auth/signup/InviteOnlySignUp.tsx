@@ -17,6 +17,7 @@ import { signIn } from '@components/Contexts/AuthContext'
 import { getLEARNHOUSE_TOP_DOMAIN_VAL } from '@services/config/config'
 import { useTranslation } from 'react-i18next'
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@components/Auth/PasswordStrengthIndicator'
+import SignupContactFields, { buildSignupContactDetails } from './SignupContactFields'
 
 const validate = (values: any, t: any) => {
   const errors: any = {}
@@ -40,6 +41,20 @@ const validate = (values: any, t: any) => {
     errors.username = t('validation.required')
   } else if (values.username.length < 4) {
     errors.username = t('validation.username_min_length')
+  }
+
+  if (!values.whatsapp_phone) {
+    errors.whatsapp_phone = t('validation.required')
+  } else if (String(values.whatsapp_phone).replace(/\D/g, '').length < 7) {
+    errors.whatsapp_phone = 'Ingresa un numero valido'
+  }
+
+  if (!values.country_code) {
+    errors.country_code = t('validation.required')
+  }
+
+  if (!values.region) {
+    errors.region = t('validation.required')
   }
 
   // Bio is optional - no validation required
@@ -69,6 +84,10 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
       bio: '',
       first_name: '',
       last_name: '',
+      whatsapp_country_code: 'BO',
+      whatsapp_phone: '',
+      country_code: 'BO',
+      region: 'La Paz',
     },
     validate: (values) => validate(values, t),
     enableReinitialize: true,
@@ -77,7 +96,10 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
       setMessage('')
       setShouldVerifyEmail(false)
       setIsSubmitting(true)
-      let res = await signUpWithInviteCode(values, props.inviteCode)
+      let res = await signUpWithInviteCode({
+        ...values,
+        details: buildSignupContactDetails(values),
+      }, props.inviteCode)
       let message = await res.json()
       if (res.status == 200) {
         setMessage(t('auth.account_created_success'))
@@ -234,6 +256,15 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
               />
             </Form.Control>
           </FormField>
+
+          <SignupContactFields
+            values={formik.values}
+            touched={formik.touched}
+            errors={formik.errors}
+            handleBlur={formik.handleBlur}
+            handleChange={formik.handleChange}
+            setFieldValue={formik.setFieldValue}
+          />
 
           <FormField name="bio">
             <FormLabelAndMessage

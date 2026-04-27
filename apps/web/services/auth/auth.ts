@@ -210,6 +210,15 @@ interface NewAccountBody {
   password: string
   org_slug: string
   org_id: string
+  first_name?: string
+  last_name?: string
+  bio?: string
+  details?: Record<string, any>
+  profile?: Record<string, any>
+  whatsapp_country_code?: string
+  whatsapp_phone?: string
+  country_code?: string
+  region?: string
 }
 
 export async function signup(body: NewAccountBody): Promise<any> {
