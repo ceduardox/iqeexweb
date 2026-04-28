@@ -1764,6 +1764,7 @@
         const canvas = root.querySelector('#neural-canvas');
         const ctx = canvas.getContext('2d');
         let width, height, particles = [], mouse = {x:0,y:0}, isActivated = false;
+        let hasAutoActivated = false;
         const isMobileViewport = window.matchMedia('(max-width: 980px)').matches;
         const frameBudgetMs = isMobileViewport ? (1000 / 30) : (1000 / 60);
         let lastFrameTs = 0;
@@ -2036,6 +2037,20 @@
             );
           }
         }
+        function autoPressBrain(){
+          if (hasAutoActivated || isActivated) return;
+          hasAutoActivated = true;
+          if (!hasBootedHeavyFx) {
+            hasBootedHeavyFx = true;
+            initParticles();
+          }
+          gsap.fromTo(
+            centerBrain,
+            { scale: 1 },
+            { scale: .92, duration: .12, yoyo: true, repeat: 1, ease: 'power2.inOut', onComplete: () => gsap.set(centerBrain, { clearProps: 'scale' }) }
+          );
+          setTimeout(activateSystem, 180);
+        }
         function setViewportActive(active){
           if (active) {
             bootViewportFx();
@@ -2061,11 +2076,15 @@
           const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
               setViewportActive(entry.isIntersecting && entry.intersectionRatio > 0.08);
+              if (entry.isIntersecting && entry.intersectionRatio > 0.32) {
+                setTimeout(autoPressBrain, 650);
+              }
             });
-          }, { threshold: [0, 0.08, 0.2], rootMargin: '120px 0px' });
+          }, { threshold: [0, 0.08, 0.2, 0.32, 0.5], rootMargin: '120px 0px' });
           observer.observe(root);
         } else {
           setViewportActive(true);
+          setTimeout(autoPressBrain, 900);
         }
       })();
       </script>
@@ -4255,9 +4274,6 @@
 </body>
 
 </html>
-
-
-
 
 
 
