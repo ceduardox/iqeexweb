@@ -55,6 +55,29 @@ class ReadingMaterialRead(ReadingMaterialBase):
     update_date: str
 
 
+class ReadingAIGenerateRequest(SQLModel):
+    title: Optional[str] = ""
+    program_name: str
+    age_min: int = 0
+    age_max: int = 99
+    prompt: Optional[str] = ""
+    source_text: Optional[str] = ""
+    target_words: int = 500
+    question_count: int = 6
+
+
+class ReadingAIGenerateRead(SQLModel):
+    title: str
+    description: Optional[str] = ""
+    program_name: str
+    age_min: int
+    age_max: int
+    text_content: str
+    questions: list[dict] = Field(default_factory=list)
+    estimated_reading_seconds: int = 0
+    source: str = "ai"
+
+
 class ReadingAttemptBase(SQLModel):
     org_id: int = Field(sa_column=Column(Integer, ForeignKey("organization.id", ondelete="CASCADE"), index=True))
     material_id: int = Field(sa_column=Column(Integer, ForeignKey("readingmaterial.id", ondelete="CASCADE"), index=True))

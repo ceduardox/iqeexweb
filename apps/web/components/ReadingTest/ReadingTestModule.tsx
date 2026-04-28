@@ -10,16 +10,21 @@ import {
   Clock3,
   FileText,
   LineChart,
+  Loader2,
+  Sparkles,
   Upload,
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
   createReadingAttempt,
   createReadingMaterial,
+  generateReadingMaterial,
+  generateReadingMaterialFromPdf,
   getReadingAttempts,
   getReadingMaterials,
   ReadingAttempt,
   ReadingMaterial,
+  ReadingQuestion,
 } from '@services/reading-test/reading-test'
 
 type ReadingTestModuleProps = {
@@ -33,7 +38,7 @@ type View = 'material' | 'test' | 'reports'
 const sampleText =
   'La lectura eficiente no consiste en recorrer palabras con prisa, sino en construir significado con control. Un lector competente anticipa ideas, identifica relaciones y separa informacion central de detalles secundarios. Cuando la atencion se mantiene estable, la memoria de trabajo puede organizar mejor los conceptos y recuperar despues lo aprendido. Por eso, una prueba de lectura debe medir velocidad, pero tambien comprension y retencion. Si solo se mide rapidez, el alumno puede sacrificar precision. Si solo se mide comprension, no se observa el esfuerzo temporal. La combinacion de ambos datos permite detectar si el estudiante necesita entrenar enfoque, amplitud visual, vocabulario, memoria o estrategias de resumen.'
 
-const questions = [
+const defaultQuestions: ReadingQuestion[] = [
   {
     q: 'Cual es la idea principal?',
     a: 'La lectura debe medir velocidad, comprension y retencion.',
@@ -118,7 +123,13 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const [ageMin, setAgeMin] = useState(12)
   const [ageMax, setAgeMax] = useState(14)
   const [fileName, setFileName] = useState('Ningun PDF seleccionado')
+  const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null)
   const [readingText, setReadingText] = useState(sampleText)
+  const [readingQuestions, setReadingQuestions] = useState<ReadingQuestion[]>(defaultQuestions)
+  const [aiPrompt, setAiPrompt] = useState('Genera una lectura clara con preguntas literales e inferenciales.')
+  const [targetWords, setTargetWords] = useState(500)
+  const [questionCount, setQuestionCount] = useState(6)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [status, setStatus] = useState('Prepara la lectura para comenzar.')
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -160,6 +171,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
     setAgeMax(material.age_max)
     setFileName(material.pdf_name || 'PDF registrado')
     setReadingText(material.text_content)
+    setReadingQuestions(material.questions?.length ? material.questions : defaultQuestions)
   }, [materials, selectedMaterialId])
 
   const normalizedAttempts = apiAttempts?.length
@@ -179,7 +191,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const bestWpm = Math.max(...normalizedAttempts.map((item) => item.wpm))
   const canManageMaterial = role !== 'student'
 
-  async function saveMaterial() {
+  async function saveMaterial(materialStatus: 'draft' | 'published' = 'published') {
     if (!canManageMaterial) return
     try {
       const material = await createReadingMaterial(
@@ -192,16 +204,67 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
           age_max: ageMax,
           pdf_name: fileName === 'Ningun PDF seleccionado' ? '' : fileName,
           text_content: readingText,
-          questions,
-          status: 'published',
+          questions: readingQuestions,
+          status: materialStatus,
         },
         token
       )
       setSelectedMaterialId(material.id)
       await mutate(materialsKey)
-      toast.success('Material de lectura guardado')
+      toast.success(materialStatus === 'published' ? 'Material publicado' : 'Borrador guardado')
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo guardar el material')
+    }
+  }
+
+  async function generateWithAI() {
+    if (!canManageMaterial || isGenerating) return
+    setIsGenerating(true)
+    setStatus('La IA esta generando la lectura y el test.')
+    try {
+      const generated = selectedPdfFile
+        ? await generateReadingMaterialFromPdf(
+            orgId,
+            {
+              file: selectedPdfFile,
+              title,
+              program_name: program,
+              age_min: ageMin,
+              age_max: ageMax,
+              prompt: aiPrompt,
+              target_words: targetWords,
+              question_count: questionCount,
+            },
+            token
+          )
+        : await generateReadingMaterial(
+            orgId,
+            {
+              title,
+              program_name: program,
+              age_min: ageMin,
+              age_max: ageMax,
+              prompt: aiPrompt,
+              source_text: readingText,
+              target_words: targetWords,
+              question_count: questionCount,
+            },
+            token
+          )
+      setTitle(generated.title)
+      setProgram(generated.program_name)
+      setAgeMin(generated.age_min)
+      setAgeMax(generated.age_max)
+      setReadingText(generated.text_content)
+      setReadingQuestions(generated.questions?.length ? generated.questions : defaultQuestions)
+      setSelectedMaterialId(null)
+      setStatus('Borrador generado con IA. Revisalo y publicalo cuando este listo.')
+      toast.success('Test generado con IA')
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo generar con IA')
+      setStatus('No se pudo generar con IA. Revisa la configuracion o intenta con mas texto.')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -230,10 +293,10 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   }
 
   async function gradeTest() {
-    const correct = questions.reduce((total, item, index) => total + (answers[index] === item.a ? 1 : 0), 0)
+    const correct = readingQuestions.reduce((total, item, index) => total + (answers[index] === item.a ? 1 : 0), 0)
     const duration = Math.max(1, elapsed || 1)
     const wpm = Math.round(wordCount / (duration / 60))
-    const comp = Math.round((correct / questions.length) * 100)
+    const comp = Math.round((correct / readingQuestions.length) * 100)
     const timeAdjustment = calculateTimeAdjustment(wordCount, duration, ageMin, ageMax)
     const adjusted = Math.round(comp * timeAdjustment.factor)
     const ret = Math.max(0, Math.min(100, Math.round(adjusted * 0.76 + (Math.min(wpm, timeAdjustment.maxWpm) / timeAdjustment.maxWpm) * 24)))
@@ -260,7 +323,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                 minimum_seconds: timeAdjustment.minimumSeconds,
                 expected_max_wpm: timeAdjustment.maxWpm,
               },
-              ...questions.map((item, index) => ({
+              ...readingQuestions.map((item, index) => ({
                 question: item.q,
                 answer: answers[index] || '',
                 correct: answers[index] === item.a,
@@ -364,10 +427,10 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
 
         <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
           {[
-            ['1. PDF', 'Admin/profesor carga material.'],
-            ['2. Programa', 'Se asigna por edad y nivel.'],
-            ['3. Intento', 'Alumno lee y responde.'],
-            ['4. Reporte', 'Chart, historial y recomendacion.'],
+            ['1. PDF o IA', 'Admin/profesor carga o genera material.'],
+            ['2. Revision', 'La IA propone texto y preguntas.'],
+            ['3. Publicacion', 'Se asigna por edad y programa.'],
+            ['4. Reporte', 'Intentos, progreso y recomendacion.'],
           ].map(([title, description]) => (
             <div key={title} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="font-semibold text-slate-900">{title}</div>
@@ -399,7 +462,11 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   type="file"
                   accept="application/pdf"
                   className="hidden"
-                  onChange={(event) => setFileName(event.target.files?.[0]?.name || 'Ningun PDF seleccionado')}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null
+                    setSelectedPdfFile(file)
+                    setFileName(file?.name || 'Ningun PDF seleccionado')
+                  }}
                 />
               </label>
               <div className="mt-3 grid gap-3">
@@ -417,6 +484,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                         setAgeMax(material.age_max)
                         setFileName(material.pdf_name || 'PDF registrado')
                         setReadingText(material.text_content)
+                        setReadingQuestions(material.questions?.length ? material.questions : defaultQuestions)
                       }
                     }}
                     className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
@@ -475,6 +543,53 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     />
                   </label>
                 </div>
+                <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-violet-900">
+                    <Sparkles size={16} />
+                    Generar test con IA
+                  </div>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                    Instrucciones
+                    <textarea
+                      disabled={!canManageMaterial || isGenerating}
+                      value={aiPrompt}
+                      onChange={(event) => setAiPrompt(event.target.value)}
+                      rows={3}
+                      className="rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm leading-5 outline-none focus:border-violet-400"
+                      placeholder="Tema, objetivo o enfoque de preguntas..."
+                    />
+                  </label>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                      Palabras
+                      <input
+                        disabled={!canManageMaterial || isGenerating}
+                        type="number"
+                        value={targetWords}
+                        onChange={(event) => setTargetWords(Number(event.target.value))}
+                        className="rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                      Preguntas
+                      <input
+                        disabled={!canManageMaterial || isGenerating}
+                        type="number"
+                        value={questionCount}
+                        onChange={(event) => setQuestionCount(Number(event.target.value))}
+                        className="rounded-lg border border-violet-100 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400"
+                      />
+                    </label>
+                  </div>
+                  <button
+                    onClick={generateWithAI}
+                    disabled={!canManageMaterial || isGenerating}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                    {selectedPdfFile ? 'Generar desde PDF' : 'Generar desde texto'}
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -494,17 +609,26 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
               />
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-slate-500">
-                  {wordCount} palabras | {program} | edades {ageMin}-{ageMax}
+                  {wordCount} palabras | {readingQuestions.length} preguntas | {program} | edades {ageMin}-{ageMax}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {canManageMaterial && (
-                    <button
-                      onClick={saveMaterial}
-                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
-                    >
-                      <Check size={16} />
-                      Guardar material
-                    </button>
+                    <>
+                      <button
+                        onClick={() => saveMaterial('draft')}
+                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50"
+                      >
+                        <Check size={16} />
+                        Guardar borrador
+                      </button>
+                      <button
+                        onClick={() => saveMaterial('published')}
+                        className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                      >
+                        <Check size={16} />
+                        Publicar
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={prepareTest}
@@ -513,6 +637,24 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     <Check size={16} />
                     Preparar prueba
                   </button>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold text-slate-900">Preguntas del test</div>
+                  <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
+                    Revisar antes de publicar
+                  </span>
+                </div>
+                <div className="grid gap-2">
+                  {readingQuestions.map((question, index) => (
+                    <div key={`${question.q}-${index}`} className="rounded-lg bg-white p-3 text-sm ring-1 ring-slate-100">
+                      <div className="font-semibold text-slate-900">
+                        {index + 1}. {question.q}
+                      </div>
+                      <div className="mt-1 text-xs text-emerald-700">Correcta: {question.a}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
@@ -540,7 +682,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
               </div>
             ) : (
               <div className="space-y-3">
-                {questions.map((question, index) => (
+                {readingQuestions.map((question, index) => (
                   <div key={question.q} className="rounded-lg border border-slate-100 bg-slate-50 p-4">
                     <div className="text-sm font-semibold text-slate-900">
                       {index + 1}. {question.q}

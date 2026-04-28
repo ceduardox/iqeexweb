@@ -1,10 +1,16 @@
+import json
+import logging
 from datetime import datetime
 from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from google.genai.types import GenerateContentConfig
+
 from src.db.reading_tests import (
+    ReadingAIGenerateRead,
+    ReadingAIGenerateRequest,
     ReadingAttempt,
     ReadingAttemptCreate,
     ReadingAttemptRead,
@@ -16,7 +22,11 @@ from src.db.reading_tests import (
 from src.db.roles import Role
 from src.db.user_organizations import UserOrganization
 from src.db.users import PublicUser, User, UserRead
+from src.services.ai.base import get_gemini_client
 from src.security.rbac.constants import ADMIN_OR_MAINTAINER_ROLE_IDS
+
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> str:
@@ -75,6 +85,141 @@ def _attempt_read(attempt: ReadingAttempt, db_session: Session) -> ReadingAttemp
         **attempt.model_dump(),
         material=_material_read(material, db_session) if material else None,
         student=_user_read(attempt.student_user_id, db_session),
+    )
+
+
+def _extract_json_object(text: str) -> dict:
+    cleaned = text.strip()
+    if "```json" in cleaned:
+        start = cleaned.find("```json") + 7
+        end = cleaned.find("```", start)
+        cleaned = cleaned[start:end].strip() if end != -1 else cleaned[start:].strip()
+    elif "```" in cleaned:
+        start = cleaned.find("```") + 3
+        end = cleaned.find("```", start)
+        cleaned = cleaned[start:end].strip() if end != -1 else cleaned[start:].strip()
+    if not cleaned.startswith("{"):
+        start = cleaned.find("{")
+        if start != -1:
+            cleaned = cleaned[start:]
+    if not cleaned.endswith("}"):
+        end = cleaned.rfind("}")
+        if end != -1:
+            cleaned = cleaned[: end + 1]
+    return json.loads(cleaned)
+
+
+def _normalize_questions(raw_questions: list[dict], desired_count: int) -> list[dict]:
+    questions: list[dict] = []
+    for item in raw_questions[: max(1, min(desired_count, 10))]:
+        q = str(item.get("q") or item.get("question") or "").strip()
+        a = str(item.get("a") or item.get("answer") or "").strip()
+        choices = item.get("choices") or item.get("options") or []
+        if not q or not a or not isinstance(choices, list):
+            continue
+        normalized_choices = [str(choice).strip() for choice in choices if str(choice).strip()]
+        if a not in normalized_choices:
+            normalized_choices.insert(0, a)
+        normalized_choices = normalized_choices[:4]
+        if len(normalized_choices) < 3:
+            continue
+        questions.append(
+            {
+                "q": q,
+                "a": a,
+                "choices": normalized_choices,
+                "type": str(item.get("type") or "comprension"),
+                "difficulty": str(item.get("difficulty") or "medio"),
+            }
+        )
+    return questions
+
+
+def _estimated_seconds(words: int, age_min: int, age_max: int) -> int:
+    age = (age_min + age_max) / 2
+    if age <= 10:
+        wpm = 120
+    elif age <= 13:
+        wpm = 150
+    elif age <= 16:
+        wpm = 180
+    else:
+        wpm = 220
+    return max(30, round((max(1, words) / wpm) * 60))
+
+
+async def generate_ai_material(
+    org_id: int,
+    payload: ReadingAIGenerateRequest,
+    current_user: PublicUser,
+    db_session: Session,
+) -> ReadingAIGenerateRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    if not _is_instructor(org_id, current_user.id, db_session):
+        raise HTTPException(status_code=403, detail="Only admins or instructors can generate reading tests")
+
+    target_words = max(120, min(payload.target_words or 500, 1800))
+    question_count = max(3, min(payload.question_count or 6, 10))
+    source_text = (payload.source_text or "").strip()
+    prompt = (payload.prompt or "").strip()
+    if not source_text and not prompt:
+        raise HTTPException(status_code=400, detail="Add source text, a PDF, or instructions for the AI")
+
+    instructions = f"""
+Genera un test de lectura en espanol para el programa "{payload.program_name}" y edades {payload.age_min}-{payload.age_max}.
+Objetivo: crear material pedagogico claro, profesional y evaluable.
+Extension aproximada: {target_words} palabras.
+Cantidad de preguntas: {question_count}.
+Instrucciones del instructor: {prompt or "Usa el texto fuente como base y manten el nivel adecuado."}
+
+Si hay texto fuente, puedes resumirlo, ordenarlo y adaptarlo sin cambiar la idea central:
+{source_text[:12000]}
+
+Devuelve SOLO JSON valido con esta forma exacta:
+{{
+  "title": "titulo corto",
+  "description": "objetivo del ejercicio",
+  "text_content": "texto completo para que lea el alumno",
+  "questions": [
+    {{
+      "q": "pregunta",
+      "a": "respuesta correcta exacta",
+      "choices": ["opcion correcta", "distractor", "distractor"],
+      "type": "literal|inferencial|vocabulario|idea principal",
+      "difficulty": "facil|medio|avanzado"
+    }}
+  ]
+}}
+"""
+
+    try:
+        client = get_gemini_client()
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[{"role": "user", "parts": [{"text": instructions}]}],
+            config=GenerateContentConfig(response_mime_type="application/json", temperature=0.45),
+        )
+        data = _extract_json_object(response.text or "")
+    except Exception as exc:
+        logger.exception("Failed to generate reading test with AI")
+        raise HTTPException(status_code=503, detail=f"AI generation failed: {str(exc)}")
+
+    text_content = str(data.get("text_content") or "").strip()
+    questions = _normalize_questions(data.get("questions") or [], question_count)
+    if not text_content or len(questions) < 3:
+        raise HTTPException(status_code=502, detail="AI response did not include enough reading content or questions")
+
+    words = len(text_content.split())
+    return ReadingAIGenerateRead(
+        title=str(data.get("title") or payload.title or "Lectura generada con IA").strip(),
+        description=str(data.get("description") or "Material generado con IA para revision del instructor").strip(),
+        program_name=payload.program_name,
+        age_min=payload.age_min,
+        age_max=payload.age_max,
+        text_content=text_content,
+        questions=questions,
+        estimated_reading_seconds=_estimated_seconds(words, payload.age_min, payload.age_max),
+        source="ai",
     )
 
 
