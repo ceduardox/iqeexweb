@@ -102,6 +102,9 @@ class ScheduleSession(ScheduleSessionBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     session_uuid: str = Field(default="", index=True)
     created_by_id: int = Field(default=0, foreign_key="user.id")
+    status_marked_by_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    status_marked_at: Optional[str] = None
+    instructor_notes: Optional[str] = ""
     cancellation_reason: Optional[str] = ""
     creation_date: str = ""
     update_date: str = ""
@@ -122,9 +125,18 @@ class ScheduleSessionRead(ScheduleSessionBase):
     tutor: UserRead
     student: UserRead
     created_by_id: int
+    status_marked_by: Optional[UserRead] = None
+    status_marked_by_id: Optional[int] = None
+    status_marked_at: Optional[str] = None
+    instructor_notes: Optional[str] = ""
     cancellation_reason: Optional[str] = ""
     creation_date: str
     update_date: str
+
+
+class ScheduleSessionStatusUpdate(SQLModel):
+    status: ScheduleSessionStatus
+    instructor_notes: Optional[str] = ""
 
 
 class ScheduleNotification(SQLModel, table=True):

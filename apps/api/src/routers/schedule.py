@@ -6,6 +6,7 @@ from src.core.events.database import get_db_session
 from src.db.schedule import (
     ScheduleSessionCreate,
     ScheduleSessionRead,
+    ScheduleSessionStatusUpdate,
     ScheduleSlot,
     ScheduleSummary,
     TutorAssignmentCreate,
@@ -24,6 +25,7 @@ from src.services.schedule.schedule import (
     list_availability,
     list_sessions,
     list_slots,
+    update_session_status,
     upsert_availability,
 )
 
@@ -123,3 +125,14 @@ async def api_cancel_session(
     current_user: PublicUser = Depends(get_current_user),
 ):
     return await cancel_session(org_id, session_uuid, body.reason, current_user, db_session)
+
+
+@router.post("/org/{org_id}/sessions/{session_uuid}/status", response_model=ScheduleSessionRead)
+async def api_update_session_status(
+    org_id: int,
+    session_uuid: str,
+    status_update: ScheduleSessionStatusUpdate,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await update_session_status(org_id, session_uuid, status_update, current_user, db_session)

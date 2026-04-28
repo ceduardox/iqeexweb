@@ -13,6 +13,7 @@ from src.db.schedule import (
     ScheduleSessionCreate,
     ScheduleSessionRead,
     ScheduleSessionStatus,
+    ScheduleSessionStatusUpdate,
     ScheduleSlot,
     ScheduleSummary,
     TutorAssignment,
@@ -101,7 +102,40 @@ def _session_read(session: ScheduleSession, db_session: Session) -> ScheduleSess
         **session.model_dump(),
         tutor=_user_read(session.tutor_user_id, db_session),
         student=_user_read(session.student_user_id, db_session),
+        status_marked_by=_user_read(session.status_marked_by_id, db_session) if session.status_marked_by_id else None,
     )
+
+
+def ensure_schedule_schema(db_session: Session) -> None:
+    bind = db_session.get_bind()
+    if not bind:
+        return
+
+    dialect = bind.dialect.name
+    table_name = ScheduleSession.__table__.name
+    quoted_table = f'"{table_name}"' if dialect == "postgresql" else table_name
+
+    if dialect == "postgresql":
+        statements = [
+            f'ALTER TABLE {quoted_table} ADD COLUMN IF NOT EXISTS status_marked_by_id INTEGER',
+            f'ALTER TABLE {quoted_table} ADD COLUMN IF NOT EXISTS status_marked_at VARCHAR',
+            f'ALTER TABLE {quoted_table} ADD COLUMN IF NOT EXISTS instructor_notes VARCHAR',
+        ]
+    else:
+        statements = [
+            f'ALTER TABLE {quoted_table} ADD COLUMN status_marked_by_id INTEGER',
+            f'ALTER TABLE {quoted_table} ADD COLUMN status_marked_at VARCHAR',
+            f'ALTER TABLE {quoted_table} ADD COLUMN instructor_notes VARCHAR',
+        ]
+
+    from sqlalchemy import text
+
+    for statement in statements:
+        try:
+            db_session.execute(text(statement))
+            db_session.commit()
+        except Exception:
+            db_session.rollback()
 
 
 def _assignment_read(assignment: TutorAssignment, db_session: Session) -> TutorAssignmentRead:
@@ -327,7 +361,7 @@ async def list_slots(
         select(ScheduleSession).where(
             ScheduleSession.org_id == org_id,
             ScheduleSession.tutor_user_id == tutor_user_id,
-            ScheduleSession.status == ScheduleSessionStatus.SCHEDULED,
+            ScheduleSession.status != ScheduleSessionStatus.CANCELLED,
         )
     ).all()
 
@@ -385,7 +419,7 @@ async def create_session(
         select(ScheduleSession).where(
             ScheduleSession.org_id == org_id,
             ScheduleSession.tutor_user_id == session_create.tutor_user_id,
-            ScheduleSession.status == ScheduleSessionStatus.SCHEDULED,
+            ScheduleSession.status != ScheduleSessionStatus.CANCELLED,
         )
     ).all()
     for session in overlapping:
@@ -446,6 +480,37 @@ async def cancel_session(
         "Una tutoría fue cancelada.",
         session.session_uuid,
     )
+    db_session.commit()
+    db_session.refresh(session)
+    return _session_read(session, db_session)
+
+
+async def update_session_status(
+    org_id: int,
+    session_uuid: str,
+    status_update: ScheduleSessionStatusUpdate,
+    current_user: PublicUser,
+    db_session: Session,
+) -> ScheduleSessionRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    session = db_session.exec(
+        select(ScheduleSession).where(ScheduleSession.org_id == org_id, ScheduleSession.session_uuid == session_uuid)
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if status_update.status not in [ScheduleSessionStatus.COMPLETED, ScheduleSessionStatus.NO_SHOW, ScheduleSessionStatus.SCHEDULED]:
+        raise HTTPException(status_code=400, detail="Invalid status for this action")
+
+    if not (_is_admin(org_id, current_user.id, db_session) or current_user.id == session.tutor_user_id):
+        raise HTTPException(status_code=403, detail="Only the tutor or an admin can mark this session")
+
+    session.status = status_update.status
+    session.status_marked_by_id = current_user.id
+    session.status_marked_at = _now()
+    session.instructor_notes = status_update.instructor_notes or ""
+    session.update_date = _now()
+    db_session.add(session)
     db_session.commit()
     db_session.refresh(session)
     return _session_read(session, db_session)

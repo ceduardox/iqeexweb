@@ -33,6 +33,26 @@ def _reconcile_packs():
         logger.warning("Pack reconciliation skipped (non-fatal): %s", e)
 
 
+def _ensure_schedule_schema():
+    try:
+        from sqlalchemy import create_engine
+        from sqlmodel import Session
+        learnhouse_config = get_learnhouse_config()
+        engine = create_engine(
+            learnhouse_config.database_config.sql_connection_string,
+            echo=False,
+            pool_pre_ping=True,
+        )
+        db_session = Session(engine)
+        try:
+            from src.services.schedule.schedule import ensure_schedule_schema
+            ensure_schedule_schema(db_session)
+        finally:
+            db_session.close()
+    except Exception as e:
+        logger.warning("Schedule schema check skipped (non-fatal): %s", e)
+
+
 def startup_app(app: FastAPI) -> Callable:
     async def start_app() -> None:
         # Get LearnHouse Config
@@ -53,6 +73,7 @@ def startup_app(app: FastAPI) -> Callable:
 
         # Reconcile pack credits (Redis ↔ DB)
         _reconcile_packs()
+        _ensure_schedule_schema()
 
         # Start Enterprise Edition Startup tasks if available
         run_ee_startup(app)

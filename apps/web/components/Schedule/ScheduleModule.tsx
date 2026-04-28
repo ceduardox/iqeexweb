@@ -11,7 +11,9 @@ import {
   Check,
   X,
   Plus,
-  Sparkles,
+  Mail,
+  MapPin,
+  Phone,
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
@@ -23,6 +25,7 @@ import {
   getScheduleSummary,
   getOrgUsersForSchedule,
   getTutorSlots,
+  updateScheduleSessionStatus,
   ScheduleSession,
   ScheduleSlot,
   ScheduleSummary,
@@ -51,6 +54,25 @@ function formatDate(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function userContact(user?: ScheduleUser) {
+  const details = user?.details || {}
+  const whatsapp = details.whatsapp || {}
+  const location = details.location || {}
+  const phone = whatsapp.international_phone || `${whatsapp.dial_code || ''}${whatsapp.phone || ''}`.trim()
+  return {
+    phone,
+    country: location.country || location.country_code || '',
+    region: location.region || '',
+  }
+}
+
+function statusInfo(status: ScheduleSession['status']) {
+  if (status === 'completed') return { label: 'Realizada', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-100' }
+  if (status === 'no_show') return { label: 'No asistio', cls: 'bg-amber-50 text-amber-700 ring-amber-100' }
+  if (status === 'cancelled') return { label: 'Cancelada', cls: 'bg-red-50 text-red-700 ring-red-100' }
+  return { label: 'Programada', cls: 'bg-indigo-50 text-indigo-700 ring-indigo-100' }
 }
 
 function isoDate(date: Date) {
@@ -111,6 +133,9 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
   )
 
   const visibleSessions = sessions || summary?.upcoming_sessions || []
+  const scheduledSessions = visibleSessions.filter((item) => item.status === 'scheduled')
+  const completedSessions = visibleSessions.filter((item) => item.status === 'completed')
+  const uniqueStudentCount = new Set(visibleSessions.map((item) => item.student_user_id)).size
   const groupedSlots = useMemo(() => {
     const groups: Record<string, ScheduleSlot[]> = {}
     ;(slots || []).forEach((slot) => {
@@ -158,6 +183,27 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
       await refreshAll()
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo cancelar')
+    }
+  }
+
+  async function handleStatusUpdate(item: ScheduleSession, status: 'completed' | 'no_show') {
+    const defaultText = status === 'completed' ? 'Tutoria realizada' : 'El alumno no asistio'
+    const instructorNotes = window.prompt('Nota interna del instructor', item.instructor_notes || defaultText)
+    if (instructorNotes === null) return
+    try {
+      await updateScheduleSessionStatus(
+        orgId,
+        item.session_uuid,
+        {
+          status,
+          instructor_notes: instructorNotes,
+        },
+        token
+      )
+      toast.success(status === 'completed' ? 'Tutoria marcada como realizada' : 'Tutoria marcada como no asistio')
+      await refreshAll()
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo actualizar el estado')
     }
   }
 
@@ -239,12 +285,18 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
               </div>
               <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
-                  <div className="text-[11px] font-semibold uppercase text-white/65">Reservas</div>
-                  <div className="mt-1 text-xl font-bold">{visibleSessions.length}</div>
+                  <div className="text-[11px] font-semibold uppercase text-white/65">
+                    {summary?.is_tutor || summary?.is_admin ? 'Pendientes' : 'Reservas'}
+                  </div>
+                  <div className="mt-1 text-xl font-bold">{scheduledSessions.length}</div>
                 </div>
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
-                  <div className="text-[11px] font-semibold uppercase text-white/65">Tutores</div>
-                  <div className="mt-1 text-xl font-bold">{tutors.length}</div>
+                  <div className="text-[11px] font-semibold uppercase text-white/65">
+                    {summary?.is_tutor || summary?.is_admin ? 'Realizadas' : 'Tutores'}
+                  </div>
+                  <div className="mt-1 text-xl font-bold">
+                    {summary?.is_tutor || summary?.is_admin ? completedSessions.length : tutors.length}
+                  </div>
                 </div>
               </div>
             </div>
@@ -284,7 +336,7 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                 ) : (
                   <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
                     {summary?.is_tutor || summary?.is_admin
-                      ? 'Puedes revisar reservas y configurar disponibilidad.'
+                      ? `${uniqueStudentCount} alumno${uniqueStudentCount === 1 ? '' : 's'} con reservas registradas. Puedes revisar datos, marcar asistencia y configurar disponibilidad.`
                       : 'Aun no tienes tutor asignado. El recurso esta visible, pero un administrador debe asignarte un tutor para reservar.'}
                   </div>
                 )}
@@ -476,30 +528,95 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                 <SectionIcon tone="bg-slate-100 text-slate-700">
                   <Clock size={17} />
                 </SectionIcon>
-                Proximas reservas
+                {summary?.is_tutor || summary?.is_admin ? 'Reservas y asistencia' : 'Proximas reservas'}
               </h2>
               <div className="space-y-3">
                 {visibleSessions.map((item) => {
-                  const counterpart = currentUserId === item.tutor_user_id ? item.student : item.tutor
+                  const isTutorView = currentUserId === item.tutor_user_id
+                  const canManageStatus = Boolean(summary?.is_admin || isTutorView)
+                  const studentContact = userContact(item.student)
+                  const badge = statusInfo(item.status)
                   return (
-                    <div key={item.session_uuid} className="flex flex-col gap-3 rounded-lg border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">{formatDate(item.starts_at)}</div>
-                        <div className="mt-1 text-sm text-gray-500">
-                          {currentUserId === item.tutor_user_id ? 'Alumno' : 'Tutor'}: {nameOf(counterpart)}
+                    <div key={item.session_uuid} className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-semibold text-gray-900">{formatDate(item.starts_at)}</div>
+                            <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ring-1 ${badge.cls}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+                          <div className="mt-2 grid gap-1 text-sm text-gray-600">
+                            <div><span className="font-medium text-gray-900">Alumno:</span> {nameOf(item.student)}</div>
+                            {(summary?.is_admin || !isTutorView) && (
+                              <div><span className="font-medium text-gray-900">Tutor:</span> {nameOf(item.tutor)}</div>
+                            )}
+                          </div>
                         </div>
-                        {item.student_notes && (
-                          <div className="mt-1 text-xs text-gray-500">Nota: {item.student_notes}</div>
+                        {item.status === 'scheduled' && (
+                          <div className="flex flex-wrap gap-2">
+                            {canManageStatus && (
+                              <>
+                                <button
+                                  onClick={() => handleStatusUpdate(item, 'completed')}
+                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50"
+                                >
+                                  <Check size={15} />
+                                  Realizada
+                                </button>
+                                <button
+                                  onClick={() => handleStatusUpdate(item, 'no_show')}
+                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-100 bg-white px-3 py-2 text-sm text-amber-700 hover:border-amber-200 hover:bg-amber-50"
+                                >
+                                  <X size={15} />
+                                  No asistio
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleCancel(item)}
+                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-100 bg-white px-3 py-2 text-sm text-red-600 hover:border-red-200 hover:bg-red-50"
+                            >
+                              <X size={15} />
+                              Cancelar
+                            </button>
+                          </div>
                         )}
                       </div>
-                      {item.status === 'scheduled' && (
-                        <button
-                          onClick={() => handleCancel(item)}
-                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-100 bg-white px-3 py-2 text-sm text-red-600 hover:border-red-200 hover:bg-red-50"
-                        >
-                          <X size={15} />
-                          Cancelar
-                        </button>
+                      <div className="mt-4 grid gap-2 rounded-lg border border-white bg-white/70 p-3 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="flex items-center gap-2">
+                          <Mail size={14} className="text-slate-400" />
+                          <span className="truncate">{item.student.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone size={14} className="text-slate-400" />
+                          <span>{studentContact.phone || 'Sin WhatsApp'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={14} className="text-slate-400" />
+                          <span>{studentContact.country || 'Sin pais'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={14} className="text-slate-400" />
+                          <span>{studentContact.region || 'Sin region'}</span>
+                        </div>
+                      </div>
+                      {(item.student_notes || item.instructor_notes || item.status_marked_at) && (
+                        <div className="mt-3 grid gap-2 text-xs text-slate-500 md:grid-cols-2">
+                          {item.student_notes && <div className="rounded-lg bg-white p-3">Nota alumno: {item.student_notes}</div>}
+                          {item.instructor_notes && <div className="rounded-lg bg-white p-3">Nota instructor: {item.instructor_notes}</div>}
+                          {item.status_marked_at && (
+                            <div className="rounded-lg bg-white p-3">
+                              Marcado: {formatDate(item.status_marked_at)}
+                              {item.status_marked_by ? ` por ${nameOf(item.status_marked_by)}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!item.status_marked_at && item.status === 'scheduled' && canManageStatus && (
+                        <div className="mt-3 rounded-lg bg-white p-3 text-xs text-slate-500">
+                          Asistencia pendiente de marcar.
+                        </div>
                       )}
                     </div>
                   )

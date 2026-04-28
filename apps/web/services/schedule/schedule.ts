@@ -12,6 +12,8 @@ export type ScheduleUser = {
   last_name?: string
   email: string
   avatar_image?: string
+  details?: any
+  bio?: string
 }
 
 export type ScheduleSession = {
@@ -26,6 +28,10 @@ export type ScheduleSession = {
   timezone: string
   student_notes?: string
   status: 'scheduled' | 'cancelled' | 'completed' | 'no_show'
+  status_marked_by?: ScheduleUser | null
+  status_marked_by_id?: number | null
+  status_marked_at?: string | null
+  instructor_notes?: string
   cancellation_reason?: string
 }
 
@@ -107,6 +113,22 @@ export async function cancelScheduleSession(
   const result = await fetch(
     `${getAPIUrl()}schedule/org/${orgId}/sessions/${sessionUuid}/cancel`,
     RequestBodyWithAuthHeader('POST', { reason }, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function updateScheduleSessionStatus(
+  orgId: number,
+  sessionUuid: string,
+  data: {
+    status: 'scheduled' | 'completed' | 'no_show'
+    instructor_notes?: string
+  },
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}schedule/org/${orgId}/sessions/${sessionUuid}/status`,
+    RequestBodyWithAuthHeader('POST', data, null, accessToken)
   )
   return errorHandling(result)
 }
