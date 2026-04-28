@@ -9,6 +9,7 @@ import CourseThumbnailLanding from '@components/Objects/Thumbnails/CourseThumbna
 import UserAvatar from '@components/Objects/UserAvatar'
 import { useTranslation } from 'react-i18next'
 import ScheduleHomeCard from '@components/Schedule/ScheduleHomeCard'
+import ReadingTestHomeCard from '@components/ReadingTest/ReadingTestHomeCard'
 import { useOrg } from '@components/Contexts/OrgContext'
 
 interface LandingCustomProps {
@@ -261,6 +262,7 @@ function LandingCustom({ landing, orgslug }: LandingCustomProps) {
       {org?.id && (
         <div className="w-full pt-6">
           <ScheduleHomeCard orgId={Number(org.id)} orgslug={orgslug} />
+          <ReadingTestHomeCard orgslug={orgslug} />
         </div>
       )}
       {landing.sections.map((section) => renderSection(section))}

@@ -397,6 +397,12 @@ function DashLeftMenu() {
               label={t('common.schedule')}
               isCollapsed={isCollapsed}
             />
+            <MenuLink
+              href="/dash/reading-test"
+              icon={<BookOpen size={20} weight="fill" />}
+              label={t('common.reading_test')}
+              isCollapsed={isCollapsed}
+            />
             {showCommunities && (
               <MenuLink
                 href="/dash/communities"

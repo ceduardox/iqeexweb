@@ -14,6 +14,7 @@ import { getUriWithOrg } from '@services/config/config'
 import { useTranslation } from 'react-i18next'
 import { BookCopy, SquareLibrary } from 'lucide-react'
 import ScheduleHomeCard from '@components/Schedule/ScheduleHomeCard'
+import ReadingTestHomeCard from '@components/ReadingTest/ReadingTestHomeCard'
 
 interface LandingClassicProps {
   courses: any[]
@@ -40,6 +41,7 @@ function LandingClassic({
     <div className="w-full">
       <GeneralWrapperStyled>
         <ScheduleHomeCard orgId={Number(org_id)} orgslug={orgslug} />
+        <ReadingTestHomeCard orgslug={orgslug} />
 
         {/* Collections */}
         <div className="flex flex-col space-y-2 mb-6">

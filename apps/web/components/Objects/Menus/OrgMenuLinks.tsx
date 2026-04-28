@@ -104,6 +104,14 @@ function MenuLinks(props: {
           variant={props.variant}
           onNavigate={props.onNavigate}
         ></LinkItem>
+        <LinkItem
+          link="/reading-test"
+          type="reading-test"
+          orgslug={props.orgslug}
+          primaryColor={props.primaryColor}
+          variant={props.variant}
+          onNavigate={props.onNavigate}
+        ></LinkItem>
         {showStore && (
           <LinkItem
             link="/store"
@@ -203,6 +211,13 @@ const LinkItem = (props: any) => {
           <>
             <CalendarBlank size={20} weight="fill" />{' '}
             <span>{t('common.schedule')}</span>
+          </>
+        )}
+
+        {props.type == 'reading-test' && (
+          <>
+            <Books size={20} weight="fill" />{' '}
+            <span>{t('common.reading_test')}</span>
           </>
         )}
 

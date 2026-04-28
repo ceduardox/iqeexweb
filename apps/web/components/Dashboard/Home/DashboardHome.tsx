@@ -22,6 +22,7 @@ import RecentMembers from './RecentMembers'
 import ContentOverview from './ContentOverview'
 import UsageOverview from './UsageOverview'
 import ScheduleHomeCard from '@components/Schedule/ScheduleHomeCard'
+import ReadingTestHomeCard from '@components/ReadingTest/ReadingTestHomeCard'
 
 const PLAN_COLORS: Record<string, { bg: string; text: string }> = {
   free: { bg: 'bg-gray-100', text: 'text-gray-600' },
@@ -79,6 +80,13 @@ export default function DashboardHome() {
                 Agenda
               </Link>
               <Link
+                href="/dash/reading-test"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition-colors"
+              >
+                <BookOpen size={14} weight="bold" />
+                Test lectura
+              </Link>
+              <Link
                 href="/dash/courses?new=true"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
               >
@@ -112,7 +120,10 @@ export default function DashboardHome() {
           <AdminAuthorization authorizationMode="component">
             <div className="space-y-6">
               {org?.id && org?.slug && (
-                <ScheduleHomeCard orgId={Number(org.id)} orgslug={org.slug} compact />
+                <div className="space-y-3">
+                  <ScheduleHomeCard orgId={Number(org.id)} orgslug={org.slug} compact />
+                  <ReadingTestHomeCard orgslug={org.slug} compact />
+                </div>
               )}
 
               {/* Content counts row */}

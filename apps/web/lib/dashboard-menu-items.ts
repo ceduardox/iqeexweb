@@ -48,6 +48,12 @@ export const DASHBOARD_MENU_ITEMS: DashboardMenuItem[] = [
     labelKey: 'common.schedule',
   },
   {
+    id: 'reading-test',
+    href: '/dash/reading-test',
+    icon: BookOpen,
+    labelKey: 'common.reading_test',
+  },
+  {
     id: 'communities',
     href: '/dash/communities',
     icon: ChatsCircle,
