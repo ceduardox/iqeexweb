@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useMemo, useState } from 'react'
+import useSWR, { mutate } from 'swr'
+import toast from 'react-hot-toast'
 import {
   BarChart3,
   BookOpenCheck,
@@ -10,8 +12,18 @@ import {
   LineChart,
   Upload,
 } from 'lucide-react'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
+import {
+  createReadingAttempt,
+  createReadingMaterial,
+  getReadingAttempts,
+  getReadingMaterials,
+  ReadingAttempt,
+  ReadingMaterial,
+} from '@services/reading-test/reading-test'
 
 type ReadingTestModuleProps = {
+  orgId: number
   dashboard?: boolean
 }
 
@@ -72,9 +84,12 @@ function SectionIcon({ children, tone }: { children: React.ReactNode; tone: stri
   return <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>{children}</span>
 }
 
-export default function ReadingTestModule({ dashboard = false }: ReadingTestModuleProps) {
+export default function ReadingTestModule({ orgId, dashboard = false }: ReadingTestModuleProps) {
+  const session = useLHSession() as any
+  const token = session?.data?.tokens?.access_token
   const [role, setRole] = useState<Role>('admin')
   const [view, setView] = useState<View>('material')
+  const [title, setTitle] = useState('Lectura diagnostica')
   const [program, setProgram] = useState('Lectura 12-14 anos')
   const [ageMin, setAgeMin] = useState(12)
   const [ageMax, setAgeMax] = useState(14)
@@ -86,7 +101,22 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
   const [isReading, setIsReading] = useState(false)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [showQuestions, setShowQuestions] = useState(false)
-  const [attempts, setAttempts] = useState(initialAttempts)
+  const [localAttempts, setLocalAttempts] = useState(initialAttempts)
+  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null)
+
+  const materialsKey = token && orgId ? ['reading-materials', orgId, token] : null
+  const attemptsKey = token && orgId ? ['reading-attempts', orgId, selectedMaterialId || 'all', token] : null
+
+  const { data: materials } = useSWR<ReadingMaterial[]>(
+    materialsKey,
+    () => getReadingMaterials(orgId, token),
+    { revalidateOnFocus: false }
+  )
+  const { data: apiAttempts } = useSWR<ReadingAttempt[]>(
+    attemptsKey,
+    () => getReadingAttempts(orgId, selectedMaterialId, token),
+    { revalidateOnFocus: false }
+  )
 
   React.useEffect(() => {
     if (!isReading || !startedAt) return
@@ -96,11 +126,58 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
     return () => window.clearInterval(tick)
   }, [isReading, startedAt])
 
-  const latest = attempts[attempts.length - 1]
+  React.useEffect(() => {
+    const material = materials?.[0]
+    if (!material || selectedMaterialId) return
+    setSelectedMaterialId(material.id)
+    setTitle(material.title)
+    setProgram(material.program_name)
+    setAgeMin(material.age_min)
+    setAgeMax(material.age_max)
+    setFileName(material.pdf_name || 'PDF registrado')
+    setReadingText(material.text_content)
+  }, [materials, selectedMaterialId])
+
+  const normalizedAttempts = apiAttempts?.length
+    ? apiAttempts.map((attempt) => ({
+        date: new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(new Date(attempt.creation_date)),
+        wpm: attempt.wpm,
+        comp: attempt.comprehension,
+        ret: attempt.retention,
+        level: attempt.level,
+      }))
+    : localAttempts
+  const latest = normalizedAttempts[normalizedAttempts.length - 1]
   const wordCount = useMemo(() => countWords(readingText), [readingText])
-  const bestComprehension = Math.max(...attempts.map((item) => item.comp))
-  const bestWpm = Math.max(...attempts.map((item) => item.wpm))
+  const bestComprehension = Math.max(...normalizedAttempts.map((item) => item.comp))
+  const bestWpm = Math.max(...normalizedAttempts.map((item) => item.wpm))
   const canManageMaterial = role !== 'student'
+
+  async function saveMaterial() {
+    if (!canManageMaterial) return
+    try {
+      const material = await createReadingMaterial(
+        orgId,
+        {
+          title,
+          description: 'Material de lectura por programa',
+          program_name: program,
+          age_min: ageMin,
+          age_max: ageMax,
+          pdf_name: fileName === 'Ningun PDF seleccionado' ? '' : fileName,
+          text_content: readingText,
+          questions,
+          status: 'published',
+        },
+        token
+      )
+      setSelectedMaterialId(material.id)
+      await mutate(materialsKey)
+      toast.success('Material de lectura guardado')
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo guardar el material')
+    }
+  }
 
   function prepareTest() {
     setView('test')
@@ -126,14 +203,42 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
     setStatus('Responde sin volver al texto.')
   }
 
-  function gradeTest() {
+  async function gradeTest() {
     const correct = questions.reduce((total, item, index) => total + (answers[index] === item.a ? 1 : 0), 0)
     const duration = Math.max(1, elapsed || 1)
     const wpm = Math.round(wordCount / (duration / 60))
     const comp = Math.round((correct / questions.length) * 100)
     const ret = Math.max(0, Math.min(100, Math.round(comp * 0.76 + (Math.min(wpm, 260) / 260) * 24)))
     const level = comp >= 85 && wpm >= 180 ? 'Avanzado' : comp >= 65 && wpm >= 120 ? 'Funcional' : 'Entrenar'
-    setAttempts((items) => [...items, { date: 'Hoy', wpm, comp, ret, level }])
+    if (selectedMaterialId) {
+      try {
+        await createReadingAttempt(
+          orgId,
+          {
+            material_id: selectedMaterialId,
+            duration_seconds: duration,
+            words_count: wordCount,
+            wpm,
+            comprehension: comp,
+            retention: ret,
+            level,
+            answers: questions.map((item, index) => ({
+              question: item.q,
+              answer: answers[index] || '',
+              correct: answers[index] === item.a,
+            })),
+          },
+          token
+        )
+        await mutate(attemptsKey)
+        toast.success('Intento guardado')
+      } catch (error: any) {
+        toast.error(error?.message || 'No se pudo guardar el intento')
+        setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, ret, level }])
+      }
+    } else {
+      setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, ret, level }])
+    }
     setStatus('Resultado calculado.')
     setView('reports')
   }
@@ -170,7 +275,7 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
               <div className="grid grid-cols-2 gap-2 sm:min-w-[360px] sm:grid-cols-4">
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
                   <div className="text-[11px] font-semibold uppercase text-white/65">Intentos</div>
-                  <div className="mt-1 text-xl font-bold">{attempts.length}</div>
+                  <div className="mt-1 text-xl font-bold">{normalizedAttempts.length}</div>
                 </div>
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
                   <div className="text-[11px] font-semibold uppercase text-white/65">Mejor WPM</div>
@@ -260,6 +365,42 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
               </label>
               <div className="mt-3 grid gap-3">
                 <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                  Material guardado
+                  <select
+                    value={selectedMaterialId || ''}
+                    onChange={(event) => {
+                      const material = materials?.find((item) => item.id === Number(event.target.value))
+                      setSelectedMaterialId(material?.id || null)
+                      if (material) {
+                        setTitle(material.title)
+                        setProgram(material.program_name)
+                        setAgeMin(material.age_min)
+                        setAgeMax(material.age_max)
+                        setFileName(material.pdf_name || 'PDF registrado')
+                        setReadingText(material.text_content)
+                      }
+                    }}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
+                  >
+                    <option value="">Nuevo material</option>
+                    {(materials || []).map((material) => (
+                      <option key={material.id} value={material.id}>
+                        {material.title} - {material.program_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                  Titulo
+                  <input
+                    disabled={!canManageMaterial}
+                    type="text"
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
+                  />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Programa
                   <select
                     disabled={!canManageMaterial}
@@ -316,13 +457,24 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
                 <div className="text-sm text-slate-500">
                   {wordCount} palabras | {program} | edades {ageMin}-{ageMax}
                 </div>
-                <button
-                  onClick={prepareTest}
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-                >
-                  <Check size={16} />
-                  Preparar prueba
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  {canManageMaterial && (
+                    <button
+                      onClick={saveMaterial}
+                      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                    >
+                      <Check size={16} />
+                      Guardar material
+                    </button>
+                  )}
+                  <button
+                    onClick={prepareTest}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                  >
+                    <Check size={16} />
+                    Preparar prueba
+                  </button>
+                </div>
               </div>
             </section>
           </div>
@@ -466,7 +618,7 @@ export default function ReadingTestModule({ dashboard = false }: ReadingTestModu
                 </svg>
               </div>
               <div className="space-y-2">
-                {attempts.slice(-5).reverse().map((attempt) => (
+                {normalizedAttempts.slice(-5).reverse().map((attempt) => (
                   <div key={`${attempt.date}-${attempt.wpm}`} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3">
                     <div>
                       <div className="text-sm font-semibold text-slate-900">{attempt.date}</div>

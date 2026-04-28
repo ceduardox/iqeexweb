@@ -22,8 +22,14 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
   }
 }
 
-async function DashboardReadingTestPage() {
-  return <ReadingTestModule dashboard />
+async function DashboardReadingTestPage(params: any) {
+  const orgslug = (await params.params).orgslug
+  const org = await getOrganizationContextInfo(orgslug, {
+    revalidate: 1800,
+    tags: ['organizations'],
+  })
+
+  return <ReadingTestModule orgId={org.id} dashboard />
 }
 
 export default DashboardReadingTestPage
