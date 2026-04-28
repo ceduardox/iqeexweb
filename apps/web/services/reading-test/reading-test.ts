@@ -38,7 +38,7 @@ export type ReadingAttempt = {
   comprehension: number
   retention: number
   level: string
-  answers: Array<{ question: string; answer: string; correct: boolean }>
+  answers: Array<Record<string, any>>
   creation_date: string
   material?: ReadingMaterial
 }
@@ -92,7 +92,7 @@ export async function createReadingAttempt(
     comprehension: number
     retention: number
     level: string
-    answers: Array<{ question: string; answer: string; correct: boolean }>
+    answers: Array<Record<string, any>>
   },
   accessToken?: string
 ) {

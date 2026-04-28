@@ -65,9 +65,9 @@ const questions = [
 ]
 
 const initialAttempts = [
-  { date: '12 abr', wpm: 132, comp: 58, ret: 61, level: 'Entrenar' },
-  { date: '18 abr', wpm: 148, comp: 66, ret: 68, level: 'Funcional' },
-  { date: '25 abr', wpm: 168, comp: 78, ret: 76, level: 'Funcional' },
+  { date: '12 abr', wpm: 132, comp: 58, adjusted: 58, ret: 61, level: 'Entrenar', timeFlag: 'normal' },
+  { date: '18 abr', wpm: 148, comp: 66, adjusted: 66, ret: 68, level: 'Funcional', timeFlag: 'normal' },
+  { date: '25 abr', wpm: 168, comp: 78, adjusted: 78, ret: 76, level: 'Funcional', timeFlag: 'normal' },
 ]
 
 function countWords(text: string) {
@@ -78,6 +78,30 @@ function formatTime(seconds: number) {
   const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
   const rest = String(seconds % 60).padStart(2, '0')
   return `${minutes}:${rest}`
+}
+
+function expectedMaxWpm(ageMin: number, ageMax: number) {
+  const age = (ageMin + ageMax) / 2
+  if (age <= 10) return 150
+  if (age <= 13) return 190
+  if (age <= 16) return 240
+  return 320
+}
+
+function calculateTimeAdjustment(words: number, seconds: number, ageMin: number, ageMax: number) {
+  const maxWpm = expectedMaxWpm(ageMin, ageMax)
+  const minimumSeconds = Math.max(15, Math.round((words / maxWpm) * 60))
+  const ratio = seconds / minimumSeconds
+  if (ratio < 0.45) {
+    return { factor: 0.45, minimumSeconds, maxWpm, flag: 'sospechoso' }
+  }
+  if (ratio < 0.7) {
+    return { factor: 0.7, minimumSeconds, maxWpm, flag: 'muy rapido' }
+  }
+  if (ratio < 0.9) {
+    return { factor: 0.88, minimumSeconds, maxWpm, flag: 'rapido' }
+  }
+  return { factor: 1, minimumSeconds, maxWpm, flag: 'normal' }
 }
 
 function SectionIcon({ children, tone }: { children: React.ReactNode; tone: string }) {
@@ -143,13 +167,15 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
         date: new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(new Date(attempt.creation_date)),
         wpm: attempt.wpm,
         comp: attempt.comprehension,
+        adjusted: Number((attempt.answers || []).find((answer: any) => answer.type === 'score_meta')?.adjusted_score || attempt.comprehension),
         ret: attempt.retention,
         level: attempt.level,
+        timeFlag: (attempt.answers || []).find((answer: any) => answer.type === 'score_meta')?.time_flag || 'normal',
       }))
     : localAttempts
   const latest = normalizedAttempts[normalizedAttempts.length - 1]
   const wordCount = useMemo(() => countWords(readingText), [readingText])
-  const bestComprehension = Math.max(...normalizedAttempts.map((item) => item.comp))
+  const bestComprehension = Math.max(...normalizedAttempts.map((item) => item.adjusted))
   const bestWpm = Math.max(...normalizedAttempts.map((item) => item.wpm))
   const canManageMaterial = role !== 'student'
 
@@ -208,8 +234,10 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
     const duration = Math.max(1, elapsed || 1)
     const wpm = Math.round(wordCount / (duration / 60))
     const comp = Math.round((correct / questions.length) * 100)
-    const ret = Math.max(0, Math.min(100, Math.round(comp * 0.76 + (Math.min(wpm, 260) / 260) * 24)))
-    const level = comp >= 85 && wpm >= 180 ? 'Avanzado' : comp >= 65 && wpm >= 120 ? 'Funcional' : 'Entrenar'
+    const timeAdjustment = calculateTimeAdjustment(wordCount, duration, ageMin, ageMax)
+    const adjusted = Math.round(comp * timeAdjustment.factor)
+    const ret = Math.max(0, Math.min(100, Math.round(adjusted * 0.76 + (Math.min(wpm, timeAdjustment.maxWpm) / timeAdjustment.maxWpm) * 24)))
+    const level = adjusted >= 85 && wpm >= 180 ? 'Avanzado' : adjusted >= 65 && wpm >= 120 ? 'Funcional' : 'Entrenar'
     if (selectedMaterialId) {
       try {
         await createReadingAttempt(
@@ -222,11 +250,22 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
             comprehension: comp,
             retention: ret,
             level,
-            answers: questions.map((item, index) => ({
-              question: item.q,
-              answer: answers[index] || '',
-              correct: answers[index] === item.a,
-            })),
+            answers: [
+              {
+                type: 'score_meta',
+                raw_comprehension: comp,
+                adjusted_score: adjusted,
+                time_factor: timeAdjustment.factor,
+                time_flag: timeAdjustment.flag,
+                minimum_seconds: timeAdjustment.minimumSeconds,
+                expected_max_wpm: timeAdjustment.maxWpm,
+              },
+              ...questions.map((item, index) => ({
+                question: item.q,
+                answer: answers[index] || '',
+                correct: answers[index] === item.a,
+              })),
+            ],
           },
           token
         )
@@ -234,10 +273,10 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
         toast.success('Intento guardado')
       } catch (error: any) {
         toast.error(error?.message || 'No se pudo guardar el intento')
-        setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, ret, level }])
+        setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, adjusted, ret, level, timeFlag: timeAdjustment.flag }])
       }
     } else {
-      setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, ret, level }])
+      setLocalAttempts((items) => [...items, { date: 'Hoy', wpm, comp, adjusted, ret, level, timeFlag: timeAdjustment.flag }])
     }
     setStatus('Resultado calculado.')
     setView('reports')
@@ -282,7 +321,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   <div className="mt-1 text-xl font-bold">{bestWpm}</div>
                 </div>
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
-                  <div className="text-[11px] font-semibold uppercase text-white/65">Comprension</div>
+                  <div className="text-[11px] font-semibold uppercase text-white/65">Puntaje</div>
                   <div className="mt-1 text-xl font-bold">{bestComprehension}%</div>
                 </div>
                 <div className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/15">
@@ -588,11 +627,11 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
                 <div className="text-2xl font-bold text-slate-900">{latest.comp}%</div>
-                <div className="text-xs font-semibold uppercase text-slate-500">Comprension</div>
+                <div className="text-xs font-semibold uppercase text-slate-500">Comprension bruta</div>
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
-                <div className="text-2xl font-bold text-slate-900">{latest.ret}%</div>
-                <div className="text-xs font-semibold uppercase text-slate-500">Retencion</div>
+                <div className="text-2xl font-bold text-slate-900">{latest.adjusted}%</div>
+                <div className="text-xs font-semibold uppercase text-slate-500">Puntaje ajustado</div>
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
                 <div className="text-2xl font-bold text-slate-900">{latest.level}</div>
@@ -625,8 +664,8 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                       <div className="text-xs text-slate-500">{attempt.level}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-slate-900">{attempt.comp}%</div>
-                      <div className="text-xs text-slate-500">{attempt.wpm} wpm</div>
+                      <div className="text-sm font-bold text-slate-900">{attempt.adjusted}%</div>
+                      <div className="text-xs text-slate-500">{attempt.wpm} wpm · {attempt.timeFlag}</div>
                     </div>
                   </div>
                 ))}
@@ -635,11 +674,13 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
 
             <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-800">
               <span className="font-semibold">Recomendacion:</span>{' '}
-              {latest.level === 'Avanzado'
-                ? 'subir complejidad del texto e incluir preguntas inferenciales.'
-                : latest.level === 'Funcional'
-                  ? 'entrenar resumen, palabras clave y control de tiempo.'
-                  : 'trabajar lectura guiada, vocabulario base e idea central.'}
+              {latest.timeFlag !== 'normal'
+                ? 'el tiempo fue menor al minimo razonable; revisar si hubo lectura real antes de interpretar el resultado.'
+                : latest.level === 'Avanzado'
+                  ? 'subir complejidad del texto e incluir preguntas inferenciales.'
+                  : latest.level === 'Funcional'
+                    ? 'entrenar resumen, palabras clave y control de tiempo.'
+                    : 'trabajar lectura guiada, vocabulario base e idea central.'}
             </div>
           </section>
         )}
