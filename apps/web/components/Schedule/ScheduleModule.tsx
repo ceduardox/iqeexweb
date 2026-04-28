@@ -18,6 +18,9 @@ import {
   ChevronRight,
   CalendarRange,
   List,
+  Pencil,
+  Save,
+  Trash2,
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
@@ -30,6 +33,8 @@ import {
   getOrgUsersForSchedule,
   getTutorSlots,
   getTutorAvailability,
+  deleteTutorAvailability,
+  updateTutorAvailability,
   updateScheduleSessionStatus,
   ScheduleSession,
   ScheduleSlot,
@@ -116,6 +121,13 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
   const [scheduleView, setScheduleView] = useState<'list' | 'month'>('list')
   const [calendarMonth, setCalendarMonth] = useState(() => new Date())
   const [availabilityTutorId, setAvailabilityTutorId] = useState('')
+  const [editingBlock, setEditingBlock] = useState<{
+    availability_uuid: string
+    weekday: number
+    start_time: string
+    end_time: string
+    slot_minutes: number
+  } | null>(null)
   const [availability, setAvailability] = useState({
     weekday: 0,
     start_time: '09:00',
@@ -286,9 +298,50 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
         token
       )
       toast.success('Disponibilidad agregada')
+      setAvailability({
+        ...availability,
+        start_time: availability.end_time,
+      })
       await refreshAll()
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo guardar disponibilidad')
+    }
+  }
+
+  async function handleAvailabilityUpdate() {
+    if (!editingBlock) return
+    try {
+      await updateTutorAvailability(
+        orgId,
+        editingBlock.availability_uuid,
+        {
+          weekday: editingBlock.weekday,
+          start_time: editingBlock.start_time,
+          end_time: editingBlock.end_time,
+          slot_minutes: editingBlock.slot_minutes,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          active: true,
+        },
+        token
+      )
+      toast.success('Bloque actualizado')
+      setEditingBlock(null)
+      await refreshAll()
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo actualizar el bloque')
+    }
+  }
+
+  async function handleAvailabilityDelete(block: TutorAvailability) {
+    try {
+      await deleteTutorAvailability(orgId, block.availability_uuid, token)
+      toast.success('Bloque eliminado')
+      if (editingBlock?.availability_uuid === block.availability_uuid) {
+        setEditingBlock(null)
+      }
+      await refreshAll()
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo eliminar el bloque')
     }
   }
 
@@ -435,23 +488,95 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                   {Object.keys(availabilityByDay).length ? (
                     dayLabels.map((label, index) => (
                       availabilityByDay[index]?.length ? (
-                        <div key={label} className="flex flex-wrap items-center gap-2 text-xs text-emerald-900">
-                          <span className="w-9 font-semibold">{label}</span>
+                        <div key={label} className="space-y-2 text-xs text-emerald-900">
+                          <span className="font-semibold">{label}</span>
                           {availabilityByDay[index].map((block) => (
-                            <span key={block.id} className="rounded-full bg-white px-2 py-1 ring-1 ring-emerald-100">
-                              {block.start_time} - {block.end_time}
-                            </span>
+                            editingBlock?.availability_uuid === block.availability_uuid ? (
+                              <div key={block.id} className="grid gap-2 rounded-lg bg-white p-2 ring-1 ring-emerald-100">
+                                <select
+                                  value={editingBlock.weekday}
+                                  onChange={(event) => setEditingBlock({ ...editingBlock, weekday: Number(event.target.value) })}
+                                  className="rounded-lg border border-emerald-100 bg-white px-2 py-2 text-xs outline-none focus:border-emerald-400"
+                                >
+                                  {dayLabels.map((dayLabel, dayIndex) => (
+                                    <option key={dayLabel} value={dayIndex}>{dayLabel}</option>
+                                  ))}
+                                </select>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="time"
+                                    value={editingBlock.start_time}
+                                    onChange={(event) => setEditingBlock({ ...editingBlock, start_time: event.target.value })}
+                                    className="rounded-lg border border-emerald-100 bg-white px-2 py-2 text-xs outline-none focus:border-emerald-400"
+                                  />
+                                  <input
+                                    type="time"
+                                    value={editingBlock.end_time}
+                                    onChange={(event) => setEditingBlock({ ...editingBlock, end_time: event.target.value })}
+                                    className="rounded-lg border border-emerald-100 bg-white px-2 py-2 text-xs outline-none focus:border-emerald-400"
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={handleAvailabilityUpdate}
+                                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2 py-2 font-medium text-white hover:bg-emerald-700"
+                                  >
+                                    <Save size={13} />
+                                    Guardar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingBlock(null)}
+                                    className="rounded-lg border border-slate-200 px-2 py-2 text-slate-600 hover:bg-slate-50"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div key={block.id} className="flex items-center justify-between gap-2 rounded-lg bg-white px-2 py-2 ring-1 ring-emerald-100">
+                                <span className="font-medium">{block.start_time} - {block.end_time}</span>
+                                <div className="flex shrink-0 gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingBlock({
+                                      availability_uuid: block.availability_uuid,
+                                      weekday: block.weekday,
+                                      start_time: block.start_time,
+                                      end_time: block.end_time,
+                                      slot_minutes: block.slot_minutes,
+                                    })}
+                                    className="rounded-md p-1.5 text-emerald-700 hover:bg-emerald-50"
+                                    aria-label="Editar bloque"
+                                  >
+                                    <Pencil size={13} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAvailabilityDelete(block)}
+                                    className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                                    aria-label="Eliminar bloque"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                              </div>
+                            )
                           ))}
                         </div>
                       ) : null
                     ))
                   ) : (
                     <p className="text-xs leading-5 text-emerald-800">
-                      Agrega bloques separados para dejar libres pausas, almuerzo o reuniones.
+                      Agrega bloques separados: por ejemplo 10:00-12:00 y otro bloque 15:00-18:00.
                     </p>
                   )}
                 </div>
                 <form onSubmit={handleAvailabilitySubmit} className="space-y-3">
+                  <div className="rounded-lg bg-white p-3 text-xs leading-5 text-emerald-800 ring-1 ring-emerald-100">
+                    Cada vez que presionas Agregar bloque se crea una franja independiente. Para partir el dia, agrega primero 10:00-12:00 y luego 15:00-18:00.
+                  </div>
                   <select
                     value={availability.weekday}
                     onChange={(event) => setAvailability({ ...availability, weekday: Number(event.target.value) })}

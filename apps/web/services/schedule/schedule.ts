@@ -179,6 +179,38 @@ export async function createTutorAvailability(
   return errorHandling(result)
 }
 
+export async function updateTutorAvailability(
+  orgId: number,
+  availabilityUuid: string,
+  data: {
+    weekday: number
+    start_time: string
+    end_time: string
+    slot_minutes: number
+    timezone: string
+    active?: boolean
+  },
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}schedule/org/${orgId}/availability/${availabilityUuid}`,
+    RequestBodyWithAuthHeader('PATCH', data, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function deleteTutorAvailability(
+  orgId: number,
+  availabilityUuid: string,
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}schedule/org/${orgId}/availability/${availabilityUuid}`,
+    RequestBodyWithAuthHeader('DELETE', null, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
 export async function createTutorAssignment(
   orgId: number,
   data: {

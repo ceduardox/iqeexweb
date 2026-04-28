@@ -13,6 +13,7 @@ from src.db.schedule import (
     TutorAssignmentRead,
     TutorAvailabilityCreate,
     TutorAvailabilityRead,
+    TutorAvailabilityUpdate,
 )
 from src.db.users import PublicUser
 from src.security.auth import get_current_user
@@ -20,12 +21,14 @@ from src.services.schedule.schedule import (
     cancel_session,
     create_assignment,
     create_session,
+    delete_availability,
     get_schedule_summary,
     list_assignments,
     list_availability,
     list_sessions,
     list_slots,
     update_session_status,
+    update_availability,
     upsert_availability,
 )
 
@@ -83,6 +86,27 @@ async def api_upsert_availability(
     current_user: PublicUser = Depends(get_current_user),
 ):
     return await upsert_availability(org_id, availability_create, current_user, db_session)
+
+
+@router.patch("/org/{org_id}/availability/{availability_uuid}", response_model=TutorAvailabilityRead)
+async def api_update_availability(
+    org_id: int,
+    availability_uuid: str,
+    availability_update: TutorAvailabilityUpdate,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await update_availability(org_id, availability_uuid, availability_update, current_user, db_session)
+
+
+@router.delete("/org/{org_id}/availability/{availability_uuid}", response_model=TutorAvailabilityRead)
+async def api_delete_availability(
+    org_id: int,
+    availability_uuid: str,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await delete_availability(org_id, availability_uuid, current_user, db_session)
 
 
 @router.get("/org/{org_id}/tutors/{tutor_user_id}/slots", response_model=list[ScheduleSlot])

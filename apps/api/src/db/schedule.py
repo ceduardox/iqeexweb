@@ -79,6 +79,15 @@ class TutorAvailabilityCreate(SQLModel):
     active: bool = True
 
 
+class TutorAvailabilityUpdate(SQLModel):
+    weekday: int = Field(ge=0, le=6)
+    start_time: str
+    end_time: str
+    slot_minutes: int = 30
+    timezone: str = "UTC"
+    active: bool = True
+
+
 class TutorAvailabilityRead(TutorAvailabilityBase):
     id: int
     availability_uuid: str

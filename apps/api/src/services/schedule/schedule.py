@@ -22,6 +22,7 @@ from src.db.schedule import (
     TutorAvailability,
     TutorAvailabilityCreate,
     TutorAvailabilityRead,
+    TutorAvailabilityUpdate,
 )
 from src.db.user_organizations import UserOrganization
 from src.db.users import PublicUser, User, UserRead
@@ -95,6 +96,18 @@ def _assignment_exists(org_id: int, tutor_user_id: int, student_user_id: int, db
             )
         ).first()
     )
+
+
+def _validate_time_range(start_time: str, end_time: str) -> None:
+    try:
+        start_hour, start_minute = [int(part) for part in start_time.split(":")[:2]]
+        end_hour, end_minute = [int(part) for part in end_time.split(":")[:2]]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid availability time")
+    start_value = start_hour * 60 + start_minute
+    end_value = end_hour * 60 + end_minute
+    if end_value <= start_value:
+        raise HTTPException(status_code=400, detail="End time must be after start time")
 
 
 def _session_read(session: ScheduleSession, db_session: Session) -> ScheduleSessionRead:
@@ -308,6 +321,7 @@ async def upsert_availability(
     _require_org_member(org_id, current_user.id, db_session)
     if not (_is_admin(org_id, current_user.id, db_session) or availability_create.tutor_user_id == current_user.id):
         raise HTTPException(status_code=403, detail="Not allowed to update this availability")
+    _validate_time_range(availability_create.start_time, availability_create.end_time)
 
     availability = TutorAvailability(
         **availability_create.model_dump(),
@@ -316,6 +330,65 @@ async def upsert_availability(
         creation_date=_now(),
         update_date=_now(),
     )
+    db_session.add(availability)
+    db_session.commit()
+    db_session.refresh(availability)
+    return TutorAvailabilityRead.model_validate(availability)
+
+
+async def update_availability(
+    org_id: int,
+    availability_uuid: str,
+    availability_update: TutorAvailabilityUpdate,
+    current_user: PublicUser,
+    db_session: Session,
+) -> TutorAvailabilityRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    availability = db_session.exec(
+        select(TutorAvailability).where(
+            TutorAvailability.org_id == org_id,
+            TutorAvailability.availability_uuid == availability_uuid,
+        )
+    ).first()
+    if not availability:
+        raise HTTPException(status_code=404, detail="Availability block not found")
+    if not (_is_admin(org_id, current_user.id, db_session) or availability.tutor_user_id == current_user.id):
+        raise HTTPException(status_code=403, detail="Not allowed to update this availability")
+    _validate_time_range(availability_update.start_time, availability_update.end_time)
+
+    availability.weekday = availability_update.weekday
+    availability.start_time = availability_update.start_time
+    availability.end_time = availability_update.end_time
+    availability.slot_minutes = availability_update.slot_minutes
+    availability.timezone = availability_update.timezone
+    availability.active = availability_update.active
+    availability.update_date = _now()
+    db_session.add(availability)
+    db_session.commit()
+    db_session.refresh(availability)
+    return TutorAvailabilityRead.model_validate(availability)
+
+
+async def delete_availability(
+    org_id: int,
+    availability_uuid: str,
+    current_user: PublicUser,
+    db_session: Session,
+) -> TutorAvailabilityRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    availability = db_session.exec(
+        select(TutorAvailability).where(
+            TutorAvailability.org_id == org_id,
+            TutorAvailability.availability_uuid == availability_uuid,
+        )
+    ).first()
+    if not availability:
+        raise HTTPException(status_code=404, detail="Availability block not found")
+    if not (_is_admin(org_id, current_user.id, db_session) or availability.tutor_user_id == current_user.id):
+        raise HTTPException(status_code=403, detail="Not allowed to delete this availability")
+
+    availability.active = False
+    availability.update_date = _now()
     db_session.add(availability)
     db_session.commit()
     db_session.refresh(availability)
