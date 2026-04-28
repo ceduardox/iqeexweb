@@ -14,6 +14,10 @@ import {
   Mail,
   MapPin,
   Phone,
+  ChevronLeft,
+  ChevronRight,
+  CalendarRange,
+  List,
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
@@ -25,11 +29,13 @@ import {
   getScheduleSummary,
   getOrgUsersForSchedule,
   getTutorSlots,
+  getTutorAvailability,
   updateScheduleSessionStatus,
   ScheduleSession,
   ScheduleSlot,
   ScheduleSummary,
   ScheduleUser,
+  TutorAvailability,
 } from '@services/schedule/schedule'
 
 type ScheduleModuleProps = {
@@ -79,6 +85,19 @@ function isoDate(date: Date) {
   return date.toISOString().slice(0, 10)
 }
 
+function localDateKey(date: Date) {
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat('es', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
 function SectionIcon({ tone, children }: { tone: string; children: React.ReactNode }) {
   return (
     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>
@@ -94,6 +113,9 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
   const [selectedTutorId, setSelectedTutorId] = useState<number | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<ScheduleSlot | null>(null)
   const [note, setNote] = useState('')
+  const [scheduleView, setScheduleView] = useState<'list' | 'month'>('list')
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date())
+  const [availabilityTutorId, setAvailabilityTutorId] = useState('')
   const [availability, setAvailability] = useState({
     weekday: 0,
     start_time: '09:00',
@@ -124,11 +146,22 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
   const tutors = summary?.assigned_tutors || []
   const selectedTutor = tutors.find((item) => item.id === selectedTutorId) || tutors[0]
   const tutorIdForSlots = selectedTutor?.id || (summary?.is_tutor ? currentUserId : null)
+  const availabilityTargetId = summary?.is_admin
+    ? Number(availabilityTutorId || currentUserId || 0)
+    : currentUserId
   const fromDate = useMemo(() => isoDate(new Date()), [])
 
   const { data: slots } = useSWR<ScheduleSlot[]>(
     token && orgId && tutorIdForSlots ? ['schedule-slots', orgId, tutorIdForSlots, fromDate, token] : null,
     () => getTutorSlots(orgId, tutorIdForSlots, fromDate, token),
+    { revalidateOnFocus: false }
+  )
+  const availabilityKey = token && orgId && availabilityTargetId
+    ? ['schedule-availability', orgId, availabilityTargetId, token]
+    : null
+  const { data: availabilityBlocks } = useSWR<TutorAvailability[]>(
+    availabilityKey,
+    () => getTutorAvailability(orgId, availabilityTargetId, token),
     { revalidateOnFocus: false }
   )
 
@@ -144,12 +177,41 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
     })
     return groups
   }, [slots])
+  const availabilityByDay = useMemo(() => {
+    const groups: Record<number, TutorAvailability[]> = {}
+    ;(availabilityBlocks || []).forEach((block) => {
+      groups[block.weekday] = [...(groups[block.weekday] || []), block].sort((a, b) => a.start_time.localeCompare(b.start_time))
+    })
+    return groups
+  }, [availabilityBlocks])
+  const monthDays = useMemo(() => {
+    const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+    const start = new Date(firstDay)
+    start.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7))
+    return Array.from({ length: 42 }, (_, index) => {
+      const day = new Date(start)
+      day.setDate(start.getDate() + index)
+      return day
+    })
+  }, [calendarMonth])
+  const sessionsByDay = useMemo(() => {
+    const groups: Record<string, ScheduleSession[]> = {}
+    visibleSessions.forEach((item) => {
+      const key = localDateKey(new Date(item.starts_at))
+      groups[key] = [...(groups[key] || []), item].sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    })
+    return groups
+  }, [visibleSessions])
+  const monthLabel = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(calendarMonth)
 
   async function refreshAll() {
     await mutate(summaryKey)
     await mutate(sessionsKey)
     if (tutorIdForSlots) {
       await mutate(['schedule-slots', orgId, tutorIdForSlots, fromDate, token])
+    }
+    if (availabilityKey) {
+      await mutate(availabilityKey)
     }
   }
 
@@ -209,11 +271,15 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
 
   async function handleAvailabilitySubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (!availabilityTargetId) {
+      toast.error('Selecciona un instructor')
+      return
+    }
     try {
       await createTutorAvailability(
         orgId,
         {
-          tutor_user_id: currentUserId,
+          tutor_user_id: availabilityTargetId,
           ...availability,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         },
@@ -349,8 +415,42 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                   <SectionIcon tone="bg-emerald-50 text-emerald-700">
                     <Clock size={17} />
                   </SectionIcon>
-                  Disponibilidad
+                  Bloques disponibles
                 </h2>
+                {summary?.is_admin && (
+                  <select
+                    value={availabilityTutorId}
+                    onChange={(event) => setAvailabilityTutorId(event.target.value)}
+                    className="mb-3 w-full rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:bg-white"
+                  >
+                    <option value="">Mi usuario</option>
+                    {(orgUsers?.items || []).map((item: any) => (
+                      <option key={`availability-${item.user.id}`} value={item.user.id}>
+                        {nameOf(item.user)} - {item.role?.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="mb-3 space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
+                  {Object.keys(availabilityByDay).length ? (
+                    dayLabels.map((label, index) => (
+                      availabilityByDay[index]?.length ? (
+                        <div key={label} className="flex flex-wrap items-center gap-2 text-xs text-emerald-900">
+                          <span className="w-9 font-semibold">{label}</span>
+                          {availabilityByDay[index].map((block) => (
+                            <span key={block.id} className="rounded-full bg-white px-2 py-1 ring-1 ring-emerald-100">
+                              {block.start_time} - {block.end_time}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null
+                    ))
+                  ) : (
+                    <p className="text-xs leading-5 text-emerald-800">
+                      Agrega bloques separados para dejar libres pausas, almuerzo o reuniones.
+                    </p>
+                  )}
+                </div>
                 <form onSubmit={handleAvailabilitySubmit} className="space-y-3">
                   <select
                     value={availability.weekday}
@@ -377,7 +477,7 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                   </div>
                   <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700">
                     <Plus size={16} />
-                    Agregar horario
+                    Agregar bloque
                   </button>
                 </form>
               </section>
@@ -518,6 +618,115 @@ export default function ScheduleModule({ orgId, dashboard = false }: ScheduleMod
                         Reservar
                       </button>
                     </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {(summary?.is_tutor || summary?.is_admin) && (
+              <section className="rounded-lg border border-indigo-100 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <SectionIcon tone="bg-indigo-50 text-indigo-700">
+                      <CalendarRange size={17} />
+                    </SectionIcon>
+                    Calendario mensual
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setScheduleView(scheduleView === 'month' ? 'list' : 'month')}
+                      className="inline-flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                    >
+                      {scheduleView === 'month' ? <List size={16} /> : <CalendarRange size={16} />}
+                      {scheduleView === 'month' ? 'Ver listado' : 'Ver calendario'}
+                    </button>
+                    <div className="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                      <button
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                        className="px-2 py-2 text-slate-500 hover:bg-slate-50"
+                        aria-label="Mes anterior"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <div className="min-w-[150px] px-3 text-center text-sm font-semibold capitalize text-slate-800">
+                        {monthLabel}
+                      </div>
+                      <button
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                        className="px-2 py-2 text-slate-500 hover:bg-slate-50"
+                        aria-label="Mes siguiente"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {scheduleView === 'month' ? (
+                  <div className="overflow-x-auto">
+                    <div className="grid min-w-[760px] grid-cols-7 gap-2">
+                      {dayLabels.map((label) => (
+                        <div key={label} className="px-2 text-xs font-semibold uppercase text-slate-400">
+                          {label}
+                        </div>
+                      ))}
+                      {monthDays.map((day) => {
+                        const key = localDateKey(day)
+                        const daySessions = sessionsByDay[key] || []
+                        const outsideMonth = day.getMonth() !== calendarMonth.getMonth()
+                        return (
+                          <div
+                            key={key}
+                            className={`min-h-[128px] rounded-lg border p-2 ${
+                              outsideMonth
+                                ? 'border-slate-100 bg-slate-50/60 text-slate-300'
+                                : 'border-indigo-100 bg-white text-slate-900'
+                            }`}
+                          >
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-xs font-semibold">{day.getDate()}</span>
+                              {daySessions.length > 0 && (
+                                <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                                  {daySessions.length}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {daySessions.slice(0, 4).map((item) => {
+                                const badge = statusInfo(item.status)
+                                return (
+                                  <div key={item.session_uuid} className="rounded-md border border-slate-100 bg-slate-50 p-2">
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="text-[11px] font-semibold text-slate-800">{formatTime(item.starts_at)}</span>
+                                      <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ring-1 ${badge.cls}`}>
+                                        {badge.label}
+                                      </span>
+                                    </div>
+                                    <div className="mt-1 truncate text-[11px] text-slate-600">
+                                      {nameOf(item.student)}
+                                    </div>
+                                    {summary?.is_admin && (
+                                      <div className="truncate text-[10px] text-slate-400">
+                                        {nameOf(item.tutor)}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                              {daySessions.length > 4 && (
+                                <div className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-700">
+                                  +{daySessions.length - 4} mas
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                    Usa el boton Ver calendario para revisar tus citas por mes. El listado de abajo mantiene las acciones de asistencia.
                   </div>
                 )}
               </section>

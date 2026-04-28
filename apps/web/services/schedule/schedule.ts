@@ -57,6 +57,21 @@ export type ScheduleSlot = {
   available: boolean
 }
 
+export type TutorAvailability = {
+  id: number
+  availability_uuid: string
+  org_id: number
+  tutor_user_id: number
+  weekday: number
+  start_time: string
+  end_time: string
+  slot_minutes: number
+  timezone: string
+  active: boolean
+  creation_date: string
+  update_date: string
+}
+
 export async function getScheduleSummary(orgId: number, accessToken?: string) {
   const result = await fetch(
     `${getAPIUrl()}schedule/org/${orgId}/summary`,
@@ -129,6 +144,18 @@ export async function updateScheduleSessionStatus(
   const result = await fetch(
     `${getAPIUrl()}schedule/org/${orgId}/sessions/${sessionUuid}/status`,
     RequestBodyWithAuthHeader('POST', data, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function getTutorAvailability(
+  orgId: number,
+  tutorUserId: number,
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}schedule/org/${orgId}/tutors/${tutorUserId}/availability`,
+    RequestBodyWithAuthHeader('GET', null, null, accessToken)
   )
   return errorHandling(result)
 }
