@@ -39,6 +39,16 @@ export type ReadingAIGeneratedMaterial = {
   source: string
 }
 
+export type ReadingProgramAssignment = {
+  id: number
+  collection_uuid: string
+  name: string
+  public: boolean
+  usergroup_id?: number
+  instructors: Array<Record<string, any>>
+  students: Array<Record<string, any>>
+}
+
 export type ReadingAttempt = {
   id: number
   attempt_uuid: string
@@ -135,6 +145,46 @@ export async function generateReadingMaterialFromPdf(
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     body: formData,
   })
+  return errorHandling(result)
+}
+
+export async function getReadingProgramAssignments(orgId: number, accessToken?: string) {
+  const result = await fetch(
+    `${getAPIUrl()}reading-test/org/${orgId}/program-assignments`,
+    RequestBodyWithAuthHeader('GET', null, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function getReadingProgramAssignableUsers(orgId: number, accessToken?: string) {
+  const result = await fetch(
+    `${getAPIUrl()}reading-test/org/${orgId}/program-assignable-users`,
+    RequestBodyWithAuthHeader('GET', null, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function assignReadingProgramInstructor(
+  orgId: number,
+  data: { collection_uuid: string; user_id: number },
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}reading-test/org/${orgId}/program-assignments/instructors`,
+    RequestBodyWithAuthHeader('POST', data, null, accessToken)
+  )
+  return errorHandling(result)
+}
+
+export async function assignReadingProgramStudent(
+  orgId: number,
+  data: { collection_uuid: string; user_id: number },
+  accessToken?: string
+) {
+  const result = await fetch(
+    `${getAPIUrl()}reading-test/org/${orgId}/program-assignments/students`,
+    RequestBodyWithAuthHeader('POST', data, null, accessToken)
+  )
   return errorHandling(result)
 }
 

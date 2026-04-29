@@ -16,14 +16,19 @@ import {
 } from 'lucide-react'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import {
+  assignReadingProgramInstructor,
+  assignReadingProgramStudent,
   createReadingAttempt,
   createReadingMaterial,
   generateReadingMaterial,
   generateReadingMaterialFromPdf,
+  getReadingProgramAssignableUsers,
+  getReadingProgramAssignments,
   getReadingAttempts,
   getReadingMaterials,
   ReadingAttempt,
   ReadingMaterial,
+  ReadingProgramAssignment,
   ReadingQuestion,
 } from '@services/reading-test/reading-test'
 import { getOrgCollections } from '@services/courses/collections'
@@ -114,6 +119,10 @@ function SectionIcon({ children, tone }: { children: React.ReactNode; tone: stri
   return <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone}`}>{children}</span>
 }
 
+function userLabel(user: any) {
+  return [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || user?.email || `Usuario ${user?.id}`
+}
+
 export default function ReadingTestModule({ orgId, dashboard = false }: ReadingTestModuleProps) {
   const session = useLHSession() as any
   const token = session?.data?.tokens?.access_token
@@ -130,6 +139,9 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const [targetWords, setTargetWords] = useState(500)
   const [questionCount, setQuestionCount] = useState(6)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedProgramUuid, setSelectedProgramUuid] = useState('')
+  const [selectedInstructorId, setSelectedInstructorId] = useState('')
+  const [selectedStudentId, setSelectedStudentId] = useState('')
   const [status, setStatus] = useState('Prepara la lectura para comenzar.')
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -154,6 +166,8 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const materialsKey = token && orgId ? ['reading-materials', orgId, token] : null
   const attemptsKey = token && orgId ? ['reading-attempts', orgId, selectedMaterialId || 'all', token] : null
   const collectionsKey = token && orgId && canManageMaterial ? ['reading-collections', orgId, token] : null
+  const programAssignmentsKey = token && orgId && canManageMaterial ? ['reading-program-assignments', orgId, token] : null
+  const assignableUsersKey = token && orgId && canManageMaterial ? ['reading-program-users', orgId, token] : null
 
   const { data: materials } = useSWR<ReadingMaterial[]>(
     materialsKey,
@@ -168,6 +182,16 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const { data: apiAttempts } = useSWR<ReadingAttempt[]>(
     attemptsKey,
     () => getReadingAttempts(orgId, selectedMaterialId, token),
+    { revalidateOnFocus: false }
+  )
+  const { data: programAssignments } = useSWR<ReadingProgramAssignment[]>(
+    programAssignmentsKey,
+    () => getReadingProgramAssignments(orgId, token),
+    { revalidateOnFocus: false }
+  )
+  const { data: assignableUsers } = useSWR<any>(
+    assignableUsersKey,
+    () => getReadingProgramAssignableUsers(orgId, token),
     { revalidateOnFocus: false }
   )
 
@@ -200,6 +224,12 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
     setReadingText(material.text_content)
     setReadingQuestions(material.questions?.length ? material.questions : defaultQuestions)
   }, [materials, selectedMaterialId])
+
+  React.useEffect(() => {
+    const firstProgram = programAssignments?.[0]
+    if (!firstProgram || selectedProgramUuid) return
+    setSelectedProgramUuid(firstProgram.collection_uuid)
+  }, [programAssignments, selectedProgramUuid])
 
   const normalizedAttempts = apiAttempts?.length
     ? apiAttempts.map((attempt) => ({
@@ -290,6 +320,30 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
       setStatus('No se pudo generar con IA. Revisa la configuracion o intenta con mas texto.')
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  async function assignInstructor() {
+    if (!selectedProgramUuid || !selectedInstructorId) return
+    try {
+      await assignReadingProgramInstructor(orgId, { collection_uuid: selectedProgramUuid, user_id: Number(selectedInstructorId) }, token)
+      setSelectedInstructorId('')
+      await mutate(programAssignmentsKey)
+      toast.success('Instructor asignado al programa')
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo asignar instructor')
+    }
+  }
+
+  async function assignStudent() {
+    if (!selectedProgramUuid || !selectedStudentId) return
+    try {
+      await assignReadingProgramStudent(orgId, { collection_uuid: selectedProgramUuid, user_id: Number(selectedStudentId) }, token)
+      setSelectedStudentId('')
+      await mutate(programAssignmentsKey)
+      toast.success('Alumno asignado al programa')
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo asignar alumno')
     }
   }
 
@@ -388,6 +442,8 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
     setStatus('Prepara la lectura para comenzar.')
   }
 
+  const selectedProgram = programAssignments?.find((item) => item.collection_uuid === selectedProgramUuid)
+
   return (
     <div className={dashboard ? 'h-full w-full bg-slate-50 px-4 py-6 sm:px-6 sm:py-8' : 'w-full bg-slate-50'}>
       <div className={dashboard ? 'mx-auto w-full max-w-7xl' : 'mx-auto w-full max-w-7xl px-4 py-6 sm:py-8'}>
@@ -462,6 +518,117 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
             </div>
           ))}
         </div>
+
+        {canManageMaterial && (
+          <section className="mb-5 rounded-lg border border-cyan-100 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <SectionIcon tone="bg-cyan-50 text-cyan-700">
+                    <BookOpenCheck size={17} />
+                  </SectionIcon>
+                  Asignaciones de programas
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Admin asigna instructores al Programa. El instructor asignado puede asignar alumnos a ese mismo Programa.
+                </p>
+              </div>
+              <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-100">
+                Usa Programas / Collections
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[330px_1fr_1fr]">
+              <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                Programa
+                <select
+                  value={selectedProgramUuid}
+                  onChange={(event) => setSelectedProgramUuid(event.target.value)}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-cyan-400 focus:bg-white"
+                >
+                  <option value="">Selecciona programa</option>
+                  {(programAssignments || []).map((programItem) => (
+                    <option key={programItem.collection_uuid} value={programItem.collection_uuid}>
+                      {programItem.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="mb-2 text-sm font-semibold text-slate-900">Instructores</div>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {selectedProgram?.instructors?.length ? (
+                    selectedProgram.instructors.map((user: any) => (
+                      <span key={user.id} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                        {userLabel(user)}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">Sin instructor asignado.</span>
+                  )}
+                </div>
+                {role === 'admin' && (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedInstructorId}
+                      onChange={(event) => setSelectedInstructorId(event.target.value)}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+                    >
+                      <option value="">Elegir instructor</option>
+                      {(assignableUsers?.instructors || []).map((user: any) => (
+                        <option key={user.id} value={user.id}>
+                          {userLabel(user)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={assignInstructor}
+                      className="rounded-lg bg-cyan-600 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-700"
+                    >
+                      Asignar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <div className="mb-2 text-sm font-semibold text-slate-900">Alumnos</div>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {selectedProgram?.students?.length ? (
+                    selectedProgram.students.map((user: any) => (
+                      <span key={user.id} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                        {userLabel(user)}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">Sin alumnos asignados.</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedStudentId}
+                    onChange={(event) => setSelectedStudentId(event.target.value)}
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+                  >
+                    <option value="">Elegir alumno</option>
+                    {(assignableUsers?.students || []).map((user: any) => (
+                      <option key={user.id} value={user.id}>
+                        {userLabel(user)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={assignStudent}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    Asignar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {view === 'material' && (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[390px_1fr]">

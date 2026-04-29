@@ -12,13 +12,19 @@ from src.db.reading_tests import (
     ReadingAttemptRead,
     ReadingMaterialCreate,
     ReadingMaterialRead,
+    ReadingProgramAssignmentRead,
+    ReadingProgramUserAssign,
 )
 from src.db.users import PublicUser
 from src.security.auth import get_current_user
 from src.services.reading_tests.reading_tests import (
     create_attempt,
     create_material,
+    assign_program_instructor,
+    assign_program_student,
     generate_ai_material,
+    list_program_assignable_users,
+    list_program_assignments,
     list_attempts,
     list_materials,
 )
@@ -44,6 +50,44 @@ async def api_create_material(
     current_user: PublicUser = Depends(get_current_user),
 ):
     return await create_material(org_id, material_create, current_user, db_session)
+
+
+@router.get("/org/{org_id}/program-assignments", response_model=list[ReadingProgramAssignmentRead])
+async def api_list_program_assignments(
+    org_id: int,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await list_program_assignments(org_id, current_user, db_session)
+
+
+@router.get("/org/{org_id}/program-assignable-users")
+async def api_list_program_assignable_users(
+    org_id: int,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await list_program_assignable_users(org_id, current_user, db_session)
+
+
+@router.post("/org/{org_id}/program-assignments/instructors", response_model=ReadingProgramAssignmentRead)
+async def api_assign_program_instructor(
+    org_id: int,
+    payload: ReadingProgramUserAssign,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await assign_program_instructor(org_id, payload, current_user, db_session)
+
+
+@router.post("/org/{org_id}/program-assignments/students", response_model=ReadingProgramAssignmentRead)
+async def api_assign_program_student(
+    org_id: int,
+    payload: ReadingProgramUserAssign,
+    db_session: Session = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await assign_program_student(org_id, payload, current_user, db_session)
 
 
 @router.post("/org/{org_id}/generate", response_model=ReadingAIGenerateRead)

@@ -78,6 +78,21 @@ class ReadingAIGenerateRead(SQLModel):
     source: str = "ai"
 
 
+class ReadingProgramAssignmentRead(SQLModel):
+    id: int
+    collection_uuid: str
+    name: str
+    public: bool
+    usergroup_id: Optional[int] = None
+    instructors: list[UserRead] = Field(default_factory=list)
+    students: list[UserRead] = Field(default_factory=list)
+
+
+class ReadingProgramUserAssign(SQLModel):
+    collection_uuid: str
+    user_id: int
+
+
 class ReadingAttemptBase(SQLModel):
     org_id: int = Field(sa_column=Column(Integer, ForeignKey("organization.id", ondelete="CASCADE"), index=True))
     material_id: int = Field(sa_column=Column(Integer, ForeignKey("readingmaterial.id", ondelete="CASCADE"), index=True))

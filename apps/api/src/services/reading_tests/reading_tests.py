@@ -18,12 +18,16 @@ from src.db.reading_tests import (
     ReadingMaterialCreate,
     ReadingMaterialRead,
     ReadingMaterialStatus,
+    ReadingProgramAssignmentRead,
+    ReadingProgramUserAssign,
 )
 from src.db.collections import Collection
+from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipEnum, ResourceAuthorshipStatusEnum
 from src.db.roles import Role
 from src.db.user_organizations import UserOrganization
 from src.db.usergroup_resources import UserGroupResource
 from src.db.usergroup_user import UserGroupUser
+from src.db.usergroups import UserGroup
 from src.db.users import PublicUser, User, UserRead
 from src.services.ai.base import get_gemini_client
 from src.security.rbac.constants import ADMIN_OR_MAINTAINER_ROLE_IDS
@@ -97,6 +101,233 @@ def _student_collection_names(org_id: int, user_id: int, db_session: Session) ->
 def _user_read(user_id: int, db_session: Session) -> UserRead | None:
     user = db_session.get(User, user_id)
     return UserRead.model_validate(user) if user else None
+
+
+def _is_collection_instructor(collection_uuid: str, user_id: int, db_session: Session) -> bool:
+    return bool(
+        db_session.exec(
+            select(ResourceAuthor).where(
+                ResourceAuthor.resource_uuid == collection_uuid,
+                ResourceAuthor.user_id == user_id,
+                ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE,
+            )
+        ).first()
+    )
+
+
+def _require_collection_manager(
+    org_id: int,
+    collection_uuid: str,
+    current_user: PublicUser,
+    db_session: Session,
+) -> Collection:
+    collection = db_session.exec(
+        select(Collection).where(
+            Collection.org_id == org_id,
+            Collection.collection_uuid == collection_uuid,
+        )
+    ).first()
+    if not collection:
+        raise HTTPException(status_code=404, detail="Program not found")
+    if _is_admin(org_id, current_user.id, db_session) or _is_collection_instructor(collection_uuid, current_user.id, db_session):
+        return collection
+    raise HTTPException(status_code=403, detail="You can only manage assigned programs")
+
+
+def _program_group_name(collection: Collection) -> str:
+    return f"Programa: {collection.name}"
+
+
+def _ensure_program_usergroup(collection: Collection, db_session: Session) -> UserGroup:
+    linked = db_session.exec(
+        select(UserGroup)
+        .join(UserGroupResource, UserGroupResource.usergroup_id == UserGroup.id)  # type: ignore
+        .where(
+            UserGroupResource.org_id == collection.org_id,
+            UserGroupResource.resource_uuid == collection.collection_uuid,
+        )
+    ).first()
+    if linked:
+        return linked
+
+    group = UserGroup(
+        org_id=collection.org_id,
+        name=_program_group_name(collection),
+        description=f"Alumnos asignados al programa {collection.name}",
+        usergroup_uuid=f"usergroup_{uuid4()}",
+        creation_date=_now(),
+        update_date=_now(),
+    )
+    db_session.add(group)
+    db_session.commit()
+    db_session.refresh(group)
+
+    db_session.add(
+        UserGroupResource(
+            usergroup_id=group.id,
+            resource_uuid=collection.collection_uuid,
+            org_id=collection.org_id,
+            creation_date=_now(),
+            update_date=_now(),
+        )
+    )
+    db_session.commit()
+    db_session.refresh(group)
+    return group
+
+
+def _program_assignment_read(collection: Collection, db_session: Session) -> ReadingProgramAssignmentRead:
+    instructors = db_session.exec(
+        select(User)
+        .join(ResourceAuthor, ResourceAuthor.user_id == User.id)  # type: ignore
+        .where(
+            ResourceAuthor.resource_uuid == collection.collection_uuid,
+            ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE,
+        )
+        .order_by(User.first_name.asc())
+    ).all()
+    group = db_session.exec(
+        select(UserGroup)
+        .join(UserGroupResource, UserGroupResource.usergroup_id == UserGroup.id)  # type: ignore
+        .where(
+            UserGroupResource.org_id == collection.org_id,
+            UserGroupResource.resource_uuid == collection.collection_uuid,
+        )
+    ).first()
+    students: list[User] = []
+    if group:
+        students = db_session.exec(
+            select(User)
+            .join(UserGroupUser, UserGroupUser.user_id == User.id)  # type: ignore
+            .where(
+                UserGroupUser.org_id == collection.org_id,
+                UserGroupUser.usergroup_id == group.id,
+            )
+            .order_by(User.first_name.asc())
+        ).all()
+    return ReadingProgramAssignmentRead(
+        id=collection.id,
+        collection_uuid=collection.collection_uuid,
+        name=collection.name,
+        public=collection.public,
+        usergroup_id=group.id if group else None,
+        instructors=[UserRead.model_validate(user) for user in instructors],
+        students=[UserRead.model_validate(user) for user in students],
+    )
+
+
+async def list_program_assignments(
+    org_id: int,
+    current_user: PublicUser,
+    db_session: Session,
+) -> list[ReadingProgramAssignmentRead]:
+    _require_org_member(org_id, current_user.id, db_session)
+    filters = [Collection.org_id == org_id]
+    if not _is_admin(org_id, current_user.id, db_session):
+        filters.append(Collection.collection_uuid.in_(  # type: ignore
+            db_session.exec(
+                select(ResourceAuthor.resource_uuid).where(
+                    ResourceAuthor.user_id == current_user.id,
+                    ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE,
+                )
+            ).all()
+        ))
+    collections = db_session.exec(select(Collection).where(*filters).order_by(Collection.name.asc())).all()
+    return [_program_assignment_read(collection, db_session) for collection in collections]
+
+
+async def list_program_assignable_users(
+    org_id: int,
+    current_user: PublicUser,
+    db_session: Session,
+) -> dict:
+    _require_org_member(org_id, current_user.id, db_session)
+    if not (_is_admin(org_id, current_user.id, db_session) or _is_instructor(org_id, current_user.id, db_session)):
+        raise HTTPException(status_code=403, detail="Only admins or instructors can assign programs")
+    rows = db_session.exec(
+        select(User, UserOrganization, Role)
+        .join(UserOrganization, UserOrganization.user_id == User.id)  # type: ignore
+        .join(Role, Role.id == UserOrganization.role_id)  # type: ignore
+        .where(UserOrganization.org_id == org_id)
+        .order_by(User.first_name.asc())
+    ).all()
+    instructors = []
+    students = []
+    for user, membership, role in rows:
+        item = UserRead.model_validate(user)
+        role_name = (role.name or "").lower()
+        if membership.role_id in ADMIN_OR_MAINTAINER_ROLE_IDS or "instructor" in role_name:
+            instructors.append(item)
+        else:
+            students.append(item)
+    return {"instructors": instructors, "students": students}
+
+
+async def assign_program_instructor(
+    org_id: int,
+    payload: ReadingProgramUserAssign,
+    current_user: PublicUser,
+    db_session: Session,
+) -> ReadingProgramAssignmentRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    if not _is_admin(org_id, current_user.id, db_session):
+        raise HTTPException(status_code=403, detail="Only admins can assign instructors to programs")
+    collection = _require_collection_manager(org_id, payload.collection_uuid, current_user, db_session)
+    _require_org_member(org_id, payload.user_id, db_session)
+    existing = db_session.exec(
+        select(ResourceAuthor).where(
+            ResourceAuthor.resource_uuid == collection.collection_uuid,
+            ResourceAuthor.user_id == payload.user_id,
+        )
+    ).first()
+    if existing:
+        existing.authorship = ResourceAuthorshipEnum.MAINTAINER
+        existing.authorship_status = ResourceAuthorshipStatusEnum.ACTIVE
+        existing.update_date = _now()
+        db_session.add(existing)
+    else:
+        db_session.add(
+            ResourceAuthor(
+                resource_uuid=collection.collection_uuid,
+                user_id=payload.user_id,
+                authorship=ResourceAuthorshipEnum.MAINTAINER,
+                authorship_status=ResourceAuthorshipStatusEnum.ACTIVE,
+                creation_date=_now(),
+                update_date=_now(),
+            )
+        )
+    db_session.commit()
+    return _program_assignment_read(collection, db_session)
+
+
+async def assign_program_student(
+    org_id: int,
+    payload: ReadingProgramUserAssign,
+    current_user: PublicUser,
+    db_session: Session,
+) -> ReadingProgramAssignmentRead:
+    _require_org_member(org_id, current_user.id, db_session)
+    collection = _require_collection_manager(org_id, payload.collection_uuid, current_user, db_session)
+    _require_org_member(org_id, payload.user_id, db_session)
+    group = _ensure_program_usergroup(collection, db_session)
+    existing = db_session.exec(
+        select(UserGroupUser).where(
+            UserGroupUser.usergroup_id == group.id,
+            UserGroupUser.user_id == payload.user_id,
+        )
+    ).first()
+    if not existing:
+        db_session.add(
+            UserGroupUser(
+                usergroup_id=group.id,
+                user_id=payload.user_id,
+                org_id=org_id,
+                creation_date=_now(),
+                update_date=_now(),
+            )
+        )
+        db_session.commit()
+    return _program_assignment_read(collection, db_session)
 
 
 def _material_read(material: ReadingMaterial, db_session: Session) -> ReadingMaterialRead:
