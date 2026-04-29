@@ -19,8 +19,11 @@ from src.db.reading_tests import (
     ReadingMaterialRead,
     ReadingMaterialStatus,
 )
+from src.db.collections import Collection
 from src.db.roles import Role
 from src.db.user_organizations import UserOrganization
+from src.db.usergroup_resources import UserGroupResource
+from src.db.usergroup_user import UserGroupUser
 from src.db.users import PublicUser, User, UserRead
 from src.services.ai.base import get_gemini_client
 from src.security.rbac.constants import ADMIN_OR_MAINTAINER_ROLE_IDS
@@ -65,6 +68,30 @@ def _is_instructor(org_id: int, user_id: int, db_session: Session) -> bool:
     dashboard = rights.get("dashboard") if isinstance(rights, dict) else None
     courses = rights.get("courses") if isinstance(rights, dict) else None
     return bool(dashboard and dashboard.get("action_access") or courses and courses.get("action_create"))
+
+
+def _student_collection_names(org_id: int, user_id: int, db_session: Session) -> list[str]:
+    public_collections = db_session.exec(
+        select(Collection.name).where(
+            Collection.org_id == org_id,
+            Collection.public == True,
+        )
+    ).all()
+    assigned_collections = db_session.exec(
+        select(Collection.name)
+        .join(UserGroupResource, UserGroupResource.resource_uuid == Collection.collection_uuid)  # type: ignore
+        .join(
+            UserGroupUser,
+            UserGroupUser.usergroup_id == UserGroupResource.usergroup_id,
+        )  # type: ignore
+        .where(
+            Collection.org_id == org_id,
+            UserGroupResource.org_id == org_id,
+            UserGroupUser.org_id == org_id,
+            UserGroupUser.user_id == user_id,
+        )
+    ).all()
+    return sorted({name.strip() for name in [*public_collections, *assigned_collections] if name and name.strip()})
 
 
 def _user_read(user_id: int, db_session: Session) -> UserRead | None:
@@ -232,6 +259,10 @@ async def list_materials(
     filters = [ReadingMaterial.org_id == org_id]
     if not _is_instructor(org_id, current_user.id, db_session):
         filters.append(ReadingMaterial.status == ReadingMaterialStatus.PUBLISHED)
+        collection_names = _student_collection_names(org_id, current_user.id, db_session)
+        if not collection_names:
+            return []
+        filters.append(ReadingMaterial.program_name.in_(collection_names))  # type: ignore
     rows = db_session.exec(
         select(ReadingMaterial).where(*filters).order_by(ReadingMaterial.id.desc())
     ).all()

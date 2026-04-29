@@ -26,6 +26,7 @@ import {
   ReadingMaterial,
   ReadingQuestion,
 } from '@services/reading-test/reading-test'
+import { getOrgCollections } from '@services/courses/collections'
 
 type ReadingTestModuleProps = {
   orgId: number
@@ -116,7 +117,6 @@ function SectionIcon({ children, tone }: { children: React.ReactNode; tone: stri
 export default function ReadingTestModule({ orgId, dashboard = false }: ReadingTestModuleProps) {
   const session = useLHSession() as any
   const token = session?.data?.tokens?.access_token
-  const [role, setRole] = useState<Role>('admin')
   const [view, setView] = useState<View>('material')
   const [title, setTitle] = useState('Lectura diagnostica')
   const [program, setProgram] = useState('Lectura 12-14 anos')
@@ -139,12 +139,30 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const [localAttempts, setLocalAttempts] = useState(initialAttempts)
   const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null)
 
+  const currentOrgRole = useMemo(() => {
+    const roles = session?.data?.roles || []
+    return roles.find((item: any) => item?.org?.id === orgId)?.role
+  }, [session?.data?.roles, orgId])
+  const role: Role =
+    session?.data?.user?.is_superadmin || currentOrgRole?.role_uuid === 'role_global_admin' || currentOrgRole?.role_uuid === 'role_global_maintainer'
+      ? 'admin'
+      : currentOrgRole?.role_uuid === 'role_global_instructor'
+        ? 'instructor'
+        : 'student'
+  const canManageMaterial = role !== 'student'
+
   const materialsKey = token && orgId ? ['reading-materials', orgId, token] : null
   const attemptsKey = token && orgId ? ['reading-attempts', orgId, selectedMaterialId || 'all', token] : null
+  const collectionsKey = token && orgId && canManageMaterial ? ['reading-collections', orgId, token] : null
 
   const { data: materials } = useSWR<ReadingMaterial[]>(
     materialsKey,
     () => getReadingMaterials(orgId, token),
+    { revalidateOnFocus: false }
+  )
+  const { data: collections } = useSWR<any[]>(
+    collectionsKey,
+    () => getOrgCollections(String(orgId), token),
     { revalidateOnFocus: false }
   )
   const { data: apiAttempts } = useSWR<ReadingAttempt[]>(
@@ -163,7 +181,16 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
 
   React.useEffect(() => {
     const material = materials?.[0]
-    if (!material || selectedMaterialId) return
+    if (!material || selectedMaterialId) {
+      if (materials && materials.length === 0 && !canManageMaterial) {
+        setTitle('Sin material asignado')
+        setProgram('Programa no asignado')
+        setFileName('')
+        setReadingText('')
+        setReadingQuestions([])
+      }
+      return
+    }
     setSelectedMaterialId(material.id)
     setTitle(material.title)
     setProgram(material.program_name)
@@ -189,8 +216,6 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const wordCount = useMemo(() => countWords(readingText), [readingText])
   const bestComprehension = Math.max(...normalizedAttempts.map((item) => item.adjusted))
   const bestWpm = Math.max(...normalizedAttempts.map((item) => item.wpm))
-  const canManageMaterial = role !== 'student'
-
   async function saveMaterial(materialStatus: 'draft' | 'published' = 'published') {
     if (!canManageMaterial) return
     try {
@@ -269,6 +294,14 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   }
 
   function prepareTest() {
+    if (!selectedMaterialId && !canManageMaterial) {
+      toast.error('Aun no tienes un test de lectura asignado a tu programa')
+      return
+    }
+    if (!readingText || readingQuestions.length === 0) {
+      toast.error('Este material todavia no tiene texto o preguntas')
+      return
+    }
     setView('test')
     setShowQuestions(false)
     setAnswers({})
@@ -293,6 +326,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   }
 
   async function gradeTest() {
+    if (readingQuestions.length === 0) return
     const correct = readingQuestions.reduce((total, item, index) => total + (answers[index] === item.a ? 1 : 0), 0)
     const duration = Math.max(1, elapsed || 1)
     const wpm = Math.round(wordCount / (duration / 60))
@@ -410,26 +444,16 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {(['admin', 'instructor', 'student'] as Role[]).map((item) => (
-              <button
-                key={item}
-                onClick={() => setRole(item)}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  role === item ? 'bg-violet-600 text-white' : 'bg-violet-50 text-violet-700 hover:bg-violet-100'
-                }`}
-              >
-                Vista {item === 'student' ? 'alumno' : item}
-              </button>
-            ))}
-          </div>
+          <span className="rounded-full bg-violet-50 px-3 py-2 text-xs font-semibold uppercase text-violet-700 ring-1 ring-violet-100">
+            {role === 'student' ? 'Alumno' : role === 'instructor' ? 'Instructor' : 'Admin'}
+          </span>
         </div>
 
         <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
           {[
-            ['1. PDF o IA', 'Admin/profesor carga o genera material.'],
-            ['2. Revision', 'La IA propone texto y preguntas.'],
-            ['3. Publicacion', 'Se asigna por edad y programa.'],
+            ['1. Programa', canManageMaterial ? 'El material se vincula al programa.' : 'Ves solo lo asignado a tu programa.'],
+            ['2. Material', canManageMaterial ? 'PDF, texto o IA para crear el test.' : 'Lectura publicada por tu profesor.'],
+            ['3. Prueba', 'Alumno lee y responde preguntas.'],
             ['4. Reporte', 'Intentos, progreso y recomendacion.'],
           ].map(([title, description]) => (
             <div key={title} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -450,28 +474,29 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
               </h2>
               {!canManageMaterial && (
                 <div className="mb-3 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-                  El alumno ve el material asignado segun su programa. La carga de PDFs queda para admin e instructor.
+                  Solo aparecen lecturas publicadas para el programa que tienes asignado. El PDF y la IA quedan para admin e instructor.
                 </div>
               )}
-              <label className="block cursor-pointer rounded-lg border border-dashed border-sky-200 bg-sky-50/50 p-5 text-center">
-                <Upload className="mx-auto mb-2 text-sky-600" size={28} />
-                <span className="block text-sm font-semibold text-slate-900">Subir PDF de lectura</span>
-                <span className="mt-1 block text-xs text-slate-500">{fileName}</span>
-                <input
-                  disabled={!canManageMaterial}
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] || null
-                    setSelectedPdfFile(file)
-                    setFileName(file?.name || 'Ningun PDF seleccionado')
-                  }}
-                />
-              </label>
+              {canManageMaterial && (
+                <label className="block cursor-pointer rounded-lg border border-dashed border-sky-200 bg-sky-50/50 p-5 text-center">
+                  <Upload className="mx-auto mb-2 text-sky-600" size={28} />
+                  <span className="block text-sm font-semibold text-slate-900">Subir PDF de lectura</span>
+                  <span className="mt-1 block text-xs text-slate-500">{fileName}</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null
+                      setSelectedPdfFile(file)
+                      setFileName(file?.name || 'Ningun PDF seleccionado')
+                    }}
+                  />
+                </label>
+              )}
               <div className="mt-3 grid gap-3">
                 <label className="grid gap-1 text-sm font-semibold text-slate-700">
-                  Material guardado
+                  {canManageMaterial ? 'Material guardado' : 'Mi lectura asignada'}
                   <select
                     value={selectedMaterialId || ''}
                     onChange={(event) => {
@@ -489,7 +514,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     }}
                     className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
                   >
-                    <option value="">Nuevo material</option>
+                    <option value="">{canManageMaterial ? 'Nuevo material' : 'Selecciona una lectura'}</option>
                     {(materials || []).map((material) => (
                       <option key={material.id} value={material.id}>
                         {material.title} - {material.program_name}
@@ -515,17 +540,15 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     onChange={(event) => setProgram(event.target.value)}
                     className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
                   >
-                    <option>Lectura 8-10 anos</option>
-                    <option>Lectura 12-14 anos</option>
-                    <option>Lectura 15-17 anos</option>
-                    <option>Lectura adulto</option>
+                    {(collections?.length ? collections.map((item: any) => item.name) : ['Lectura 8-10 anos', 'Lectura 12-14 anos', 'Lectura 15-17 anos', 'Lectura adulto']).map((name: string) => (
+                      <option key={name}>{name}</option>
+                    ))}
                   </select>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                {canManageMaterial && <div className="grid grid-cols-2 gap-2">
                   <label className="grid gap-1 text-sm font-semibold text-slate-700">
                     Edad minima
                     <input
-                      disabled={!canManageMaterial}
                       type="number"
                       value={ageMin}
                       onChange={(event) => setAgeMin(Number(event.target.value))}
@@ -535,15 +558,14 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   <label className="grid gap-1 text-sm font-semibold text-slate-700">
                     Edad maxima
                     <input
-                      disabled={!canManageMaterial}
                       type="number"
                       value={ageMax}
                       onChange={(event) => setAgeMax(Number(event.target.value))}
                       className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-sky-400 focus:bg-white"
                     />
                   </label>
-                </div>
-                <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
+                </div>}
+                {canManageMaterial && <div className="rounded-lg border border-violet-100 bg-violet-50/60 p-3">
                   <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-violet-900">
                     <Sparkles size={16} />
                     Generar test con IA
@@ -589,7 +611,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                     {selectedPdfFile ? 'Generar desde PDF' : 'Generar desde texto'}
                   </button>
-                </div>
+                </div>}
               </div>
             </section>
 
@@ -598,15 +620,28 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                 <SectionIcon tone="bg-violet-50 text-violet-700">
                   <BookOpenCheck size={17} />
                 </SectionIcon>
-                Texto extraido / fragmento
+                {canManageMaterial ? 'Texto extraido / fragmento' : 'Prueba asignada'}
               </h2>
-              <textarea
-                disabled={!canManageMaterial}
-                value={readingText}
-                onChange={(event) => setReadingText(event.target.value)}
-                rows={9}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-sky-400 focus:bg-white"
-              />
+              {canManageMaterial ? (
+                <textarea
+                  value={readingText}
+                  onChange={(event) => setReadingText(event.target.value)}
+                  rows={9}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-sky-400 focus:bg-white"
+                />
+              ) : (
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-5">
+                  <div className="text-lg font-bold text-slate-900">{title}</div>
+                  <div className="mt-2 text-sm leading-6 text-slate-600">
+                    Programa: <span className="font-semibold">{program}</span>. La lectura y preguntas se muestran al iniciar la prueba para medir tiempo real.
+                  </div>
+                  {!selectedMaterialId && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      Aun no tienes material publicado para tu programa. Un admin o instructor debe asignarlo desde Programas.
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm text-slate-500">
                   {wordCount} palabras | {readingQuestions.length} preguntas | {program} | edades {ageMin}-{ageMax}
@@ -639,7 +674,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   </button>
                 </div>
               </div>
-              <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
+              {canManageMaterial && <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="text-sm font-semibold text-slate-900">Preguntas del test</div>
                   <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
@@ -656,7 +691,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
             </section>
           </div>
         )}
