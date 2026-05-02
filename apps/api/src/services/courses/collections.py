@@ -13,10 +13,11 @@ from src.db.collections_courses import CollectionCourse
 from src.db.courses.courses import Course
 from src.db.usergroup_resources import UserGroupResource
 from src.db.usergroup_user import UserGroupUser
-from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipStatusEnum
+from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipEnum, ResourceAuthorshipStatusEnum
+from src.db.user_organizations import UserOrganization
 from fastapi import HTTPException, status, Request
 from src.security.rbac import check_resource_access, AccessAction
-from src.security.org_auth import is_org_admin
+from src.security.rbac.constants import ADMIN_OR_MAINTAINER_ROLE_IDS
 
 
 def _user_can_manage_all_org_collections(
@@ -26,7 +27,33 @@ def _user_can_manage_all_org_collections(
 ) -> bool:
     if isinstance(current_user, AnonymousUser):
         return False
-    return is_org_admin(current_user.id, org_id, db_session)
+    membership = db_session.exec(
+        select(UserOrganization).where(
+            UserOrganization.user_id == current_user.id,
+            UserOrganization.org_id == org_id,
+        )
+    ).first()
+    return bool(membership and membership.role_id in ADMIN_OR_MAINTAINER_ROLE_IDS)
+
+
+def _user_can_edit_collection(
+    current_user: PublicUser | AnonymousUser,
+    collection: Collection,
+    db_session: Session,
+) -> bool:
+    if isinstance(current_user, AnonymousUser):
+        return False
+    if _user_can_manage_all_org_collections(current_user, int(collection.org_id), db_session):
+        return True
+    author = db_session.exec(
+        select(ResourceAuthor).where(
+            ResourceAuthor.resource_uuid == collection.collection_uuid,
+            ResourceAuthor.user_id == current_user.id,
+            ResourceAuthor.authorship_status == ResourceAuthorshipStatusEnum.ACTIVE,
+            ResourceAuthor.authorship.in_([ResourceAuthorshipEnum.CREATOR, ResourceAuthorshipEnum.MAINTAINER]),  # type: ignore
+        )
+    ).first()
+    return bool(author)
 
 
 def _apply_visible_collection_course_scope(
@@ -111,10 +138,8 @@ async def create_collection(
 ) -> CollectionRead:
     collection = Collection.model_validate(collection_object)
 
-    # SECURITY: Check if user has permission to create collections in this organization
-    # Since collections are organization-level resources, we need to check org permissions
-    # For now, we'll use the existing RBAC check but with proper organization context
-    await check_resource_access(request, db_session, current_user, "collection_x", AccessAction.CREATE)
+    if not _user_can_manage_all_org_collections(current_user, int(collection_object.org_id), db_session):
+        raise HTTPException(status_code=403, detail="Only admins can create programs")
 
     # Complete the collection object
     collection.collection_uuid = f"collection_{uuid4()}"
@@ -185,10 +210,8 @@ async def update_collection(
             status_code=status.HTTP_409_CONFLICT, detail="Collection does not exist"
         )
 
-    # RBAC check
-    await check_resource_access(
-        request, db_session, current_user, collection.collection_uuid, AccessAction.UPDATE
-    )
+    if not _user_can_edit_collection(current_user, collection, db_session):
+        raise HTTPException(status_code=403, detail="You can only edit assigned programs with edit permission")
 
     courses = collection_object.courses
 

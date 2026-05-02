@@ -269,7 +269,7 @@ def install_default_elements(db_session: Session):
                 action_delete=False,
             ),
             collections=Permission(
-                action_create=True,
+                action_create=False,
                 action_read=True,
                 action_update=False,
                 action_delete=False,

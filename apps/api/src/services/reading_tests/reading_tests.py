@@ -177,8 +177,8 @@ def _ensure_program_usergroup(collection: Collection, db_session: Session) -> Us
 
 
 def _program_assignment_read(collection: Collection, db_session: Session) -> ReadingProgramAssignmentRead:
-    instructors = db_session.exec(
-        select(User)
+    instructor_rows = db_session.exec(
+        select(User, ResourceAuthor)
         .join(ResourceAuthor, ResourceAuthor.user_id == User.id)  # type: ignore
         .where(
             ResourceAuthor.resource_uuid == collection.collection_uuid,
@@ -211,7 +211,13 @@ def _program_assignment_read(collection: Collection, db_session: Session) -> Rea
         name=collection.name,
         public=collection.public,
         usergroup_id=group.id if group else None,
-        instructors=[UserRead.model_validate(user) for user in instructors],
+        instructors=[
+            {
+                **UserRead.model_validate(user).model_dump(),
+                "can_edit": author.authorship in [ResourceAuthorshipEnum.CREATOR, ResourceAuthorshipEnum.MAINTAINER],
+            }
+            for user, author in instructor_rows
+        ],
         students=[UserRead.model_validate(user) for user in students],
     )
 
@@ -281,7 +287,7 @@ async def assign_program_instructor(
         )
     ).first()
     if existing:
-        existing.authorship = ResourceAuthorshipEnum.MAINTAINER
+        existing.authorship = ResourceAuthorshipEnum.MAINTAINER if payload.can_edit else ResourceAuthorshipEnum.CONTRIBUTOR
         existing.authorship_status = ResourceAuthorshipStatusEnum.ACTIVE
         existing.update_date = _now()
         db_session.add(existing)
@@ -290,7 +296,7 @@ async def assign_program_instructor(
             ResourceAuthor(
                 resource_uuid=collection.collection_uuid,
                 user_id=payload.user_id,
-                authorship=ResourceAuthorshipEnum.MAINTAINER,
+                authorship=ResourceAuthorshipEnum.MAINTAINER if payload.can_edit else ResourceAuthorshipEnum.CONTRIBUTOR,
                 authorship_status=ResourceAuthorshipStatusEnum.ACTIVE,
                 creation_date=_now(),
                 update_date=_now(),

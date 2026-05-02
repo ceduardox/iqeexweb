@@ -84,13 +84,14 @@ class ReadingProgramAssignmentRead(SQLModel):
     name: str
     public: bool
     usergroup_id: Optional[int] = None
-    instructors: list[UserRead] = Field(default_factory=list)
+    instructors: list[dict] = Field(default_factory=list)
     students: list[UserRead] = Field(default_factory=list)
 
 
 class ReadingProgramUserAssign(SQLModel):
     collection_uuid: str
     user_id: int
+    can_edit: bool = False
 
 
 class ReadingAttemptBase(SQLModel):

@@ -45,7 +45,7 @@ export type ReadingProgramAssignment = {
   name: string
   public: boolean
   usergroup_id?: number
-  instructors: Array<Record<string, any>>
+  instructors: Array<Record<string, any> & { can_edit?: boolean }>
   students: Array<Record<string, any>>
 }
 
@@ -166,7 +166,7 @@ export async function getReadingProgramAssignableUsers(orgId: number, accessToke
 
 export async function assignReadingProgramInstructor(
   orgId: number,
-  data: { collection_uuid: string; user_id: number },
+  data: { collection_uuid: string; user_id: number; can_edit?: boolean },
   accessToken?: string
 ) {
   const result = await fetch(

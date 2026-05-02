@@ -141,6 +141,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedProgramUuid, setSelectedProgramUuid] = useState('')
   const [selectedInstructorId, setSelectedInstructorId] = useState('')
+  const [instructorCanEdit, setInstructorCanEdit] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState('')
   const [status, setStatus] = useState('Prepara la lectura para comenzar.')
   const [startedAt, setStartedAt] = useState<number | null>(null)
@@ -326,8 +327,13 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
   async function assignInstructor() {
     if (!selectedProgramUuid || !selectedInstructorId) return
     try {
-      await assignReadingProgramInstructor(orgId, { collection_uuid: selectedProgramUuid, user_id: Number(selectedInstructorId) }, token)
+      await assignReadingProgramInstructor(
+        orgId,
+        { collection_uuid: selectedProgramUuid, user_id: Number(selectedInstructorId), can_edit: instructorCanEdit },
+        token
+      )
       setSelectedInstructorId('')
+      setInstructorCanEdit(false)
       await mutate(programAssignmentsKey)
       toast.success('Instructor asignado al programa')
     } catch (error: any) {
@@ -561,7 +567,7 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   {selectedProgram?.instructors?.length ? (
                     selectedProgram.instructors.map((user: any) => (
                       <span key={user.id} className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                        {userLabel(user)}
+                        {userLabel(user)} {user.can_edit ? '· edita' : '· sin edicion'}
                       </span>
                     ))
                   ) : (
@@ -569,11 +575,11 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                   )}
                 </div>
                 {role === 'admin' && (
-                  <div className="flex gap-2">
+                  <div className="grid gap-2">
                     <select
                       value={selectedInstructorId}
                       onChange={(event) => setSelectedInstructorId(event.target.value)}
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+                      className="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
                     >
                       <option value="">Elegir instructor</option>
                       {(assignableUsers?.instructors || []).map((user: any) => (
@@ -582,6 +588,15 @@ export default function ReadingTestModule({ orgId, dashboard = false }: ReadingT
                         </option>
                       ))}
                     </select>
+                    <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={instructorCanEdit}
+                        onChange={(event) => setInstructorCanEdit(event.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600"
+                      />
+                      Puede editar cursos del programa
+                    </label>
                     <button
                       onClick={assignInstructor}
                       className="rounded-lg bg-cyan-600 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-700"
