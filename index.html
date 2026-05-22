@@ -771,6 +771,85 @@
       background:linear-gradient(90deg,#00d2ff,#7dd3fc);
       transition:width .14s linear;
     }
+    .iqx-whatsapp-fab{
+      position:fixed;
+      left:18px;
+      bottom:20px;
+      z-index:6600;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-height:54px;
+      padding:10px 18px 10px 12px;
+      border-radius:999px;
+      background:#21c45d;
+      color:#fff;
+      text-decoration:none;
+      font-family:"Gilroy", "Gilroy Bold", Inter, Arial, sans-serif;
+      font-size:15px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:0 14px 30px rgba(18, 140, 76, .34);
+      isolation:isolate;
+      transform:translateZ(0);
+      transition:transform .22s ease, box-shadow .22s ease, background .22s ease;
+    }
+    .iqx-whatsapp-fab::before{
+      content:"";
+      position:absolute;
+      inset:-7px;
+      z-index:-1;
+      border-radius:999px;
+      border:2px solid rgba(33, 196, 93, .34);
+      animation:iqxWhatsappPulse 1.85s ease-out infinite;
+    }
+    .iqx-whatsapp-fab:hover,
+    .iqx-whatsapp-fab:focus-visible{
+      background:#16a34a;
+      transform:translateY(-2px);
+      box-shadow:0 18px 36px rgba(18, 140, 76, .42);
+      outline:none;
+    }
+    .iqx-whatsapp-fab:active{
+      transform:translateY(0) scale(.98);
+    }
+    .iqx-whatsapp-fab img{
+      width:30px;
+      height:30px;
+      display:block;
+      flex:0 0 auto;
+    }
+    .iqx-whatsapp-fab-text{
+      display:grid;
+      gap:3px;
+      white-space:nowrap;
+    }
+    .iqx-whatsapp-fab-text small{
+      font-size:11px;
+      font-weight:700;
+      opacity:.88;
+    }
+    @keyframes iqxWhatsappPulse{
+      0%{opacity:.8;transform:scale(.92)}
+      72%{opacity:0;transform:scale(1.18)}
+      100%{opacity:0;transform:scale(1.18)}
+    }
+    @media (max-width: 560px){
+      .iqx-whatsapp-fab{
+        left:12px;
+        bottom:14px;
+        min-height:50px;
+        padding:9px 14px 9px 10px;
+        font-size:14px;
+      }
+      .iqx-whatsapp-fab img{
+        width:27px;
+        height:27px;
+      }
+      .iqx-whatsapp-fab-text small{
+        font-size:10px;
+      }
+    }
   </style>
 </head>
 <body class="preloader-active">
@@ -881,7 +960,19 @@
       <li><a href="/lms/login" data-i18n="header.contact">Acceso</a></li>
     </ul>
   </aside>
-
+  <a
+    class="iqx-whatsapp-fab"
+    href="https://wa.me/59161333628?text=Hola%20IQeXponencial%2C%20quiero%20recibir%20informaci%C3%B3n."
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Escribir a IQeXponencial por WhatsApp"
+  >
+    <img src="./assets/images/whatsapp_101778-128.png" alt="" width="30" height="30" loading="lazy" decoding="async">
+    <span class="iqx-whatsapp-fab-text">
+      <span>Escribenos</span>
+      <small>por WhatsApp</small>
+    </span>
+  </a>
   <main class="container">
     <section class="hero hero-brain" id="inicio" aria-label="Intro Brain">
       <img src="./assets/images/1pro.png" alt="" class="hero-brain-layer" loading="lazy" decoding="async">
@@ -3921,7 +4012,7 @@
       if (!btn) return;
 
       btn.addEventListener('click', function () {
-        window.location.href = 'https://api.whatsapp.com/send/?phone=59173600060&text=Bienvenido+a+IQExponencial+en+que+podemos+ayudarle&type=phone_number&app_absent=0';
+        window.location.href = 'https://wa.me/59161333628?text=Hola%20IQeXponencial%2C%20quiero%20recibir%20informaci%C3%B3n.';
       });
     })();
 
