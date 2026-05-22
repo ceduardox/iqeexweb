@@ -62,7 +62,7 @@
   <header class="iqx-topnav" id="iqxTopnav">
     <div class="iqx-topnav-glass">
       <nav class="iqx-topnav-links" aria-label="Navegacion principal">
-        <a href="index.html" data-i18n="header.home">Inicio</a><a href="metodox.html" data-i18n="header.method">Metodo X</a><a href="training.html" data-i18n="header.training">Entrenar</a><a href="tests.html" data-i18n="header.test">Test</a><a href="blog.html" data-i18n="header.blog">Blog</a><a href="nosotros.html" data-i18n="header.about">Nosotros</a><a href="contacto.html" data-i18n="header.contact">Contacto</a>
+        <a href="index.html" data-i18n="header.home">Inicio</a><a href="metodox.html" data-i18n="header.method">Metodo X</a><a href="training.html" data-i18n="header.training">Entrenar</a><a href="tests.html" data-i18n="header.test">Test</a><a href="a-leer-bolivia.html">A leer Bolivia</a><a href="blog.html" data-i18n="header.blog">Blog</a><a href="nosotros.html" data-i18n="header.about">Nosotros</a><a href="contacto.html" data-i18n="header.contact">Contacto</a>
       </nav>
       <div class="iqx-topnav-lang" id="iqxLang">
         <button class="iqx-topnav-lang-btn" id="iqxLangBtn" type="button" aria-expanded="false"><img src="https://flagcdn.com/w20/es.png" alt="Bandera de Espana"/><span>ES</span><ion-icon name="chevron-down-outline"></ion-icon></button>
@@ -77,7 +77,7 @@
     </div>
   </header>
   <div class="iqx-menu-backdrop" id="iqxMenuBackdrop"></div>
-  <aside class="iqx-menu-overlay" id="iqxMenuOverlay" aria-label="Menu lateral"><ul class="iqx-menu-list"><li><a href="index.html" data-i18n="header.home">Inicio</a></li><li><a href="metodox.html" data-i18n="header.method">Metodo X</a></li><li><a href="training.html" data-i18n="header.training">Entrenar</a></li><li><a href="tests.html" data-i18n="header.test">Test</a></li><li><a href="blog.html" data-i18n="header.blog">Blog</a></li><li><a href="nosotros.html" data-i18n="header.about">Nosotros</a></li><li><a href="contacto.html" data-i18n="header.contact">Contacto</a></li></ul></aside>
+  <aside class="iqx-menu-overlay" id="iqxMenuOverlay" aria-label="Menu lateral"><ul class="iqx-menu-list"><li><a href="index.html" data-i18n="header.home">Inicio</a></li><li><a href="metodox.html" data-i18n="header.method">Metodo X</a></li><li><a href="training.html" data-i18n="header.training">Entrenar</a></li><li><a href="tests.html" data-i18n="header.test">Test</a></li><li><a href="a-leer-bolivia.html">A leer Bolivia</a></li><li><a href="blog.html" data-i18n="header.blog">Blog</a></li><li><a href="nosotros.html" data-i18n="header.about">Nosotros</a></li><li><a href="contacto.html" data-i18n="header.contact">Contacto</a></li></ul></aside>
   <div class="frame-wrap"><iframe id="pageFrame" src="https://iqexponencial.app/age-selection/razonamiento?embed=true" title="Escaner Agilidad Mental IQeXponencial"></iframe></div>
   <script>
     (function initTopNavMenu(){const h=document.getElementById('iqxTopnav'),b=document.getElementById('iqxBurger'),o=document.getElementById('iqxMenuOverlay'),bd=document.getElementById('iqxMenuBackdrop'),l=document.getElementById('iqxLang'),lb=document.getElementById('iqxLangBtn'),lm=document.getElementById('iqxLangMenu'),lbtn=lm?Array.from(lm.querySelectorAll('button')):[],links=o?Array.from(o.querySelectorAll('a')):[],cb=document.getElementById('iqxHeaderContact');if(!h||!b||!o||!bd)return;const close=()=>{o.classList.remove('active');bd.classList.remove('active');h.classList.remove('menu-open');document.body.style.overflow='';},open=()=>{o.classList.add('active');bd.classList.add('active');h.classList.add('menu-open');if(window.innerWidth<=980)document.body.style.overflow='hidden';};b.addEventListener('click',()=>o.classList.contains('active')?close():open());bd.addEventListener('click',close);links.forEach((a)=>a.addEventListener('click',(e)=>{e.preventDefault();const href=a.getAttribute('href');if(!href)return;links.forEach((x)=>x.classList.remove('is-typing'));a.classList.add('is-typing');setTimeout(()=>window.location.href=href,1400);}));if(l&&lb&&lm){lb.addEventListener('click',(e)=>{e.stopPropagation();const ex=l.classList.toggle('open');lb.setAttribute('aria-expanded',String(ex));});lbtn.forEach((x)=>x.addEventListener('click',()=>{const c=(x.getAttribute('data-code')||'EN').toLowerCase();if(window.IQXI18N&&typeof window.IQXI18N.setLanguage==='function')window.IQXI18N.setLanguage(c);l.classList.remove('open');lb.setAttribute('aria-expanded','false');}));document.addEventListener('click',(e)=>{if(!l.contains(e.target)){l.classList.remove('open');lb.setAttribute('aria-expanded','false');}});}if(cb)cb.addEventListener('click',()=>window.location.href='contacto.html');})();
@@ -125,5 +125,3 @@
   </style>
 </body>
 </html>
-
-
