@@ -1409,6 +1409,62 @@
           box-shadow: 0 0 10px rgba(94,180,185,.95);
           animation: pv5ChipPulse 1.8s ease-in-out infinite;
         }
+        .previa5-v2 .pilar-detail-btn {
+          margin-left: auto;
+          border: 1px solid rgba(94,180,185,.44);
+          border-radius: 999px;
+          padding: 7px 10px;
+          background: rgba(3, 219, 238, .12);
+          color: rgba(235, 255, 255, .96);
+          font-family: 'Gilroy-Bold', sans-serif;
+          font-size: 11px;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          cursor: pointer;
+          box-shadow: inset 0 0 14px rgba(94,180,185,.12), 0 0 14px rgba(94,180,185,.12);
+        }
+        .previa5-v2 .pilar-detail-btn:hover,
+        .previa5-v2 .pilar-detail-btn:focus-visible {
+          border-color: rgba(0,255,255,.86);
+          background: rgba(0,255,255,.18);
+          outline: none;
+        }
+        .previa5-v2 .pilar-detail-btn .pv5-close-label { display: none; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail-btn .pv5-open-label { display: none; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail-btn .pv5-close-label { display: inline; }
+        .previa5-v2 .pilar-detail {
+          position: relative;
+          z-index: 2;
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          margin-top: 0;
+          color: rgba(239, 255, 255, .9);
+          font-size: 12.5px;
+          line-height: 1.48;
+          transition: max-height .32s ease, opacity .24s ease, margin-top .24s ease;
+        }
+        .previa5-v2 .pilar.is-detail-open {
+          width: min(360px, calc(100vw - 28px));
+          z-index: 26;
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-content {
+          min-height: 440px;
+          border-color: rgba(0,255,255,.86);
+          box-shadow: 0 30px 82px rgba(8, 4, 30, .68), inset 0 0 58px rgba(0,255,255,.15);
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail {
+          max-height: 190px;
+          overflow-y: auto;
+          opacity: 1;
+          margin-top: 12px;
+          padding-right: 4px;
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail::-webkit-scrollbar { width: 5px; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail::-webkit-scrollbar-thumb {
+          border-radius: 999px;
+          background: rgba(94,180,185,.6);
+        }
         .previa5-v2 .pilar-radar {
           position: absolute;
           top: 88px;
@@ -1655,6 +1711,9 @@
           .previa5-v2 .pulse-text { position: static; transform:none; text-align:center; opacity:1; margin-top:8px; letter-spacing:4px; }
           .previa5-v2 .pulse-text { margin-bottom: 2rem; }
           .previa5-v2 .pilar { position:relative !important; top:auto !important; left:auto !important; right:auto !important; bottom:auto !important; transform:none !important; width:100%; min-height:196px; display:none; }
+          .previa5-v2 .pilar.is-detail-open { grid-column: 1 / -1; width: 100%; }
+          .previa5-v2 .pilar.is-detail-open .pilar-content { min-height: 430px; }
+          .previa5-v2 .pilar.is-detail-open .pilar-detail { max-height: 170px; font-size: 13px; }
           .previa5-v2 .pilar-radar { width: 44px; height: 44px; top: 78px; right: 10px; border-radius: 12px; }
           .previa5-v2 .pilar-radar::before,
           .previa5-v2 .pilar-radar::after { border-radius: 12px; }
@@ -1706,8 +1765,13 @@
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <h3 class="pilar-title" data-i18n="previa5.card1.title">Neuro-Activación</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card1.subtitle">Potencial y Aceleración</p>
+            <p class="pilar-detail" data-i18n="previa5.card1.detail">La Neuro-Activación es la fase inicial donde preparamos el cerebro antes de aprender, llevándolo a un estado óptimo de concentración y enfoque. A través de ejercicios de coordinación y estímulos como audiofrecuencias específicas, logramos reducir la distracción, mejorar la atención y activar las conexiones neuronales necesarias para que el aprendizaje sea más rápido, claro y eficiente desde el primer momento.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1720,8 +1784,13 @@
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <h3 class="pilar-title" data-i18n="previa5.card2.title">Decodificación Ágil</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card2.subtitle">Análisis de Input</p>
+            <p class="pilar-detail" data-i18n="previa5.card2.detail">La Decodificación Ágil se enfoca en mejorar la forma en que el cerebro recibe y procesa la información. En niños, permite aprender a leer correctamente y sin esfuerzo; en adolescentes y adultos, entrena la lectura rápida y la captación de ideas completas. El objetivo es que la persona deje de leer palabra por palabra y empiece a entender de forma más fluida, aumentando su velocidad sin perder comprensión.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1733,10 +1802,15 @@
             </div>
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <div class="wave-container" id="waveContainer"><div class="wave-bar" style="left:10px;animation-delay:0s"></div><div class="wave-bar" style="left:20px;animation-delay:.1s"></div><div class="wave-bar" style="left:30px;animation-delay:.2s"></div><div class="wave-bar" style="left:40px;animation-delay:.3s"></div><div class="wave-bar" style="left:50px;animation-delay:.4s"></div><div class="wave-bar" style="left:60px;animation-delay:.5s"></div><div class="wave-bar" style="left:70px;animation-delay:.6s"></div><div class="wave-bar" style="left:80px;animation-delay:.7s"></div><div class="wave-bar" style="left:90px;animation-delay:.8s"></div><div class="wave-bar" style="left:100px;animation-delay:.9s"></div></div>
-            <h3 class="pilar-title" data-i18n="previa5.card3.title">Proyección</h3>
+            <h3 class="pilar-title" data-i18n="previa5.card3.title">Proyección de Impacto</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card3.subtitle">Output y Comunicación</p>
+            <p class="pilar-detail" data-i18n="previa5.card3.detail">La Proyección de Impacto es la etapa donde el aprendizaje se consolida al expresarlo. Aquí entrenamos la capacidad de comunicar ideas de forma clara, ordenada y segura mediante oratoria y argumentación. Esto no solo fortalece la memoria y el pensamiento, sino que desarrolla confianza, liderazgo y la habilidad de transmitir conocimiento con impacto en cualquier entorno.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1747,10 +1821,15 @@
               <img class="pilar-icon-img" src="./assets/images/1.png" alt="Icono Arquitectura" />
             </div>
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
-            <h3 class="pilar-title" data-i18n="previa5.card4.title">Arquitectura</h3>
+            <h3 class="pilar-title" data-i18n="previa5.card4.title">Arquitectura Neuronal</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card4.subtitle">Procesamiento Estructural</p>
+            <p class="pilar-detail" data-i18n="previa5.card4.detail">La Arquitectura Neuronal consiste en organizar la información dentro del cerebro para que sea comprendida y recordada con facilidad. A través de herramientas como mapas mentales y asociaciones visuales, transformamos datos sueltos en estructuras claras y conectadas, lo que permite una mejor retención, comprensión profunda y capacidad de análisis, evitando el olvido y la confusión.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1920,6 +1999,11 @@
         function resetSystem(){
           if(!isActivated) return;
           isActivated = false;
+          root.querySelectorAll('.pilar.is-detail-open').forEach((item) => {
+            item.classList.remove('is-detail-open');
+            const btn = item.querySelector('.pilar-detail-btn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
           if (isDesktop) {
             root.classList.remove('active');
           } else {
@@ -1950,16 +2034,23 @@
           isActivated ? resetSystem() : activateSystem();
         });
         root.querySelectorAll('.pilar').forEach((pilar)=>{
-          pilar.addEventListener('click', ()=>{
-            if (!isActivated || isDesktop) return;
+          const detailBtn = pilar.querySelector('.pilar-detail-btn');
+          function togglePilarDetail(event){
+            if (!isActivated) return;
+            event.preventDefault();
             if (typeof playCardClickSound === 'function') playCardClickSound();
-            const scan = pilar.querySelector('.scan-line');
-            gsap.killTweensOf(pilar);
-            if (scan) gsap.killTweensOf(scan);
-            gsap.to(pilar, { scale: 1.08, duration: .12, ease: 'power2.out' });
-            gsap.to(pilar, { scale: .9, duration: .14, delay: .12, ease: 'power2.in' });
-            gsap.to(pilar, { opacity: 0, scale: 0, y: 0, duration: .24, delay: .22, ease: 'power2.inOut' });
-          });
+            const willOpen = !pilar.classList.contains('is-detail-open');
+            root.querySelectorAll('.pilar.is-detail-open').forEach((other) => {
+              if (other === pilar) return;
+              other.classList.remove('is-detail-open');
+              const otherBtn = other.querySelector('.pilar-detail-btn');
+              if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            });
+            pilar.classList.toggle('is-detail-open', willOpen);
+            if (detailBtn) detailBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            gsap.fromTo(pilar.querySelector('.scan-line'), {opacity:0, top:'-6px'}, {opacity:1, top:'100%', duration:.52, ease:'power2.out'});
+          }
+          pilar.addEventListener('click', togglePilarDetail);
           pilar.addEventListener('mouseenter', ()=>{
             if(!isActivated || !isDesktop) return;
             root.querySelectorAll('.pilar').forEach((other)=>{ if(other!==pilar){ gsap.to(other,{opacity:.42,duration:.25}); }});
@@ -3163,10 +3254,12 @@
             pulse: 'PULSAR',
             cardStatus: 'Activo',
             cardCta: 'Activar',
-            card1: { title: 'Neuro-Activación', subtitle: 'Potencial y Aceleración' },
-            card2: { title: 'Decodificación Ágil', subtitle: 'Análisis de Input' },
-            card3: { title: 'Proyección', subtitle: 'Output y Comunicación' },
-            card4: { title: 'Arquitectura', subtitle: 'Procesamiento Estructural' }
+            detailCta: 'Ver detalle',
+            detailClose: 'Cerrar',
+            card1: { title: 'Neuro-Activación', subtitle: 'Potencial y Aceleración', detail: 'La Neuro-Activación es la fase inicial donde preparamos el cerebro antes de aprender, llevándolo a un estado óptimo de concentración y enfoque. A través de ejercicios de coordinación y estímulos como audiofrecuencias específicas, logramos reducir la distracción, mejorar la atención y activar las conexiones neuronales necesarias para que el aprendizaje sea más rápido, claro y eficiente desde el primer momento.' },
+            card2: { title: 'Decodificación Ágil', subtitle: 'Análisis de Input', detail: 'La Decodificación Ágil se enfoca en mejorar la forma en que el cerebro recibe y procesa la información. En niños, permite aprender a leer correctamente y sin esfuerzo; en adolescentes y adultos, entrena la lectura rápida y la captación de ideas completas. El objetivo es que la persona deje de leer palabra por palabra y empiece a entender de forma más fluida, aumentando su velocidad sin perder comprensión.' },
+            card3: { title: 'Proyección de Impacto', subtitle: 'Output y Comunicación', detail: 'La Proyección de Impacto es la etapa donde el aprendizaje se consolida al expresarlo. Aquí entrenamos la capacidad de comunicar ideas de forma clara, ordenada y segura mediante oratoria y argumentación. Esto no solo fortalece la memoria y el pensamiento, sino que desarrolla confianza, liderazgo y la habilidad de transmitir conocimiento con impacto en cualquier entorno.' },
+            card4: { title: 'Arquitectura Neuronal', subtitle: 'Procesamiento Estructural', detail: 'La Arquitectura Neuronal consiste en organizar la información dentro del cerebro para que sea comprendida y recordada con facilidad. A través de herramientas como mapas mentales y asociaciones visuales, transformamos datos sueltos en estructuras claras y conectadas, lo que permite una mejor retención, comprensión profunda y capacidad de análisis, evitando el olvido y la confusión.' }
           },
           footer: {
             minimize: 'Minimizar footer',
@@ -3302,10 +3395,12 @@
             pulse: 'PRESS',
             cardStatus: 'Active',
             cardCta: 'Activate',
-            card1: { title: 'Neuro-Activation', subtitle: 'Potential and Acceleration' },
-            card2: { title: 'Agile Decoding', subtitle: 'Input Analysis' },
-            card3: { title: 'Projection', subtitle: 'Output and Communication' },
-            card4: { title: 'Architecture', subtitle: 'Structural Processing' }
+            detailCta: 'View detail',
+            detailClose: 'Close',
+            card1: { title: 'Neuro-Activation', subtitle: 'Potential and Acceleration', detail: 'Neuro-Activation is the initial phase where we prepare the brain before learning, bringing it into an optimal state of concentration and focus. Through coordination exercises and stimuli such as specific audio frequencies, we reduce distraction, improve attention, and activate the neural connections needed for faster, clearer, and more efficient learning from the first moment.' },
+            card2: { title: 'Agile Decoding', subtitle: 'Input Analysis', detail: 'Agile Decoding improves the way the brain receives and processes information. In children, it supports correct and effortless reading; in teens and adults, it trains rapid reading and full-idea capture. The goal is to stop reading word by word and understand more fluidly, increasing speed without losing comprehension.' },
+            card3: { title: 'Impact Projection', subtitle: 'Output and Communication', detail: 'Impact Projection is the stage where learning is consolidated by expressing it. Here we train the ability to communicate ideas clearly, orderly, and confidently through public speaking and argumentation. This strengthens memory and thinking while developing confidence, leadership, and the ability to transmit knowledge with impact in any environment.' },
+            card4: { title: 'Neural Architecture', subtitle: 'Structural Processing', detail: 'Neural Architecture organizes information inside the brain so it can be understood and remembered with ease. Through tools such as mind maps and visual associations, we turn loose data into clear and connected structures, improving retention, deep understanding, and analytical capacity while avoiding forgetting and confusion.' }
           },
           footer: {
             minimize: 'Minimize footer',
@@ -3441,10 +3536,12 @@
             pulse: 'PRESSIONAR',
             cardStatus: 'Ativo',
             cardCta: 'Ativar',
-            card1: { title: 'Neuro-Ativação', subtitle: 'Potencial e Aceleração' },
-            card2: { title: 'Decodificação Ágil', subtitle: 'Análise de Input' },
-            card3: { title: 'Projeção', subtitle: 'Saída e Comunicação' },
-            card4: { title: 'Arquitetura', subtitle: 'Processamento Estrutural' }
+            detailCta: 'Ver detalhe',
+            detailClose: 'Fechar',
+            card1: { title: 'Neuro-Ativação', subtitle: 'Potencial e Aceleração', detail: 'A Neuro-Ativação é a fase inicial em que preparamos o cérebro antes de aprender, levando-o a um estado ideal de concentração e foco. Por meio de exercícios de coordenação e estímulos como audiofrequências específicas, reduzimos a distração, melhoramos a atenção e ativamos as conexões neurais necessárias para que o aprendizado seja mais rápido, claro e eficiente desde o primeiro momento.' },
+            card2: { title: 'Decodificação Ágil', subtitle: 'Análise de Input', detail: 'A Decodificação Ágil melhora a forma como o cérebro recebe e processa a informação. Em crianças, permite aprender a ler corretamente e sem esforço; em adolescentes e adultos, treina a leitura rápida e a captação de ideias completas. O objetivo é deixar de ler palavra por palavra e entender com mais fluidez, aumentando a velocidade sem perder compreensão.' },
+            card3: { title: 'Projeção de Impacto', subtitle: 'Saída e Comunicação', detail: 'A Projeção de Impacto é a etapa em que o aprendizado se consolida ao ser expresso. Aqui treinamos a capacidade de comunicar ideias de forma clara, organizada e segura por meio da oratória e da argumentação. Isso fortalece a memória e o pensamento, além de desenvolver confiança, liderança e a habilidade de transmitir conhecimento com impacto em qualquer ambiente.' },
+            card4: { title: 'Arquitetura Neural', subtitle: 'Processamento Estrutural', detail: 'A Arquitetura Neural consiste em organizar a informação dentro do cérebro para que seja compreendida e lembrada com facilidade. Por meio de ferramentas como mapas mentais e associações visuais, transformamos dados soltos em estruturas claras e conectadas, permitindo melhor retenção, compreensão profunda e capacidade de análise, evitando o esquecimento e a confusão.' }
           },
           footer: {
             minimize: 'Minimizar footer',
