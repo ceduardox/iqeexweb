@@ -1997,86 +1997,9 @@
   </script>
   <script>
     (function initCardsFeatureLoop(){
-      const sections = Array.from(document.querySelectorAll(".cards.is-animated"));
-      if (!sections.length) return;
-
-      const teardown = [];
-
-      sections.forEach((cardsSection) => {
-        const featuresList = cardsSection.querySelector(".features-list");
-        if (!featuresList) return;
-
-        let visible = false;
-        let timerId = null;
-
-        function rotateFeatures() {
-          if (!visible) return;
-          const items = Array.from(featuresList.querySelectorAll(".feature-item"));
-          if (items.length < 3) return;
-
-          const first = items[0];
-          first.classList.add("is-pulse-lift");
-
-          setTimeout(() => {
-            first.classList.remove("is-pulse-lift");
-            const firstPositions = new Map();
-            items.forEach((item) => {
-              firstPositions.set(item, item.getBoundingClientRect().top);
-            });
-
-            featuresList.appendChild(first);
-
-            const updatedItems = Array.from(featuresList.querySelectorAll(".feature-item"));
-            updatedItems.forEach((item) => {
-              const prevTop = firstPositions.get(item);
-              const nextTop = item.getBoundingClientRect().top;
-              const deltaY = prevTop - nextTop;
-
-              if (!deltaY) return;
-              item.style.transform = "translateY(" + deltaY + "px)";
-              item.classList.add("is-reordering");
-            });
-
-            void featuresList.offsetHeight;
-
-            updatedItems.forEach((item) => {
-              if (!item.classList.contains("is-reordering")) return;
-              item.style.transform = "";
-              const clear = () => {
-                item.classList.remove("is-reordering");
-                item.removeEventListener("transitionend", clear);
-              };
-              item.addEventListener("transitionend", clear);
-            });
-          }, 260);
-        }
-
-        function startLoop() {
-          if (timerId) return;
-          timerId = setInterval(rotateFeatures, 2600);
-        }
-
-        function stopLoop() {
-          if (!timerId) return;
-          clearInterval(timerId);
-          timerId = null;
-        }
-
-        const observer = new IntersectionObserver((entries) => {
-          visible = entries.some((e) => e.isIntersecting && e.intersectionRatio > 0.35);
-          if (visible) startLoop();
-          else stopLoop();
-        }, { threshold: [0.2, 0.35, 0.6] });
-
-        observer.observe(cardsSection);
-        teardown.push(() => {
-          stopLoop();
-          observer.disconnect();
-        });
-      });
-
-      window.addEventListener("beforeunload", () => {
-        teardown.forEach((fn) => fn());
+      document.querySelectorAll(".cards .feature-item").forEach((item) => {
+        item.classList.remove("is-pulse-lift", "is-reordering");
+        item.style.transform = "";
       });
     })();
   </script>
