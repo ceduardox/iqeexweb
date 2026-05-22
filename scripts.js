@@ -660,6 +660,9 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
   }
 
   function getCards(){
+    if(track){
+      return Array.from(track.querySelectorAll('.iqx-t-card'));
+    }
     return Array.from(section.querySelectorAll('.iqx-t-card'));
   }
 
