@@ -208,38 +208,8 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
   const placeholder = document.querySelector('.sec3-video-placeholder');
   if(!thumb || !placeholder) return;
   const id = thumb.dataset.videoId;
-  const videoSrc = thumb.dataset.videoSrc;
-  const videoType = thumb.dataset.videoType || 'video/webm';
 
   function load(){
-    if(videoSrc){
-      const video = document.createElement('video');
-      video.controls = true;
-      video.autoplay = true;
-      video.playsInline = true;
-      video.preload = 'auto';
-      video.poster = thumb.querySelector('img') ? thumb.querySelector('img').getAttribute('src') : '';
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.borderRadius = '12px';
-      video.style.objectFit = 'cover';
-      const source = document.createElement('source');
-      source.src = videoSrc;
-      source.type = videoType;
-      video.appendChild(source);
-      video.appendChild(document.createTextNode('Tu navegador no puede reproducir este video.'));
-      placeholder.style.display = 'block';
-      placeholder.innerHTML = '';
-      placeholder.appendChild(video);
-      placeholder.setAttribute('aria-hidden', 'false');
-      thumb.style.transition = 'opacity .36s ease';
-      thumb.style.opacity = 0;
-      setTimeout(()=> thumb.style.display='none',360);
-      const played = video.play();
-      if(played && typeof played.catch === 'function') played.catch(() => {});
-      return;
-    }
-
     const iframe = document.createElement('iframe');
     // Sin autoplay para que en móvil se muestren los controles nativos y se pueda pausar
     iframe.src = `https://www.youtube.com/embed/${id}?rel=0&autoplay=0&controls=1&modestbranding=1&playsinline=1`;
