@@ -676,6 +676,7 @@ hero, .cards-row, .lower { padding:40px 80px; }
 .sec3-video-thumb{position:relative}
 .sec3-video-thumb::after{content:'';position:absolute;inset:0;border-radius:14px;background:linear-gradient(120deg, rgba(0,198,216,0.55) 0%, rgba(255,215,0,0.42) 60%);mix-blend-mode:screen;pointer-events:none}
 .sec3-video-placeholder{display:none;width:100%;height:260px;border-radius:12px;overflow:hidden}
+.sec3-video-placeholder video{width:100%;height:100%;display:block;object-fit:cover;background:#05030d}
 
 /* Play button pulso + radar glow */
 .sec3-play{
