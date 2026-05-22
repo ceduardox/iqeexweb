@@ -1538,8 +1538,21 @@ hero, .cards-row, .lower { padding:40px 80px; }
 
 @media (min-width:981px){
   .iqx-video-testimonials{
-    padding-left:10px;
-    padding-right:10px;
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:18px;
+    overflow:visible;
+    scroll-snap-type:none;
+    padding:8px 0 30px;
+    scrollbar-width:none;
+  }
+  .iqx-video-testimonials::-webkit-scrollbar{
+    display:none;
+  }
+  .iqx-video-card{
+    flex:initial;
+    max-width:none;
+    width:100%;
   }
 }
 
@@ -1555,6 +1568,79 @@ hero, .cards-row, .lower { padding:40px 80px; }
   }
   .iqx-video-frame{
     border-radius:18px;
+  }
+}
+
+.iqx-text-testimonials{
+  margin-top:34px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  align-items:stretch;
+}
+
+.iqx-text-card{
+  min-height:unset !important;
+  padding:22px 18px 20px;
+  transform:translateY(52px) scale(.96) !important;
+}
+
+.iqx-text-card.is-visible{
+  transform:translateY(0) scale(1) !important;
+}
+
+.iqx-text-card.is-looping{
+  animation:iqxTestiSway var(--loop-dur, 5.6s) ease-in-out var(--loop-delay, 0s) infinite;
+}
+
+.iqx-text-card:hover{
+  transform:translateY(-6px) scale(1.01) !important;
+}
+
+.iqx-text-testimonials .iqx-t-card-featured{
+  grid-column:span 2;
+  max-width:none;
+  width:100%;
+  justify-self:stretch;
+}
+
+.iqx-text-testimonials .iqx-t-quote-featured{
+  font-size:clamp(18px,1.35vw,24px);
+  line-height:1.28;
+}
+
+@media (max-width:980px){
+  .iqx-text-testimonials{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .iqx-text-testimonials .iqx-t-card-featured{
+    grid-column:1 / -1;
+  }
+}
+
+@media (max-width:640px){
+  .iqx-text-testimonials{
+    margin-top:24px;
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    padding:0 14px 8px;
+    scrollbar-width:none;
+  }
+  .iqx-text-testimonials::-webkit-scrollbar{
+    display:none;
+  }
+  .iqx-text-card,
+  .iqx-text-testimonials .iqx-t-card-featured{
+    flex:0 0 86%;
+    max-width:86%;
+    scroll-snap-align:center;
+  }
+  .iqx-text-testimonials .iqx-t-card-featured{
+    flex-basis:92%;
+    max-width:92%;
   }
 }
 
