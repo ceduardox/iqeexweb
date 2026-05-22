@@ -196,7 +196,7 @@
   <link href="https://fonts.cdnfonts.com/css/gilroy-bold" rel="stylesheet">
   <link rel="preconnect" href="https://iqexponencial.app" crossorigin>
   <link rel="stylesheet" href="styles.css?v=20260227-1">
-  <link rel="stylesheet" href="sec6-styles.css?v=20260227-1">
+  <link rel="stylesheet" href="sec6-styles.css?v=20260522-1">
   <link rel="stylesheet" href="sec7-styles.css?v=20260227-1">
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
@@ -2689,17 +2689,18 @@
 
             <!-- Slide 1 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-speed">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
-                    <img src="./assets/images/brain.png" alt="Dominancia cerebral" loading="lazy" decoding="async" />
+                    <img src="./assets/images/eys.png" alt="Velocidad y comprensión" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide1.title">Velocidad y Comprensión</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide1.desc">
-                      ¿Eres más Lógico o Creativo?<br/>Descubre tu dominancia
+                      Mide tus palabras por minuto<br/>y tu comprensión real
                     </p>
-                    <a class="iqx-btn" href="cerebral.html"><ion-icon name="brain"></ion-icon><span data-i18n="sec6.slide1.cta">Analizar Dominancia</span></a>
+                    <a class="iqx-btn" href="lectura.html"><ion-icon name="book"></ion-icon><span data-i18n="sec6.slide1.cta">Medir mi Velocidad</span></a>
                   </div>
 
                   <!-- FX (solo visibles en la activa) -->
@@ -2712,13 +2713,14 @@
 
             <!-- Slide 2 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-agility">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
                     <img src="./assets/images/cube1.png" alt="Reto lógico" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide2.title">Agilidad Mental</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide2.desc">
                       Mide tu agilidad mental<br/>y resolución de problemas
                     </p>
@@ -2734,17 +2736,18 @@
 
             <!-- Slide 3 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-brain">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
-                    <img src="./assets/images/eys.png" alt="Velocidad lectora" loading="lazy" decoding="async" />
+                    <img src="./assets/images/brain.png" alt="Escáner cerebral" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide3.title">Escáner Cerebral</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide3.desc">
-                      ¿Cuántas palabras lees por minuto?<br/>Mide tu PPM y comprensión
+                      Descubre si tu mente es<br/>más lógica o creativa
                     </p>
-                    <a class="iqx-btn" href="lectura.html"><ion-icon name="book"></ion-icon><span data-i18n="sec6.slide3.cta">Medir mi Velocidad</span></a>
+                    <a class="iqx-btn" href="cerebral.html"><ion-icon name="brain"></ion-icon><span data-i18n="sec6.slide3.cta">Analizar Dominancia</span></a>
                   </div>
 
                   <div class="iqx-particles" aria-hidden="true"></div>
@@ -3219,9 +3222,9 @@
             title1: 'Mide tus',
             title2: 'Capacidades',
             title3: 'en Tiempo Real',
-            slide1: { desc: '¿Eres más Lógico o Creativo?<br/>Descubre tu dominancia', cta: 'Analizar Dominancia' },
-            slide2: { desc: 'Mide tu agilidad mental<br/>y resolución de problemas', cta: 'Iniciar Reto Lógico' },
-            slide3: { desc: '¿Cuántas palabras lees por minuto?<br/>Mide tu PPM y comprensión', cta: 'Medir mi Velocidad' },
+            slide1: { title: 'Velocidad y Comprensión', desc: 'Mide tus palabras por minuto<br/>y tu comprensión real', cta: 'Medir mi Velocidad' },
+            slide2: { title: 'Agilidad Mental', desc: 'Mide tu agilidad mental<br/>y resolución de problemas', cta: 'Iniciar Reto Lógico' },
+            slide3: { title: 'Escáner Cerebral', desc: 'Descubre si tu mente es<br/>más lógica o creativa', cta: 'Analizar Dominancia' },
             hint: 'Arrastra • Swipe'
           },
           sec7: {
@@ -3360,9 +3363,9 @@
             title1: 'Measure your',
             title2: 'Capabilities',
             title3: 'in Real Time',
-            slide1: { desc: 'Are you more Logical or Creative?<br/>Discover your dominance', cta: 'Analyze Dominance' },
-            slide2: { desc: 'Measure your mental agility<br/>and problem solving', cta: 'Start Logic Challenge' },
-            slide3: { desc: 'How many words per minute do you read?<br/>Measure WPM and comprehension', cta: 'Measure my Speed' },
+            slide1: { title: 'Speed and Comprehension', desc: 'Measure your words per minute<br/>and real comprehension', cta: 'Measure my Speed' },
+            slide2: { title: 'Mental Agility', desc: 'Measure your mental agility<br/>and problem solving', cta: 'Start Logic Challenge' },
+            slide3: { title: 'Brain Scanner', desc: 'Discover whether your mind is<br/>more logical or creative', cta: 'Analyze Dominance' },
             hint: 'Drag • Swipe'
           },
           sec7: {
@@ -3501,9 +3504,9 @@
             title1: 'Meça suas',
             title2: 'Capacidades',
             title3: 'em Tempo Real',
-            slide1: { desc: 'Você é mais Lógico ou Criativo?<br/>Descubra sua dominância', cta: 'Analisar Dominância' },
-            slide2: { desc: 'Meça sua agilidade mental<br/>e resolução de problemas', cta: 'Iniciar Desafio Lógico' },
-            slide3: { desc: 'Quantas palavras você lê por minuto?<br/>Meça PPM e compreensão', cta: 'Medir minha Velocidade' },
+            slide1: { title: 'Velocidade e Compreensão', desc: 'Meça suas palavras por minuto<br/>e sua compreensão real', cta: 'Medir minha Velocidade' },
+            slide2: { title: 'Agilidade Mental', desc: 'Meça sua agilidade mental<br/>e resolução de problemas', cta: 'Iniciar Desafio Lógico' },
+            slide3: { title: 'Scanner Cerebral', desc: 'Descubra se sua mente é<br/>mais lógica ou criativa', cta: 'Analisar Dominância' },
             hint: 'Arraste • Swipe'
           },
           sec7: {
