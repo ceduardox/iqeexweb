@@ -563,6 +563,13 @@
   font-family: 'Gilroy-Bold', sans-serif;
   font-size: 13px;
 }
+.iqx-btn ion-icon{
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,.35));
+}
 
 .iqx-btn:hover{ transform: translateY(-2px) scale(1.01); filter: brightness(1.05); }
 /* FX layers */
