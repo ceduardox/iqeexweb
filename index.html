@@ -196,7 +196,7 @@
   <link href="https://fonts.cdnfonts.com/css/gilroy-bold" rel="stylesheet">
   <link rel="preconnect" href="https://iqexponencial.app" crossorigin>
   <link rel="stylesheet" href="styles.css?v=20260227-1">
-  <link rel="stylesheet" href="sec6-styles.css?v=20260227-1">
+  <link rel="stylesheet" href="sec6-styles.css?v=20260522-2">
   <link rel="stylesheet" href="sec7-styles.css?v=20260227-1">
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
@@ -703,7 +703,7 @@
     .iqx-chat-fab{
       position:fixed;
       right:14px;
-      bottom:86px;
+      bottom:16px;
       width:58px;
       height:58px;
       border:none;
@@ -734,7 +734,7 @@
     .iqx-chat-loading{
       position:fixed;
       right:14px;
-      bottom:154px;
+      bottom:84px;
       min-width:118px;
       padding:8px 10px;
       border-radius:12px;
@@ -770,85 +770,6 @@
       height:100%;
       background:linear-gradient(90deg,#00d2ff,#7dd3fc);
       transition:width .14s linear;
-    }
-    .iqx-whatsapp-fab{
-      position:fixed;
-      right:14px;
-      bottom:16px;
-      z-index:6600;
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      min-height:54px;
-      padding:10px 18px 10px 12px;
-      border-radius:999px;
-      background:#21c45d;
-      color:#fff;
-      text-decoration:none;
-      font-family:"Gilroy", "Gilroy Bold", Inter, Arial, sans-serif;
-      font-size:15px;
-      font-weight:800;
-      line-height:1;
-      box-shadow:0 14px 30px rgba(18, 140, 76, .34);
-      isolation:isolate;
-      transform:translateZ(0);
-      transition:transform .22s ease, box-shadow .22s ease, background .22s ease;
-    }
-    .iqx-whatsapp-fab::before{
-      content:"";
-      position:absolute;
-      inset:-7px;
-      z-index:-1;
-      border-radius:999px;
-      border:2px solid rgba(33, 196, 93, .34);
-      animation:iqxWhatsappPulse 1.85s ease-out infinite;
-    }
-    .iqx-whatsapp-fab:hover,
-    .iqx-whatsapp-fab:focus-visible{
-      background:#16a34a;
-      transform:translateY(-2px);
-      box-shadow:0 18px 36px rgba(18, 140, 76, .42);
-      outline:none;
-    }
-    .iqx-whatsapp-fab:active{
-      transform:translateY(0) scale(.98);
-    }
-    .iqx-whatsapp-fab img{
-      width:30px;
-      height:30px;
-      display:block;
-      flex:0 0 auto;
-    }
-    .iqx-whatsapp-fab-text{
-      display:grid;
-      gap:3px;
-      white-space:nowrap;
-    }
-    .iqx-whatsapp-fab-text small{
-      font-size:11px;
-      font-weight:700;
-      opacity:.88;
-    }
-    @keyframes iqxWhatsappPulse{
-      0%{opacity:.8;transform:scale(.92)}
-      72%{opacity:0;transform:scale(1.18)}
-      100%{opacity:0;transform:scale(1.18)}
-    }
-    @media (max-width: 560px){
-      .iqx-whatsapp-fab{
-        right:12px;
-        bottom:14px;
-        min-height:50px;
-        padding:9px 14px 9px 10px;
-        font-size:14px;
-      }
-      .iqx-whatsapp-fab img{
-        width:27px;
-        height:27px;
-      }
-      .iqx-whatsapp-fab-text small{
-        font-size:10px;
-      }
     }
   </style>
 </head>
@@ -959,19 +880,6 @@
       <li><a href="/lms/login" data-i18n="header.contact">Acceso</a></li>
     </ul>
   </aside>
-  <a
-    class="iqx-whatsapp-fab"
-    href="https://wa.me/59161333628?text=Hola%20IQeXponencial%2C%20quiero%20recibir%20informaci%C3%B3n."
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Escribir a IQeXponencial por WhatsApp"
-  >
-    <img src="./assets/images/whatsapp_101778-128.png" alt="" width="30" height="30" loading="lazy" decoding="async">
-    <span class="iqx-whatsapp-fab-text">
-      <span>Escribenos</span>
-      <small>por WhatsApp</small>
-    </span>
-  </a>
 
   <main class="container">
     <section class="hero hero-brain" id="inicio" aria-label="Intro Brain">
@@ -1090,12 +998,13 @@
                 <p class="muted" data-i18n="sec3.tagline">Reprograma tu Cerebro. Acelera tu Futuro.</p>
               </div>
             </div>
-            <div class="sec3-right-card card white">
+                        <div class="sec3-right-card card white">
               <div class="sec3-video">
                 <div class="sec3-streamable-embed">
                   <iframe allow="fullscreen" allowfullscreen src="https://streamable.com/e/7mvq9l?" title="Presentación IQeXponencial"></iframe>
                 </div>
               </div>
+            </div></div>
             </div>
           </div>
         </div>
@@ -1499,6 +1408,62 @@
           box-shadow: 0 0 10px rgba(94,180,185,.95);
           animation: pv5ChipPulse 1.8s ease-in-out infinite;
         }
+        .previa5-v2 .pilar-detail-btn {
+          margin-left: auto;
+          border: 1px solid rgba(94,180,185,.44);
+          border-radius: 999px;
+          padding: 7px 10px;
+          background: rgba(3, 219, 238, .12);
+          color: rgba(235, 255, 255, .96);
+          font-family: 'Gilroy-Bold', sans-serif;
+          font-size: 11px;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+          cursor: pointer;
+          box-shadow: inset 0 0 14px rgba(94,180,185,.12), 0 0 14px rgba(94,180,185,.12);
+        }
+        .previa5-v2 .pilar-detail-btn:hover,
+        .previa5-v2 .pilar-detail-btn:focus-visible {
+          border-color: rgba(0,255,255,.86);
+          background: rgba(0,255,255,.18);
+          outline: none;
+        }
+        .previa5-v2 .pilar-detail-btn .pv5-close-label { display: none; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail-btn .pv5-open-label { display: none; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail-btn .pv5-close-label { display: inline; }
+        .previa5-v2 .pilar-detail {
+          position: relative;
+          z-index: 2;
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          margin-top: 0;
+          color: rgba(239, 255, 255, .9);
+          font-size: 12.5px;
+          line-height: 1.48;
+          transition: max-height .32s ease, opacity .24s ease, margin-top .24s ease;
+        }
+        .previa5-v2 .pilar.is-detail-open {
+          width: min(360px, calc(100vw - 28px));
+          z-index: 26;
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-content {
+          min-height: 440px;
+          border-color: rgba(0,255,255,.86);
+          box-shadow: 0 30px 82px rgba(8, 4, 30, .68), inset 0 0 58px rgba(0,255,255,.15);
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail {
+          max-height: 190px;
+          overflow-y: auto;
+          opacity: 1;
+          margin-top: 12px;
+          padding-right: 4px;
+        }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail::-webkit-scrollbar { width: 5px; }
+        .previa5-v2 .pilar.is-detail-open .pilar-detail::-webkit-scrollbar-thumb {
+          border-radius: 999px;
+          background: rgba(94,180,185,.6);
+        }
         .previa5-v2 .pilar-radar {
           position: absolute;
           top: 88px;
@@ -1745,6 +1710,9 @@
           .previa5-v2 .pulse-text { position: static; transform:none; text-align:center; opacity:1; margin-top:8px; letter-spacing:4px; }
           .previa5-v2 .pulse-text { margin-bottom: 2rem; }
           .previa5-v2 .pilar { position:relative !important; top:auto !important; left:auto !important; right:auto !important; bottom:auto !important; transform:none !important; width:100%; min-height:196px; display:none; }
+          .previa5-v2 .pilar.is-detail-open { grid-column: 1 / -1; width: 100%; }
+          .previa5-v2 .pilar.is-detail-open .pilar-content { min-height: 430px; }
+          .previa5-v2 .pilar.is-detail-open .pilar-detail { max-height: 170px; font-size: 13px; }
           .previa5-v2 .pilar-radar { width: 44px; height: 44px; top: 78px; right: 10px; border-radius: 12px; }
           .previa5-v2 .pilar-radar::before,
           .previa5-v2 .pilar-radar::after { border-radius: 12px; }
@@ -1796,8 +1764,13 @@
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <h3 class="pilar-title" data-i18n="previa5.card1.title">Neuro-Activación</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card1.subtitle">Potencial y Aceleración</p>
+            <p class="pilar-detail" data-i18n="previa5.card1.detail">La Neuro-Activación es la fase inicial donde preparamos el cerebro antes de aprender, llevándolo a un estado óptimo de concentración y enfoque. A través de ejercicios de coordinación y estímulos como audiofrecuencias específicas, logramos reducir la distracción, mejorar la atención y activar las conexiones neuronales necesarias para que el aprendizaje sea más rápido, claro y eficiente desde el primer momento.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1810,8 +1783,13 @@
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <h3 class="pilar-title" data-i18n="previa5.card2.title">Decodificación Ágil</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card2.subtitle">Análisis de Input</p>
+            <p class="pilar-detail" data-i18n="previa5.card2.detail">La Decodificación Ágil se enfoca en mejorar la forma en que el cerebro recibe y procesa la información. En niños, permite aprender a leer correctamente y sin esfuerzo; en adolescentes y adultos, entrena la lectura rápida y la captación de ideas completas. El objetivo es que la persona deje de leer palabra por palabra y empiece a entender de forma más fluida, aumentando su velocidad sin perder comprensión.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1823,10 +1801,15 @@
             </div>
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
             <div class="wave-container" id="waveContainer"><div class="wave-bar" style="left:10px;animation-delay:0s"></div><div class="wave-bar" style="left:20px;animation-delay:.1s"></div><div class="wave-bar" style="left:30px;animation-delay:.2s"></div><div class="wave-bar" style="left:40px;animation-delay:.3s"></div><div class="wave-bar" style="left:50px;animation-delay:.4s"></div><div class="wave-bar" style="left:60px;animation-delay:.5s"></div><div class="wave-bar" style="left:70px;animation-delay:.6s"></div><div class="wave-bar" style="left:80px;animation-delay:.7s"></div><div class="wave-bar" style="left:90px;animation-delay:.8s"></div><div class="wave-bar" style="left:100px;animation-delay:.9s"></div></div>
-            <h3 class="pilar-title" data-i18n="previa5.card3.title">Proyección</h3>
+            <h3 class="pilar-title" data-i18n="previa5.card3.title">Proyección de Impacto</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card3.subtitle">Output y Comunicación</p>
+            <p class="pilar-detail" data-i18n="previa5.card3.detail">La Proyección de Impacto es la etapa donde el aprendizaje se consolida al expresarlo. Aquí entrenamos la capacidad de comunicar ideas de forma clara, ordenada y segura mediante oratoria y argumentación. Esto no solo fortalece la memoria y el pensamiento, sino que desarrolla confianza, liderazgo y la habilidad de transmitir conocimiento con impacto en cualquier entorno.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1837,10 +1820,15 @@
               <img class="pilar-icon-img" src="./assets/images/1.png" alt="Icono Arquitectura" />
             </div>
             <div class="pilar-radar" aria-hidden="true"><span class="pilar-radar-dot"></span></div>
-            <h3 class="pilar-title" data-i18n="previa5.card4.title">Arquitectura</h3>
+            <h3 class="pilar-title" data-i18n="previa5.card4.title">Arquitectura Neuronal</h3>
             <p class="pilar-subtitle" data-i18n="previa5.card4.subtitle">Procesamiento Estructural</p>
+            <p class="pilar-detail" data-i18n="previa5.card4.detail">La Arquitectura Neuronal consiste en organizar la información dentro del cerebro para que sea comprendida y recordada con facilidad. A través de herramientas como mapas mentales y asociaciones visuales, transformamos datos sueltos en estructuras claras y conectadas, lo que permite una mejor retención, comprensión profunda y capacidad de análisis, evitando el olvido y la confusión.</p>
             <div class="pilar-footer">
               <span class="pilar-chip" data-i18n="previa5.cardStatus">Activo</span>
+              <button class="pilar-detail-btn" type="button" aria-expanded="false">
+                <span class="pv5-open-label" data-i18n="previa5.detailCta">Ver detalle</span>
+                <span class="pv5-close-label" data-i18n="previa5.detailClose">Cerrar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2010,6 +1998,11 @@
         function resetSystem(){
           if(!isActivated) return;
           isActivated = false;
+          root.querySelectorAll('.pilar.is-detail-open').forEach((item) => {
+            item.classList.remove('is-detail-open');
+            const btn = item.querySelector('.pilar-detail-btn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+          });
           if (isDesktop) {
             root.classList.remove('active');
           } else {
@@ -2040,16 +2033,23 @@
           isActivated ? resetSystem() : activateSystem();
         });
         root.querySelectorAll('.pilar').forEach((pilar)=>{
-          pilar.addEventListener('click', ()=>{
-            if (!isActivated || isDesktop) return;
+          const detailBtn = pilar.querySelector('.pilar-detail-btn');
+          function togglePilarDetail(event){
+            if (!isActivated) return;
+            event.preventDefault();
             if (typeof playCardClickSound === 'function') playCardClickSound();
-            const scan = pilar.querySelector('.scan-line');
-            gsap.killTweensOf(pilar);
-            if (scan) gsap.killTweensOf(scan);
-            gsap.to(pilar, { scale: 1.08, duration: .12, ease: 'power2.out' });
-            gsap.to(pilar, { scale: .9, duration: .14, delay: .12, ease: 'power2.in' });
-            gsap.to(pilar, { opacity: 0, scale: 0, y: 0, duration: .24, delay: .22, ease: 'power2.inOut' });
-          });
+            const willOpen = !pilar.classList.contains('is-detail-open');
+            root.querySelectorAll('.pilar.is-detail-open').forEach((other) => {
+              if (other === pilar) return;
+              other.classList.remove('is-detail-open');
+              const otherBtn = other.querySelector('.pilar-detail-btn');
+              if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            });
+            pilar.classList.toggle('is-detail-open', willOpen);
+            if (detailBtn) detailBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            gsap.fromTo(pilar.querySelector('.scan-line'), {opacity:0, top:'-6px'}, {opacity:1, top:'100%', duration:.52, ease:'power2.out'});
+          }
+          pilar.addEventListener('click', togglePilarDetail);
           pilar.addEventListener('mouseenter', ()=>{
             if(!isActivated || !isDesktop) return;
             root.querySelectorAll('.pilar').forEach((other)=>{ if(other!==pilar){ gsap.to(other,{opacity:.42,duration:.25}); }});
@@ -2688,17 +2688,18 @@
 
             <!-- Slide 1 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-speed">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
-                    <img src="./assets/images/brain.png" alt="Dominancia cerebral" loading="lazy" decoding="async" />
+                    <img src="./assets/images/eys.png" alt="Velocidad y comprensión" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide1.title">Velocidad y Comprensión</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide1.desc">
-                      ¿Eres más Lógico o Creativo?<br/>Descubre tu dominancia
+                      Mide tus palabras por minuto<br/>y tu comprensión real
                     </p>
-                    <a class="iqx-btn" href="cerebral.html"><ion-icon name="brain"></ion-icon><span data-i18n="sec6.slide1.cta">Analizar Dominancia</span></a>
+                    <a class="iqx-btn" href="lectura.html"><ion-icon name="speedometer-outline"></ion-icon><span data-i18n="sec6.slide1.cta">Medir mi Velocidad</span></a>
                   </div>
 
                   <!-- FX (solo visibles en la activa) -->
@@ -2711,17 +2712,18 @@
 
             <!-- Slide 2 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-agility">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
                     <img src="./assets/images/cube1.png" alt="Reto lógico" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide2.title">Agilidad Mental</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide2.desc">
                       Mide tu agilidad mental<br/>y resolución de problemas
                     </p>
-                    <a class="iqx-btn" href="agilidadmental.html"><ion-icon name="bulb"></ion-icon><span data-i18n="sec6.slide2.cta">Iniciar Reto Lógico</span></a>
+                    <a class="iqx-btn" href="agilidadmental.html"><ion-icon name="flash-outline"></ion-icon><span data-i18n="sec6.slide2.cta">Iniciar Reto Lógico</span></a>
                   </div>
 
                   <div class="iqx-particles" aria-hidden="true"></div>
@@ -2733,17 +2735,18 @@
 
             <!-- Slide 3 -->
             <div class="swiper-slide">
-              <article class="iqx-card">
+              <article class="iqx-card iqx-card-brain">
                 <div class="iqx-card-inner">
                   <div class="iqx-media">
-                    <img src="./assets/images/eys.png" alt="Velocidad lectora" loading="lazy" decoding="async" />
+                    <img src="./assets/images/brain.png" alt="Escáner cerebral" loading="lazy" decoding="async" />
                   </div>
 
                   <div class="iqx-body">
+                    <h3 class="iqx-card-title" data-i18n="sec6.slide3.title">Escáner Cerebral</h3>
                     <p class="iqx-sub" data-i18n-html="sec6.slide3.desc">
-                      ¿Cuántas palabras lees por minuto?<br/>Mide tu PPM y comprensión
+                      Descubre si tu mente es<br/>más lógica o creativa
                     </p>
-                    <a class="iqx-btn" href="lectura.html"><ion-icon name="book"></ion-icon><span data-i18n="sec6.slide3.cta">Medir mi Velocidad</span></a>
+                    <a class="iqx-btn" href="cerebral.html"><ion-icon name="scan-circle-outline"></ion-icon><span data-i18n="sec6.slide3.cta">Analizar Dominancia</span></a>
                   </div>
 
                   <div class="iqx-particles" aria-hidden="true"></div>
@@ -2864,11 +2867,7 @@
               <!-- Slide 1: Sofia -->
               <div class="iqx-carousel-slide" data-index="0">
                 <div class="iqx-slide-video">
-                  <video controls playsinline preload="metadata">
-                    <source src="videos/11_SOFIA_TALLER.webm" type="video/webm">
-                    <source src="videos/11_SOFIA_TALLER.mp4" type="video/mp4">
-                    Tu navegador no soporta video.
-                  </video>
+                  <iframe src="https://streamable.com/e/x3vg2s?" allowfullscreen allow="autoplay"></iframe>
                   <div class="iqx-video-caption">
                     <span class="name">Sofia</span>
                   </div>
@@ -2878,11 +2877,7 @@
               <!-- Slide 2: Victoria -->
               <div class="iqx-carousel-slide" data-index="1">
                 <div class="iqx-slide-video">
-                  <video controls playsinline preload="metadata">
-                    <source src="videos/3_VICTORIA_HOLA.webm" type="video/webm">
-                    <source src="videos/3_VICTORIA_HOLA.mp4" type="video/mp4">
-                    Tu navegador no soporta video.
-                  </video>
+                  <iframe src="https://streamable.com/e/gekavk?" allowfullscreen allow="autoplay"></iframe>
                   <div class="iqx-video-caption">
                     <span class="name">Victoria</span>
                   </div>
@@ -2892,11 +2887,7 @@
               <!-- Slide 3: Profesional -->
               <div class="iqx-carousel-slide" data-index="2">
                 <div class="iqx-slide-video">
-                  <video controls playsinline preload="metadata">
-                    <source src="videos/4_PROFESIONAL_VERTICAL_JE.webm" type="video/webm">
-                    <source src="videos/4_PROFESIONAL_VERTICAL_JE.mp4" type="video/mp4">
-                    Tu navegador no soporta video.
-                  </video>
+                  <iframe src="https://streamable.com/e/52lg8i?" allowfullscreen allow="autoplay"></iframe>
                   <div class="iqx-video-caption">
                     <span class="name">Profesional</span>
                   </div>
@@ -2906,11 +2897,7 @@
               <!-- Slide 4: Adolescente -->
               <div class="iqx-carousel-slide" data-index="3">
                 <div class="iqx-slide-video">
-                  <video controls playsinline preload="metadata">
-                    <source src="videos/17_IQX_ADOLESCENTE.webm" type="video/webm">
-                    <source src="videos/17_IQX_ADOLESCENTE.mp4" type="video/mp4">
-                    Tu navegador no soporta video.
-                  </video>
+                  <iframe src="https://streamable.com/e/8gt4hg?" allowfullscreen allow="autoplay"></iframe>
                   <div class="iqx-video-caption">
                     <span class="name">Adolescente</span>
                   </div>
@@ -2920,11 +2907,7 @@
               <!-- Slide 5: Sra. Chichita -->
               <div class="iqx-carousel-slide" data-index="4">
                 <div class="iqx-slide-video">
-                  <video controls playsinline preload="metadata">
-                    <source src="videos/16_IQX_ADULTO_MAYOR_SRA_CHICHITA.webm" type="video/webm">
-                    <source src="videos/16_IQX_ADULTO_MAYOR_SRA_CHICHITA.mp4" type="video/mp4">
-                    Tu navegador no soporta video.
-                  </video>
+                  <iframe src="https://streamable.com/e/pajfts?" allowfullscreen allow="autoplay"></iframe>
                   <div class="iqx-video-caption">
                     <span class="name">Sra. Chichita</span>
                   </div>
@@ -3251,9 +3234,9 @@
             title1: 'Mide tus',
             title2: 'Capacidades',
             title3: 'en Tiempo Real',
-            slide1: { desc: '¿Eres más Lógico o Creativo?<br/>Descubre tu dominancia', cta: 'Analizar Dominancia' },
-            slide2: { desc: 'Mide tu agilidad mental<br/>y resolución de problemas', cta: 'Iniciar Reto Lógico' },
-            slide3: { desc: '¿Cuántas palabras lees por minuto?<br/>Mide tu PPM y comprensión', cta: 'Medir mi Velocidad' },
+            slide1: { title: 'Velocidad y Comprensión', desc: 'Mide tus palabras por minuto<br/>y tu comprensión real', cta: 'Medir mi Velocidad' },
+            slide2: { title: 'Agilidad Mental', desc: 'Mide tu agilidad mental<br/>y resolución de problemas', cta: 'Iniciar Reto Lógico' },
+            slide3: { title: 'Escáner Cerebral', desc: 'Descubre si tu mente es<br/>más lógica o creativa', cta: 'Analizar Dominancia' },
             hint: 'Arrastra • Swipe'
           },
           sec7: {
@@ -3272,7 +3255,7 @@
             kicker: 'Historias verificadas',
             title1: 'Resultados de',
             title2: 'Mentes Reales',
-            sub: 'Experiencias de estudiantes, profesionales y adultos que entrenaron enfoque, lectura y memoria con Método X.'
+            sub: 'Videos reales de estudiantes, profesionales y familias que vivieron el Método X.'
           },
           chat: {
             loading: 'Cargando chat',
@@ -3286,10 +3269,12 @@
             pulse: 'PULSAR',
             cardStatus: 'Activo',
             cardCta: 'Activar',
-            card1: { title: 'Neuro-Activación', subtitle: 'Potencial y Aceleración' },
-            card2: { title: 'Decodificación Ágil', subtitle: 'Análisis de Input' },
-            card3: { title: 'Proyección', subtitle: 'Output y Comunicación' },
-            card4: { title: 'Arquitectura', subtitle: 'Procesamiento Estructural' }
+            detailCta: 'Ver detalle',
+            detailClose: 'Cerrar',
+            card1: { title: 'Neuro-Activación', subtitle: 'Potencial y Aceleración', detail: 'La Neuro-Activación es la fase inicial donde preparamos el cerebro antes de aprender, llevándolo a un estado óptimo de concentración y enfoque. A través de ejercicios de coordinación y estímulos como audiofrecuencias específicas, logramos reducir la distracción, mejorar la atención y activar las conexiones neuronales necesarias para que el aprendizaje sea más rápido, claro y eficiente desde el primer momento.' },
+            card2: { title: 'Decodificación Ágil', subtitle: 'Análisis de Input', detail: 'La Decodificación Ágil se enfoca en mejorar la forma en que el cerebro recibe y procesa la información. En niños, permite aprender a leer correctamente y sin esfuerzo; en adolescentes y adultos, entrena la lectura rápida y la captación de ideas completas. El objetivo es que la persona deje de leer palabra por palabra y empiece a entender de forma más fluida, aumentando su velocidad sin perder comprensión.' },
+            card3: { title: 'Proyección de Impacto', subtitle: 'Output y Comunicación', detail: 'La Proyección de Impacto es la etapa donde el aprendizaje se consolida al expresarlo. Aquí entrenamos la capacidad de comunicar ideas de forma clara, ordenada y segura mediante oratoria y argumentación. Esto no solo fortalece la memoria y el pensamiento, sino que desarrolla confianza, liderazgo y la habilidad de transmitir conocimiento con impacto en cualquier entorno.' },
+            card4: { title: 'Arquitectura Neuronal', subtitle: 'Procesamiento Estructural', detail: 'La Arquitectura Neuronal consiste en organizar la información dentro del cerebro para que sea comprendida y recordada con facilidad. A través de herramientas como mapas mentales y asociaciones visuales, transformamos datos sueltos en estructuras claras y conectadas, lo que permite una mejor retención, comprensión profunda y capacidad de análisis, evitando el olvido y la confusión.' }
           },
           footer: {
             minimize: 'Minimizar footer',
@@ -3390,9 +3375,9 @@
             title1: 'Measure your',
             title2: 'Capabilities',
             title3: 'in Real Time',
-            slide1: { desc: 'Are you more Logical or Creative?<br/>Discover your dominance', cta: 'Analyze Dominance' },
-            slide2: { desc: 'Measure your mental agility<br/>and problem solving', cta: 'Start Logic Challenge' },
-            slide3: { desc: 'How many words per minute do you read?<br/>Measure WPM and comprehension', cta: 'Measure my Speed' },
+            slide1: { title: 'Speed and Comprehension', desc: 'Measure your words per minute<br/>and real comprehension', cta: 'Measure my Speed' },
+            slide2: { title: 'Mental Agility', desc: 'Measure your mental agility<br/>and problem solving', cta: 'Start Logic Challenge' },
+            slide3: { title: 'Brain Scanner', desc: 'Discover whether your mind is<br/>more logical or creative', cta: 'Analyze Dominance' },
             hint: 'Drag • Swipe'
           },
           sec7: {
@@ -3411,7 +3396,7 @@
             kicker: 'Verified stories',
             title1: 'Results from',
             title2: 'Real Minds',
-            sub: 'Experiences from students, professionals and adults who trained focus, reading and memory with Method X.'
+            sub: 'Real videos from students, professionals and families who experienced Method X.'
           },
           chat: {
             loading: 'Loading chat',
@@ -3425,10 +3410,12 @@
             pulse: 'PRESS',
             cardStatus: 'Active',
             cardCta: 'Activate',
-            card1: { title: 'Neuro-Activation', subtitle: 'Potential and Acceleration' },
-            card2: { title: 'Agile Decoding', subtitle: 'Input Analysis' },
-            card3: { title: 'Projection', subtitle: 'Output and Communication' },
-            card4: { title: 'Architecture', subtitle: 'Structural Processing' }
+            detailCta: 'View detail',
+            detailClose: 'Close',
+            card1: { title: 'Neuro-Activation', subtitle: 'Potential and Acceleration', detail: 'Neuro-Activation is the initial phase where we prepare the brain before learning, bringing it into an optimal state of concentration and focus. Through coordination exercises and stimuli such as specific audio frequencies, we reduce distraction, improve attention, and activate the neural connections needed for faster, clearer, and more efficient learning from the first moment.' },
+            card2: { title: 'Agile Decoding', subtitle: 'Input Analysis', detail: 'Agile Decoding improves the way the brain receives and processes information. In children, it supports correct and effortless reading; in teens and adults, it trains rapid reading and full-idea capture. The goal is to stop reading word by word and understand more fluidly, increasing speed without losing comprehension.' },
+            card3: { title: 'Impact Projection', subtitle: 'Output and Communication', detail: 'Impact Projection is the stage where learning is consolidated by expressing it. Here we train the ability to communicate ideas clearly, orderly, and confidently through public speaking and argumentation. This strengthens memory and thinking while developing confidence, leadership, and the ability to transmit knowledge with impact in any environment.' },
+            card4: { title: 'Neural Architecture', subtitle: 'Structural Processing', detail: 'Neural Architecture organizes information inside the brain so it can be understood and remembered with ease. Through tools such as mind maps and visual associations, we turn loose data into clear and connected structures, improving retention, deep understanding, and analytical capacity while avoiding forgetting and confusion.' }
           },
           footer: {
             minimize: 'Minimize footer',
@@ -3529,9 +3516,9 @@
             title1: 'Meça suas',
             title2: 'Capacidades',
             title3: 'em Tempo Real',
-            slide1: { desc: 'Você é mais Lógico ou Criativo?<br/>Descubra sua dominância', cta: 'Analisar Dominância' },
-            slide2: { desc: 'Meça sua agilidade mental<br/>e resolução de problemas', cta: 'Iniciar Desafio Lógico' },
-            slide3: { desc: 'Quantas palavras você lê por minuto?<br/>Meça PPM e compreensão', cta: 'Medir minha Velocidade' },
+            slide1: { title: 'Velocidade e Compreensão', desc: 'Meça suas palavras por minuto<br/>e sua compreensão real', cta: 'Medir minha Velocidade' },
+            slide2: { title: 'Agilidade Mental', desc: 'Meça sua agilidade mental<br/>e resolução de problemas', cta: 'Iniciar Desafio Lógico' },
+            slide3: { title: 'Scanner Cerebral', desc: 'Descubra se sua mente é<br/>mais lógica ou criativa', cta: 'Analisar Dominância' },
             hint: 'Arraste • Swipe'
           },
           sec7: {
@@ -3550,7 +3537,7 @@
             kicker: 'Histórias verificadas',
             title1: 'Resultados de',
             title2: 'Mentes Reais',
-            sub: 'Experiências de estudantes, profissionais e adultos que treinaram foco, leitura e memória com Método X.'
+            sub: 'Vídeos reais de estudantes, profissionais e famílias que viveram o Método X.'
           },
           chat: {
             loading: 'Carregando chat',
@@ -3564,10 +3551,12 @@
             pulse: 'PRESSIONAR',
             cardStatus: 'Ativo',
             cardCta: 'Ativar',
-            card1: { title: 'Neuro-Ativação', subtitle: 'Potencial e Aceleração' },
-            card2: { title: 'Decodificação Ágil', subtitle: 'Análise de Input' },
-            card3: { title: 'Projeção', subtitle: 'Saída e Comunicação' },
-            card4: { title: 'Arquitetura', subtitle: 'Processamento Estrutural' }
+            detailCta: 'Ver detalhe',
+            detailClose: 'Fechar',
+            card1: { title: 'Neuro-Ativação', subtitle: 'Potencial e Aceleração', detail: 'A Neuro-Ativação é a fase inicial em que preparamos o cérebro antes de aprender, levando-o a um estado ideal de concentração e foco. Por meio de exercícios de coordenação e estímulos como audiofrequências específicas, reduzimos a distração, melhoramos a atenção e ativamos as conexões neurais necessárias para que o aprendizado seja mais rápido, claro e eficiente desde o primeiro momento.' },
+            card2: { title: 'Decodificação Ágil', subtitle: 'Análise de Input', detail: 'A Decodificação Ágil melhora a forma como o cérebro recebe e processa a informação. Em crianças, permite aprender a ler corretamente e sem esforço; em adolescentes e adultos, treina a leitura rápida e a captação de ideias completas. O objetivo é deixar de ler palavra por palavra e entender com mais fluidez, aumentando a velocidade sem perder compreensão.' },
+            card3: { title: 'Projeção de Impacto', subtitle: 'Saída e Comunicação', detail: 'A Projeção de Impacto é a etapa em que o aprendizado se consolida ao ser expresso. Aqui treinamos a capacidade de comunicar ideias de forma clara, organizada e segura por meio da oratória e da argumentação. Isso fortalece a memória e o pensamento, além de desenvolver confiança, liderança e a habilidade de transmitir conhecimento com impacto em qualquer ambiente.' },
+            card4: { title: 'Arquitetura Neural', subtitle: 'Processamento Estrutural', detail: 'A Arquitetura Neural consiste em organizar a informação dentro do cérebro para que seja compreendida e lembrada com facilidade. Por meio de ferramentas como mapas mentais e associações visuais, transformamos dados soltos em estruturas claras e conectadas, permitindo melhor retenção, compreensão profunda e capacidade de análise, evitando o esquecimento e a confusão.' }
           },
           footer: {
             minimize: 'Minimizar footer',
@@ -3929,7 +3918,7 @@
       if (!btn) return;
 
       btn.addEventListener('click', function () {
-        window.location.href = 'https://wa.me/59161333628?text=Hola%20IQeXponencial%2C%20quiero%20recibir%20informaci%C3%B3n.';
+        window.location.href = 'https://api.whatsapp.com/send/?phone=59173600060&text=Bienvenido+a+IQExponencial+en+que+podemos+ayudarle&type=phone_number&app_absent=0';
       });
     })();
 
@@ -4323,19 +4312,10 @@
         requestAnimationFrame(tick);
       }
 
-      function triggerLoaded() {
-        if (loaded) return;
+      window.addEventListener('load', () => {
         loaded = true;
         target = 100;
-      }
-
-      if (document.readyState === 'complete') {
-        triggerLoaded();
-      } else {
-        window.addEventListener('load', triggerLoaded, { once: true });
-        // Fallback timeout to ensure the preloader never gets stuck
-        setTimeout(triggerLoaded, 3500);
-      }
+      }, { once: true });
 
       requestAnimationFrame(tick);
     })();
@@ -4403,20 +4383,6 @@
       animation-play-state: paused !important;
     }
   </style>
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 
   <script>
     let currentSlideIdx = 0;
@@ -4577,4 +4543,7 @@
 </body>
 
 </html>
+
+
+
 
