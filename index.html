@@ -4504,6 +4504,8 @@
     }
   </style>
 
+  
+
   <script>
     let currentSlideIdx = 0;
     let autoplayInterval = null;
@@ -4625,6 +4627,33 @@
 
     window.addEventListener('resize', () => {
         showSlide(currentSlideIdx);
+    });
+
+    // Touch Swipe Gesture Support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const viewport = document.querySelector('.iqx-carousel-viewport');
+        if (viewport) {
+            viewport.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].clientX;
+                stopAutoplay();
+            }, { passive: true });
+
+            viewport.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].clientX;
+                const threshold = 40;
+                const diffX = touchEndX - touchStartX;
+                if (diffX < -threshold) {
+                    nextSlide();
+                } else if (diffX > threshold) {
+                    prevSlide();
+                } else {
+                    startAutoplay();
+                }
+            }, { passive: true });
+        }
     });
 
     // Run on init
