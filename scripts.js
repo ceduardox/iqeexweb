@@ -393,6 +393,13 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
     var item = segmentVideos[index];
     if(!item || !item.video) return;
     stopAllVideos(index);
+    if (!item.video.src) {
+      var dataSrc = item.video.getAttribute('data-src');
+      if (dataSrc) {
+        item.video.src = dataSrc;
+        item.video.load();
+      }
+    }
     var p = item.video.play();
     if(p && typeof p.then === 'function'){
       p.then(function(){
@@ -446,11 +453,11 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
     if(!photo || !img) return;
 
     var video = document.createElement('video');
-    video.src = toWebmPath(img.getAttribute('src') || '');
+    video.setAttribute('data-src', toWebmPath(img.getAttribute('src') || ''));
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
-    video.preload = 'metadata';
+    video.preload = 'none';
     video.setAttribute('playsinline', '');
     video.setAttribute('aria-hidden', 'true');
     photo.appendChild(video);
@@ -916,3 +923,43 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
   });
 })();
 
+
+  // Lazy load pillar videos (.lazy-bg-video) using IntersectionObserver
+  document.addEventListener('DOMContentLoaded', function() {
+    var lazyBgVideos = [].slice.call(document.querySelectorAll('video.lazy-bg-video'));
+    if ('IntersectionObserver' in window) {
+      var videoObserver = new IntersectionObserver(function(entries, observer) {
+        entries.forEach(function(entry) {
+          var video = entry.target;
+          if (entry.isIntersecting) {
+            if (!video.src) {
+              var dataSrc = video.getAttribute('data-src');
+              if (dataSrc) {
+                video.src = dataSrc;
+                video.load();
+              }
+            }
+            video.play().catch(function() {});
+          } else {
+            if (video.src) {
+              video.pause();
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      lazyBgVideos.forEach(function(video) {
+        videoObserver.observe(video);
+      });
+    } else {
+      // Fallback
+      lazyBgVideos.forEach(function(video) {
+        var dataSrc = video.getAttribute('data-src');
+        if (dataSrc) {
+          video.src = dataSrc;
+          video.load();
+        }
+        video.play().catch(function() {});
+      });
+    }
+  });
