@@ -373,6 +373,10 @@ hero, .cards-row, .lower { padding:40px 80px; }
   100%{transform:translateX(5%);opacity:0.42}
 }
 @media (max-width:899px){
+  .sec3-new {
+    min-height: auto;
+    padding: 60px 0;
+  }
   .sec3-new::before{
     z-index:1;
     opacity:0.9;
