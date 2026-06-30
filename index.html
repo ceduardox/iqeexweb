@@ -2940,93 +2940,110 @@
           </div>
           <h2 id="iqx-testimonials-title">
             <span class="iqx-testimonials-title-main iqx-t-line iqx-t-line-2" data-i18n="testimonials.title1">Resultados de</span>
-            <span class="iqx-testimonials-title-accent iqx-t-line iqx-t-line-3" data-i18n="testimonials.title2">Mentes Reales</span>
+            <span class="iqx-testimonials-title-accent iqx-t-line iqx-t-line-3" data-i18n="testimonials.title2">Mentes Reais</span>
           </h2>
           <div class="iqx-testimonials-underline iqx-t-line iqx-t-line-4" aria-hidden="true">
             <span class="iqx-testimonials-underline-left"></span>
             <span class="iqx-testimonials-underline-center"></span>
             <span class="iqx-testimonials-underline-right"></span>
           </div>
-          <p class="iqx-testimonials-sub iqx-t-line iqx-t-line-5" data-i18n="testimonials.sub">Videos reales de estudiantes, profesionales y familias que vivieron el Método X.</p>
+          <p class="iqx-testimonials-sub iqx-t-line iqx-t-line-5" data-i18n="testimonials.sub">Experiencias de estudiantes, profesionales y adultos que entrenaron enfoque, lectura y memoria con Método X.</p>
         </header>
 
-        <div class="iqx-testimonials-grid iqx-video-testimonials" aria-label="Videos de testimonios">
-          <article class="iqx-t-card iqx-video-card">
-            <div class="iqx-video-frame">
-              <iframe loading="lazy" allow="fullscreen" allowfullscreen src="https://streamable.com/e/x3vg2s?" title="Testimonio IQeXponencial 1"></iframe>
+        <!-- Modern Video Carousel Container -->
+        <div class="iqx-video-carousel-container">
+          <div class="iqx-carousel-viewport">
+            <div class="iqx-carousel-track">
+              
+              <!-- Slide 1: Sofia -->
+              <div class="iqx-carousel-slide" data-index="0">
+                <div class="iqx-slide-video">
+                  <video controls playsinline preload="metadata">
+                    <source src="videos/11.%20SOFIA%20TALLER.mp4" type="video/mp4">
+                    <source src="videos/11.%20SOFIA%20TALLER.webm" type="video/webm">
+                    Tu navegador no soporta video.
+                  </video>
+                  <div class="iqx-video-caption">
+                    <span class="name">Sofia</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 2: Victoria -->
+              <div class="iqx-carousel-slide" data-index="1">
+                <div class="iqx-slide-video">
+                  <video controls playsinline preload="metadata">
+                    <source src="videos/3.%20VICTORIA%20HOLA.mp4" type="video/mp4">
+                    <source src="videos/3.%20VICTORIA%20HOLA.webm" type="video/webm">
+                    Tu navegador no soporta video.
+                  </video>
+                  <div class="iqx-video-caption">
+                    <span class="name">Victoria</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 3: Profesional -->
+              <div class="iqx-carousel-slide" data-index="2">
+                <div class="iqx-slide-video">
+                  <video controls playsinline preload="metadata">
+                    <source src="videos/4.%20PROFESIONAL%20VERTICAL%20JE.mp4" type="video/mp4">
+                    <source src="videos/4.%20PROFESIONAL%20VERTICAL%20JE.webm" type="video/webm">
+                    Tu navegador no soporta video.
+                  </video>
+                  <div class="iqx-video-caption">
+                    <span class="name">Profesional</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 4: Adolescente -->
+              <div class="iqx-carousel-slide" data-index="3">
+                <div class="iqx-slide-video">
+                  <video controls playsinline preload="metadata">
+                    <source src="videos/17.%20IQX%20ADOLESCENTE.mp4" type="video/mp4">
+                    <source src="videos/17.%20IQX%20ADOLESCENTE.webm" type="video/webm">
+                    Tu navegador no soporta video.
+                  </video>
+                  <div class="iqx-video-caption">
+                    <span class="name">Adolescente</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 5: Sra. Chichita -->
+              <div class="iqx-carousel-slide" data-index="4">
+                <div class="iqx-slide-video">
+                  <video controls playsinline preload="metadata">
+                    <source src="videos/16.%20IQX%20ADULTO%20MAYOR%20SRA.%20CHICHITA.mp4" type="video/mp4">
+                    <source src="videos/16.%20IQX%20ADULTO%20MAYOR%20SRA.%20CHICHITA.webm" type="video/webm">
+                    Tu navegador no soporta video.
+                  </video>
+                  <div class="iqx-video-caption">
+                    <span class="name">Sra. Chichita</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </article>
+          </div>
 
-          <article class="iqx-t-card iqx-video-card">
-            <div class="iqx-video-frame">
-              <iframe loading="lazy" allow="fullscreen" allowfullscreen src="https://streamable.com/e/gekavk?" title="Testimonio IQeXponencial 2"></iframe>
+          <!-- Navigation Controls -->
+          <div class="iqx-carousel-nav">
+            <button type="button" class="iqx-nav-btn prev" onclick="prevSlide()" aria-label="Anterior">
+              <ion-icon name="chevron-back-outline"></ion-icon>
+            </button>
+            <div class="iqx-carousel-dots">
+              <span class="dot active" onclick="gotoSlide(0)"></span>
+              <span class="dot" onclick="gotoSlide(1)"></span>
+              <span class="dot" onclick="gotoSlide(2)"></span>
+              <span class="dot" onclick="gotoSlide(3)"></span>
+              <span class="dot" onclick="gotoSlide(4)"></span>
             </div>
-          </article>
-
-          <article class="iqx-t-card iqx-video-card">
-            <div class="iqx-video-frame">
-              <iframe loading="lazy" allow="fullscreen" allowfullscreen src="https://streamable.com/e/52lg8i?" title="Testimonio IQeXponencial 3"></iframe>
-            </div>
-          </article>
-
-          <article class="iqx-t-card iqx-video-card">
-            <div class="iqx-video-frame">
-              <iframe loading="lazy" allow="fullscreen" allowfullscreen src="https://streamable.com/e/8gt4hg?" title="Testimonio IQeXponencial 4"></iframe>
-            </div>
-          </article>
-
-          <article class="iqx-t-card iqx-video-card">
-            <div class="iqx-video-frame">
-              <iframe loading="lazy" allow="fullscreen" allowfullscreen src="https://streamable.com/e/pajfts?" title="Testimonio IQeXponencial 5"></iframe>
-            </div>
-          </article>
-        </div>
-
-        <div class="iqx-text-testimonials" aria-label="Testimonios escritos">
-          <article class="iqx-t-card iqx-text-card iqx-t-card-side">
-            <div class="iqx-t-avatar" aria-hidden="true">AM</div>
-            <div class="iqx-t-stars" aria-label="5 estrellas">★★★★★</div>
-            <p class="iqx-t-quote">"Mi hijo pasó de tardar 3 horas en tareas a terminarlas en 70 minutos y con mejor comprensión."</p>
-            <h3 class="iqx-t-name">Ana M.</h3>
-            <p class="iqx-t-meta">Madre de estudiante | Cochabamba</p>
-            <div class="iqx-t-tags"><span>+42% enfoque</span><span>8 semanas</span></div>
-          </article>
-
-          <article class="iqx-t-card iqx-text-card iqx-t-card-featured">
-            <div class="iqx-t-avatar iqx-t-avatar-lg" aria-hidden="true">LR</div>
-            <div class="iqx-t-stars" aria-label="5 estrellas">★★★★★</div>
-            <p class="iqx-t-quote iqx-t-quote-featured">"Logré leer mi primer libro completo en un día, sin perder comprensión. Hoy estudio con menos estrés y más claridad mental."</p>
-            <h3 class="iqx-t-name">Luis R.</h3>
-            <p class="iqx-t-meta">Universitario | La Paz</p>
-            <div class="iqx-t-tags"><span>2.1x velocidad lectora</span><span>+31% retención</span><span>12 sesiones</span></div>
-          </article>
-
-          <article class="iqx-t-card iqx-text-card iqx-t-card-side">
-            <div class="iqx-t-avatar" aria-hidden="true">CP</div>
-            <div class="iqx-t-stars" aria-label="5 estrellas">★★★★★</div>
-            <p class="iqx-t-quote">"Antes me quedaba en blanco en reuniones. Ahora estructuro ideas rápido y comunico con seguridad."</p>
-            <h3 class="iqx-t-name">Carlos P.</h3>
-            <p class="iqx-t-meta">Gerente Comercial | Santa Cruz</p>
-            <div class="iqx-t-tags"><span>-55% bloqueos</span><span>Mayor productividad</span></div>
-          </article>
-
-          <article class="iqx-t-card iqx-text-card iqx-t-card-side">
-            <div class="iqx-t-avatar" aria-hidden="true">SV</div>
-            <div class="iqx-t-stars" aria-label="5 estrellas">★★★★★</div>
-            <p class="iqx-t-quote">"Me costaba retener conceptos técnicos. En pocas semanas mejoré memoria de trabajo y velocidad para resolver casos."</p>
-            <h3 class="iqx-t-name">Sofía V.</h3>
-            <p class="iqx-t-meta">Ingeniera de Software | Sucre</p>
-            <div class="iqx-t-tags"><span>+38% memoria activa</span><span>Enfoque sostenido</span></div>
-          </article>
-
-          <article class="iqx-t-card iqx-text-card iqx-t-card-side">
-            <div class="iqx-t-avatar" aria-hidden="true">RG</div>
-            <div class="iqx-t-stars" aria-label="5 estrellas">★★★★★</div>
-            <p class="iqx-t-quote">"Recuperé seguridad para estudiar a mi ritmo. Ahora leo más rápido y recuerdo mejor lo importante."</p>
-            <h3 class="iqx-t-name">Rosa G.</h3>
-            <p class="iqx-t-meta">Docente Jubilada | Tarija</p>
-            <div class="iqx-t-tags"><span>+46% retención</span><span>Lectura fluida</span></div>
-          </article>
+            <button type="button" class="iqx-nav-btn next" onclick="nextSlide()" aria-label="Siguiente">
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -4406,10 +4423,19 @@
         requestAnimationFrame(tick);
       }
 
-      window.addEventListener('load', () => {
+      function triggerLoaded() {
+        if (loaded) return;
         loaded = true;
         target = 100;
-      }, { once: true });
+      }
+
+      if (document.readyState === 'complete') {
+        triggerLoaded();
+      } else {
+        window.addEventListener('load', triggerLoaded, { once: true });
+        // Fallback timeout to ensure the preloader never gets stuck
+        setTimeout(triggerLoaded, 3500);
+      }
 
       requestAnimationFrame(tick);
     })();
@@ -4477,6 +4503,136 @@
       animation-play-state: paused !important;
     }
   </style>
+
+  <script>
+    let currentSlideIdx = 0;
+    let autoplayInterval = null;
+    
+    function getVisibleSlidesCount() {
+        if (window.innerWidth >= 981) return 3;
+        if (window.innerWidth >= 641) return 2;
+        return 1;
+    }
+
+    function startAutoplay() {
+        stopAutoplay();
+        autoplayInterval = setInterval(() => {
+            // Check if any video is currently playing
+            let anyPlaying = false;
+            document.querySelectorAll('.iqx-carousel-slide video').forEach(v => {
+                if (!v.paused && !v.ended && v.currentTime > 0) {
+                    anyPlaying = true;
+                }
+            });
+            
+            if (anyPlaying) return; // Do not auto-slide if user is playing a video
+
+            const visibleSlides = getVisibleSlidesCount();
+            const maxIndex = 5 - visibleSlides;
+            let nextIndex = currentSlideIdx + 1;
+            if (nextIndex > maxIndex) {
+                nextIndex = 0;
+            }
+            showSlide(nextIndex);
+        }, 4000);
+    }
+
+    function stopAutoplay() {
+        if (autoplayInterval) {
+            clearInterval(autoplayInterval);
+            autoplayInterval = null;
+        }
+    }
+
+    function showSlide(index) {
+        const track = document.querySelector('.iqx-carousel-track');
+        const slides = document.querySelectorAll('.iqx-carousel-slide');
+        const dots = document.querySelectorAll('.iqx-carousel-dots .dot');
+        if (!slides.length || !track) return;
+        
+        // Pause all videos ONLY if we are manually sliding, not on autoplay initialization
+        // Wait, to keep it simple, we pause all videos when transition happens
+        const visibleSlides = getVisibleSlidesCount();
+        const maxIndex = slides.length - visibleSlides;
+        
+        const targetIndex = Math.max(0, Math.min(maxIndex, index));
+        
+        // If we are changing slides, pause all videos
+        if (targetIndex !== currentSlideIdx) {
+            document.querySelectorAll('.iqx-carousel-slide video').forEach(v => {
+                v.pause();
+            });
+        }
+
+        currentSlideIdx = targetIndex;
+        
+        // Calculate translation offset
+        const slideWidth = slides[0].offsetWidth;
+        const gap = 20; // gap in CSS
+        const offset = currentSlideIdx * (slideWidth + gap);
+        
+        track.style.transform = `translateX(-${offset}px)`;
+
+        // Highlight center slide
+        slides.forEach((slide, idx) => {
+            slide.classList.remove('center-active');
+            slide.classList.remove('side-active');
+            
+            if (visibleSlides === 3) {
+                if (idx === currentSlideIdx + 1) {
+                    slide.classList.add('center-active');
+                } else if (idx === currentSlideIdx || idx === currentSlideIdx + 2) {
+                    slide.classList.add('side-active');
+                }
+            } else if (visibleSlides === 2) {
+                if (idx === currentSlideIdx) {
+                    slide.classList.add('center-active');
+                } else {
+                    slide.classList.add('side-active');
+                }
+            } else {
+                if (idx === currentSlideIdx) {
+                    slide.classList.add('center-active');
+                }
+            }
+        });
+
+        // Update dots UI
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === currentSlideIdx);
+            if (idx > maxIndex) {
+                dot.style.display = 'none';
+            } else {
+                dot.style.display = 'inline-block';
+            }
+        });
+    }
+
+    function nextSlide() {
+        showSlide(currentSlideIdx + 1);
+        startAutoplay();
+    }
+    
+    function prevSlide() {
+        showSlide(currentSlideIdx - 1);
+        startAutoplay();
+    }
+    
+    function gotoSlide(index) {
+        showSlide(index);
+        startAutoplay();
+    }
+
+    window.addEventListener('resize', () => {
+        showSlide(currentSlideIdx);
+    });
+
+    // Run on init
+    setTimeout(() => {
+        showSlide(0);
+        startAutoplay();
+    }, 100);
+  </script>
 </body>
 
 </html>

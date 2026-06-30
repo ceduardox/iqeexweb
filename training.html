@@ -257,10 +257,19 @@
         requestAnimationFrame(tick);
       }
 
-      window.addEventListener('load', () => {
+      function triggerLoaded() {
+        if (loaded) return;
         loaded = true;
         target = 100;
-      }, { once: true });
+      }
+
+      if (document.readyState === 'complete') {
+        triggerLoaded();
+      } else {
+        window.addEventListener('load', triggerLoaded, { once: true });
+        // Fallback timeout to ensure the preloader never gets stuck
+        setTimeout(triggerLoaded, 3500);
+      }
 
       requestAnimationFrame(tick);
     })();

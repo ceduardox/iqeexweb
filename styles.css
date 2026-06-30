@@ -1648,3 +1648,187 @@ hero, .cards-row, .lower { padding:40px 80px; }
   }
 }
 
+
+
+/* Video Carousel Styling */
+.iqx-video-carousel-container {
+    max-width: 1080px; /* Wider to fit 3 videos side-by-side */
+    width: 100%;
+    margin: 40px auto 0;
+    position: relative;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 32px;
+    padding: 30px;
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.05);
+    opacity: 1 !important;
+    transform: none !important;
+}
+.iqx-carousel-viewport {
+    width: 100%;
+    overflow: hidden;
+    padding: 25px 0;
+    margin: -25px 0;
+}
+.iqx-carousel-track {
+    display: flex;
+    gap: 20px;
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    width: 100%;
+}
+.iqx-carousel-slide {
+    flex: 0 0 100%; /* Default mobile: 1 slide visible */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+    opacity: 0.6;
+    transform: scale(0.92);
+}
+.iqx-carousel-slide.center-active {
+    opacity: 1;
+    transform: scale(1.05);
+    z-index: 2;
+}
+.iqx-carousel-slide.center-active .iqx-slide-video {
+    border-color: rgba(143, 60, 226, 0.85);
+    box-shadow: 0 25px 50px rgba(143, 60, 226, 0.35);
+    animation: activePulse 3s ease-in-out infinite alternate;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.iqx-carousel-slide.center-active .iqx-slide-video:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 35px 60px rgba(143, 60, 226, 0.5);
+}
+
+@keyframes activePulse {
+  0% {
+    box-shadow: 0 20px 40px rgba(143, 60, 226, 0.25);
+  }
+  100% {
+    box-shadow: 0 30px 60px rgba(143, 60, 226, 0.45);
+  }
+}
+.iqx-carousel-slide.side-active {
+    opacity: 0.75;
+    transform: scale(0.94);
+    z-index: 1;
+}
+.iqx-slide-video {
+    width: 100%;
+    max-width: 290px; /* Perfect vertical video width */
+    border-radius: 24px;
+    overflow: hidden;
+    aspect-ratio: 9 / 16;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    border: 2px solid rgba(143, 60, 226, 0.35);
+    background: #000;
+    position: relative;
+}
+.iqx-slide-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.iqx-video-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+    padding: 24px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+.iqx-video-caption .name {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+}
+.iqx-video-caption .role {
+    color: #cbd5e1;
+    font-size: 12px;
+}
+.iqx-carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding-top: 20px;
+}
+.iqx-nav-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #0f172a;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    transition: all 0.25s ease;
+}
+.iqx-nav-btn ion-icon {
+    font-size: 20px;
+    color: #0f172a;
+    transition: color 0.25s ease;
+}
+.iqx-nav-btn:hover {
+    background: #8f3ce2;
+    color: #ffffff;
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(143, 60, 226, 0.3);
+}
+.iqx-nav-btn:hover ion-icon {
+    color: #ffffff;
+}
+.iqx-carousel-dots {
+    display: flex;
+    gap: 6px;
+}
+.iqx-carousel-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.15);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.iqx-carousel-dots .dot.active {
+    background: #8f3ce2;
+    transform: scale(1.2);
+}
+
+@media (min-width: 981px) {
+    .iqx-carousel-slide {
+        flex: 0 0 calc((100% - 40px) / 3); /* 3 slides visible side-by-side */
+    }
+}
+@media (max-width: 980px) and (min-width: 641px) {
+    .iqx-carousel-slide {
+        flex: 0 0 calc((100% - 20px) / 2); /* 2 slides visible side-by-side */
+    }
+}
+@media (max-width: 640px) {
+    .iqx-video-carousel-container {
+        padding: 16px;
+        max-width: 350px;
+    }
+    .iqx-slide-video {
+        max-width: 250px;
+    }
+}
+
+
