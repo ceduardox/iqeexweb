@@ -870,7 +870,7 @@ hero, .cards-row, .lower { padding:40px 80px; }
 }
 
 @media (min-width:901px){
-  .sec3-grid{grid-template-columns:1fr 672px;}
+  .sec3-grid{grid-template-columns:1fr 760px;}
   .sec3-video-thumb img, .sec3-video-placeholder{height:312px;}
 }
 
