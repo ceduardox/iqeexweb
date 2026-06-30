@@ -60,3 +60,6 @@ apps/web/runtime-config.json
 
 # Claude Code
 .claude/
+
+# Ignorar videos mp4 muy pesados
+videos/*.mp4
