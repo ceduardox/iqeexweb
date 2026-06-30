@@ -48,7 +48,7 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
     const id = videoCard.dataset.videoId;
     function loadIframe(){
       const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${id}?rel=0&autoplay=1`;
+      iframe.src = `https://player.vimeo.com/video/423017074?title=0&byline=0&autoplay=1`;
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
       iframe.frameBorder = 0;
       iframe.style.width = '100%';
@@ -212,7 +212,7 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
   function load(){
     const iframe = document.createElement('iframe');
     // Sin autoplay para que en móvil se muestren los controles nativos y se pueda pausar
-    iframe.src = `https://www.youtube.com/embed/${id}?rel=0&autoplay=0&controls=1&modestbranding=1&playsinline=1`;
+    iframe.src = `https://player.vimeo.com/video/423017074?title=0&byline=0&autoplay=1`;
     iframe.frameBorder = 0;
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
     iframe.allowFullscreen = true;
@@ -637,8 +637,8 @@ window.addEventListener('load', ()=> document.body.classList.add('loaded'));
 (function(){
   var section = document.querySelector('.iqx-testimonials');
   if(!section) return;
-  var track = section.querySelector('.iqx-testimonials-grid');
-  var cards = Array.from(section.querySelectorAll('.iqx-t-card'));
+  var track = section.querySelector('.iqx-testimonials-grid') || section.querySelector('.iqx-video-carousel-container');
+  var cards = Array.from(section.querySelectorAll('.iqx-t-card, .iqx-carousel-slide'));
   if(!cards.length) return;
   var mobileQuery = window.matchMedia('(max-width:640px)');
   var autoplayTimer = null;
